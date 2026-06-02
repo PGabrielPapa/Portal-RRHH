@@ -1719,10 +1719,6 @@ async function abmGuardarEdicion(){
     titulo:        gV('abm-e-titulo') || '',
     titulo_desc:   gV('abm-e-titulo-desc').trim() || '',
     foto:          abmGetFotoParaGuardar(leg),
-    centro_operaciones:    gV('abm-e-centro-operaciones'),
-    sector:                gV('abm-e-sector'),
-    centro_costos:         gV('abm-e-centro-costos'),
-    centro_costos_nuevo:   gV('abm-e-centro-costos-nuevo'),
     validador: gV('abm-e-validador') || null, areaOrg: gV('abm-e-area') || null};
   saveAbmOverrides(ov);
   // Altas: actualizar también
@@ -1774,9 +1770,6 @@ async function abmGuardarEdicion(){
     complemento: _abmComplementoCalculado()||0,
     condicion: gV('abm-e-condicion'),
     cod_convenio: empAntes.cod_convenio, // no editables en este form
-    cat_convenio: gV('abm-e-cat-convenio') || '',
-    titulo: gV('abm-e-titulo') || '',
-    titulo_desc: gV('abm-e-titulo-desc').trim() || '',
     cod_os: empAntes.cod_os, cod_sindicato: empAntes.cod_sindicato,
     // Domicilio expandido
     dom_calle: calle, dom_nro: nro, dom_piso: piso, dom_depto: depto,

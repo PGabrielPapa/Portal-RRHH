@@ -256,16 +256,6 @@ function saveGanParamsPorSemestre(obj){
   try{localStorage.setItem(GAN_PARAMS_PERIODOS_KEY, JSON.stringify(obj));}catch(e){}
 }
 
-// Dado una fecha (YYYY-MM-DD o Date), devuelve la clave del semestre "YYYY-S1" o "YYYY-S2"
-function periodoSemestralDeFecha(fecha){
-  if(!fecha) fecha = new Date();
-  const d = (typeof fecha === 'string') ? new Date(fecha + (fecha.length===10 ? 'T12:00:00' : '')) : fecha;
-  if(isNaN(d.getTime())) return null;
-  const anio = d.getFullYear();
-  const sem = d.getMonth() < 6 ? 'S1' : 'S2';
-  return `${anio}-${sem}`;
-}
-
 // Normaliza una clave de período Ganancias a su mes de INICIO de vigencia "YYYY-MM"
 // (sortable). Soporta claves mensuales ("YYYY-MM"), semestrales ("YYYY-S1"/"YYYY-S2")
 // y anuales ("YYYY").
