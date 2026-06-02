@@ -166,7 +166,7 @@ function buildAsientoContable(liq){
     const anssal         = sum(i => i.anssal);
     const aportePami     = sum(i => i.pamiEmp);
     const sindEmp        = sum(i => i.sindicato);
-    const ganancias      = sum(i => i.ganancias);
+    const ganancias      = sum(i => (i.ganancias||0) + (i.ajusteGananciasAnual||0)); // incluye ajuste liq. anual (abril)
     const embargo        = sum(i => i.embargo);
     const anticipos      = sum(i => i.anticiposDesc);
     const otrosDesc      = sum(i => i.mOtrosD);

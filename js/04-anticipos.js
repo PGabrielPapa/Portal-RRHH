@@ -503,7 +503,7 @@ function renderPendientes(){
 }
 
 // ─── PANEL RR.HH. — NAVEGACIÓN POR SECCIONES ───
-const RRHH_SUBS = ['solicitudes','recibos','ganancias','contraseñas','delegacion','exportar','licencias','domicilios','mensajes','repositorio','abm','empresas','lic-anuales','lic-especiales','liquidacion','simulacion','evaluaciones','escala','sindicatos','hys','familiares','sanciones','conceptos-custom','reportes','reporte-conceptos','importar-conceptos','cert-trabajo'];
+const RRHH_SUBS = ['solicitudes','recibos','ganancias','contraseñas','delegacion','exportar','licencias','domicilios','mensajes','repositorio','abm','empresas','lic-anuales','lic-especiales','liquidacion','simulacion','evaluaciones','escala','sindicatos','hys','familiares','sanciones','conceptos-custom','reportes','reporte-conceptos','importar-conceptos','cert-trabajo','lic-anual-gan'];
 
 function navRRHH(sub){
   const _navRole = currentUser?.role; const _navLevel = (typeof getUserLevel === 'function') ? getUserLevel(currentUser?.emp?.dni) : currentUser?.level;
@@ -522,6 +522,7 @@ function navRRHH(sub){
   if(sub==='lic-anuales'){ renderLicAnualRRHH(); }
   if(sub==='lic-especiales'){ renderLicEspecialRRHH(); }
   if(sub==='liquidacion'){ liqTab('periodos'); renderLiqPeriodos(); }
+  if(sub==='lic-anual-gan'){ renderLiqAnualGan(); }
   if(sub==='simulacion'){ simTab('mensual'); }
   if(sub==='domicilios'){ renderCambiosDomicilio(); }
   if(sub==='mensajes'){ renderMensajesAdmin(); }

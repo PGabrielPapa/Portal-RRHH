@@ -809,6 +809,13 @@
               <div style="font-size:11px;color:var(--t3)">Cargar cálculo del impuesto a las ganancias</div>
             </div>
 
+          <div class="card home-card" onclick="navRRHH('lic-anual-gan')" style="cursor:pointer;padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;transition:all .18s">
+            <div style="width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);display:flex;align-items:center;justify-content:center;font-size:24px">📅</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px">Liquidación Anual Ganancias</div>
+              <div style="font-size:11px;color:var(--t3)">Cierre anual (F.1359) e imputación en abril</div>
+            </div>
+          </div>
           <div class="card home-card" onclick="navRRHH('reportes')" style="cursor:pointer;padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;transition:all .18s">
             <div style="width:56px;height:56px;border-radius:50%;background:rgba(94,194,255,.08);border:1px solid rgba(94,194,255,.2);display:flex;align-items:center;justify-content:center;font-size:24px">📈</div>
             <div>
@@ -1004,6 +1011,7 @@
       </div>
 
       <!-- Ganancias -->
+      <div id="rrhh-sub-lic-anual-gan" style="display:none"></div>
       <div id="rrhh-sub-ganancias" style="display:none">
         <button onclick="navRRHH(null)" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);color:var(--t2);font-size:12px;cursor:pointer;padding:6px 14px;margin-bottom:18px;font-family:var(--font-mono);transition:all .15s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">← Volver al panel</button>
         <div class="card" style="margin-bottom:20px">
@@ -2858,6 +2866,7 @@
 <script src="js/54-elementos-trabajo.js"></script>
 <script src="js/55-beneficios.js"></script>
 <script src="js/56-art-empresas.js"></script>
+<script src="js/57-liquidacion-anual-ganancias.js"></script>
 
 <!-- Modal: Cierre de período contable (js/33) -->
 <div id="liq-cierre-periodos-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 16px">

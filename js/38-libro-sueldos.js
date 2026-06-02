@@ -279,7 +279,7 @@ function _lsdGenerarF901(liq, items, empresaCUIT){
     // invertido (el neto resulta correcto). Una devolución bajo el código 306
     // de retención puede requerir tratamiento/concepto específico según la
     // versión vigente del Libro de Sueldos Digital (ARCA) — verificar al cierre anual.
-    filaConcepto('ganancias',  -$m(item.ganancias),  null);
+    filaConcepto('ganancias',  -$m(item.ganancias) - $m(item.ajusteGananciasAnual),  null); // incluye ajuste liq. anual (abril)
     filaConcepto('embargo',    -$m(item.embargo),    null);
     filaConcepto('anticipos',  -$m(item.anticiposDesc), null);
     filaConcepto('mDescSuspension', -$m(item.mDescSuspension), item.diasSuspension);

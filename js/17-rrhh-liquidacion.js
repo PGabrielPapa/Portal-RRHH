@@ -1442,6 +1442,17 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
   // Capa 2: COMUNES — tope Art. 147 conjunto, sobre neto post-alimentos.
   const itemsComun = embargosList.filter(e => e.tipo === 'comun');
   const sumaComunCargada = itemsComun.reduce((s,e) => s + $m(e.monto), 0);
+  // ── Ajuste de la LIQUIDACIÓN ANUAL de Ganancias (Art. 21 RG 4003/2017) ──
+  // Solo en ABRIL (mes 4): imputa la diferencia del cierre del ejercicio anterior
+  // (N = anio-1) como concepto. NO integra el acumulado mensual del ejercicio en
+  // curso (es un ajuste del ejercicio anterior). Con signo: <0 = devolución.
+  let ajusteGananciasAnual = 0;
+  if(mes === 4 && typeof getAjusteAnualGanParaAbril === 'function'){
+    try {
+      const _ajAnual = getAjusteAnualGanParaAbril(emp.leg, anio - 1);
+      if(_ajAnual && Math.abs($m(_ajAnual.diferencia)) > 0.005) ajusteGananciasAnual = $m(_ajAnual.diferencia);
+    } catch(_eAj){ ajusteGananciasAnual = 0; }
+  }
   const netoTrasAlim = totalHaberes - (jubilacion+obraSocial+anssal+pamiEmp+sindicato+ganancias+anticipos+mAlimentos);
   let topeComun = 0;
   let mComun = sumaComunCargada;
@@ -1468,7 +1479,7 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
   const otrosD=(nov.otrosDescuentos||[]);
   const mOtrosD=otrosD.reduce((s,d)=>s+$m(d.monto),0);
 
-  const totalDescuentos=jubilacion+obraSocial+anssal+pamiEmp+sindicato+ganancias+embargo+anticiposDesc+mOtrosD+mDescSuspension+_ccTotalDesc+_ccTotalAporte;
+  const totalDescuentos=jubilacion+obraSocial+anssal+pamiEmp+sindicato+ganancias+embargo+anticiposDesc+mOtrosD+mDescSuspension+_ccTotalDesc+_ccTotalAporte+ajusteGananciasAnual;
   const netoAPagar=Math.max(0,totalHaberes-totalDescuentos);
 
   // ─ Contribuciones patronales (sin tope máximo — Ley 26.417) ─
@@ -1603,7 +1614,7 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
     pctSindicatoEmp: pctSindEmp,
     pctSindicatoPatronal: pctSindPatronal,
     pctAntigPorAnio: pctAntigPorAnio,
-    ganancias, gananciasManual: nov.gananciasManual === true, embargo, anticiposDesc, mOtrosD, otrosD,
+    ganancias, gananciasManual: nov.gananciasManual === true, ajusteGananciasAnual, embargo, anticiposDesc, mOtrosD, otrosD,
     // Trazabilidad embargos: lista detallada + agregados
     embargos: embargosList,
     mAlimentos, mComun,                         // por capa
@@ -4782,6 +4793,11 @@ function buildConceptRows(item, params){
     pH('Devolución Imp. Ganancias',        9300, '',                                 -$m(item.ganancias));
   } else {
     pR('Retención Imp. Ganancias',         90000, '',                                 item.ganancias);
+  }
+  // Ajuste de la liquidación anual de Ganancias (solo abril) — concepto separado
+  if($m(item.ajusteGananciasAnual)){
+    if($m(item.ajusteGananciasAnual) < 0) pH('Devolución Liq. Anual Ganancias', 9301, '', -$m(item.ajusteGananciasAnual));
+    else pR('Ajuste Liq. Anual Ganancias',  90001, '',  item.ajusteGananciasAnual);
   }
   pR('Descuento anticipo haberes',         10500, '',                                 item.anticiposDesc);
   pR('Embargo judicial',                   10600, '',                                 item.embargo);
