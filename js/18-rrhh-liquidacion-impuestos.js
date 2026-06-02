@@ -24,9 +24,20 @@ async function calcImpuestoEscala(base, params){
   };
 }
 
+// Cache breve de liquidaciones para el acumulado (evita N lecturas IDB en el loop de liquidación)
+let _gananciasLiqCache = null, _gananciasLiqCacheTs = 0;
+async function _getLiquidacionesGan(){
+  const now = Date.now();
+  if(_gananciasLiqCache && (now - _gananciasLiqCacheTs) < 8000) return _gananciasLiqCache;
+  _gananciasLiqCache = await getLiquidaciones();
+  _gananciasLiqCacheTs = now;
+  return _gananciasLiqCache;
+}
+function invalidarCacheGanancias(){ _gananciasLiqCache = null; _gananciasLiqCacheTs = 0; }
+
 // Acumula todos los valores del empleado desde enero al mes de la liquidación activa
 async function acumularGananciasEmpleado(leg, anio, mesHasta){
-  const lista = await getLiquidaciones();
+  const lista = await _getLiquidacionesGan();
   // Filtrar aprobadas del mismo año, del empleado, hasta el mes indicado
   const previas = lista.filter(l =>
     l.estado === 'aprobada' &&
@@ -126,67 +137,69 @@ function _edEmp(empresa){
   return EMPRESA_DATOS_LIQ[empresa] || {cuit:'',dir:'',nro:'',piso:'',depto:'',cp:'',loc:''};
 }
 
-// HTML planilla Ganancias con acumulado
-async function planillaGananciasHTML(item, liq, params, nov){
-  const ed = _edEmp(item.empresa);
-  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const mesNombre = (meses[liq.mes-1] || '').toUpperCase() + ' ' + liq.anio;
-  const tipoDesc = ({mensual:'Mensual',quincenal:'Quincenal',sac1:'SAC 1er Sem.',sac2:'SAC 2do Sem.',vacaciones:'Vacaciones',final:'Final',complementaria:'Complementaria'})[liq.tipo] || liq.tipo;
-
-  // ── Resolver parámetros Ganancias según FECHA DE PAGO de la liquidación ──
-  // Si no hay fecha de pago, usa el primer día del mes liquidado.
+// ═══════════════════════════════════════════════════════════════
+// DETERMINACIÓN DE GANANCIAS 4ª DEL PERÍODO (acumulado RG 4003/2017)
+// Función pura reutilizable: la usan tanto el motor de liquidación
+// (calcularItemLiquidacion en 17-rrhh-liquidacion.js) para AUTOCOMPLETAR
+// item.ganancias, como la planilla de control.
+//
+// Devuelve impMesAuto CON SIGNO:
+//   > 0  → retención del período
+//   < 0  → devolución del período
+// Por construcción: retenidoAcum(previos) + impMesAuto = impDetAcum
+// ⇒ al cierre del período la diferencia da CERO.
+//
+// REGLA DEDUCCIONES (Art. 30 / Art. 85 LIG):
+//   • Deducciones personales declaradas por el trabajador (cargas de
+//     familia y deducciones voluntarias Art. 85): SOLO si se importó el
+//     F.572 SIRADIG.
+//   • Excepción — aportes obligatorios (jubilación, obra social, ANSSAL,
+//     Ley 19.032 y sindicato): SIEMPRE deducibles, tomados de los
+//     acumulados retenidos en períodos previos + los de la liquidación
+//     mensual en curso (que ya incluyen los aportes sobre SAC y demás
+//     pagos no habituales devengados en el mes vía baseSacAportes).
+//   • MNI y Deducción Especial (Art. 30): SIEMPRE (no las declara el
+//     empleado; surgen de tablas ARCA).
+// ═══════════════════════════════════════════════════════════════
+async function calcGananciasMes(item, liq, params, nov){
+  nov = nov || {};
+  // Resolver parámetros Ganancias según FECHA DE PAGO de la liquidación.
   const fechaRef = liq.fechaPago || `${liq.anio}-${String(liq.mes).padStart(2,'0')}-01`;
   params = buildParamsConPeriodo(params, fechaRef);
 
-  // ── ACUMULADO enero → mes anterior ──
+  // Acumulado enero → mes anterior (sobre liquidaciones aprobadas)
   const acum = await acumularGananciasEmpleado(item.leg, liq.anio, liq.mes);
 
-  // ── Mes actual ──
-  // IMPORTANTE: usar totalHaberesRem (remunerativos) como base gravable de ganancias.
-  // totalHaberes incluye exentos, que NO forman parte de la base imponible.
+  // Mes actual — base gravable = remunerativos (los exentos no integran la base)
   const remMes = $m(item.totalHaberesRem || item.totalHaberes);
   const sacMes = $m(item.mSac);
+  // Aportes obligatorios del mes (incluyen los devengados sobre SAC / pagos no habituales)
   const dedGenMes = $m(item.jubilacion) + $m(item.obraSocial) + $m(item.anssal) + $m(item.pamiEmp) + $m(item.sindicato);
 
-  // Conceptos exentos del mes (informativo — ya excluidos de remMes)
-  const hsExtExentas = $m(nov.hsExtrasExentas);
-  const bonoExento  = $m(nov.bonoProductividadExento);
-  const indemniz    = $m(nov.indemnizaciones);
-  const otrosExentos = $m(nov.otrosExentos);
-  const totalExento = hsExtExentas + bonoExento + indemniz + otrosExentos;
-
-  // ── Acumulado incluyendo el mes actual ──
+  // Acumulado incluyendo el mes actual
   const remGravAcum = acum.remGravAcum + remMes;
   const sacAcumTot  = acum.sacAcum + sacMes;
   const dedGenAcum  = acum.dedGenAcum + dedGenMes;
 
-  // ── Deducciones personales PROPORCIONALES (al mes liquidado) ──
+  // Deducciones personales PROPORCIONALES (a los meses transcurridos)
   const mesesTranscurridos = liq.mes; // enero=1
   const propMes = mesesTranscurridos / 12;
-  const mniProp        = params.gan_mniAnual * propMes;
-  const dedEspProp     = params.gan_dedEspAnual * propMes;
-  const dedEsp2Prop    = params.gan_dedEsp2Anual * propMes;
-  const dedEspecProp   = params.gan_dedEspecifica * propMes;
+  const mniProp      = params.gan_mniAnual    * propMes;
+  const dedEspProp   = params.gan_dedEspAnual  * propMes;
+  const dedEsp2Prop  = params.gan_dedEsp2Anual * propMes;
+  const dedEspecProp = params.gan_dedEspecifica * propMes;
 
-  // ── Cargas de familia y deducciones voluntarias ──
-  // REGLA: solo se consideran si fueron importadas desde el F.572 Web (SIRADIG).
-  // La carga manual en el modal queda como información para el empleado, pero NO
-  // impacta el cálculo del impuesto hasta que se importe el XML correspondiente.
-  // Las únicas deducciones que SÍ aplican siempre son la Ganancia No Imponible
-  // (MNI) y la Deducción Especial (Art. 30 LIG), que dependen de tablas AFIP y
-  // no son declaradas por el empleado.
+  // Cargas de familia y deducciones voluntarias: SOLO con F.572 SIRADIG importado
   const tieneSiradig = !!(nov && nov._importadoSiradig);
-
-  const tieneConyuge   = tieneSiradig && !!nov.tieneConyuge;
-  const nroHijos       = tieneSiradig ? (parseInt(nov.nroHijosMenores) || 0) : 0;
-  const nroHijosInc    = tieneSiradig ? (parseInt(nov.nroHijosIncapacitados) || 0) : 0;
-  const cargaConyuge   = tieneConyuge ? params.gan_cargaConyugeAnual * propMes : 0;
-  const cargaHijos     = nroHijos * params.gan_cargaHijoAnual * propMes;
-  const cargaHijosInc  = nroHijosInc * params.gan_cargaHijoIncAnual * propMes;
+  const tieneConyuge = tieneSiradig && !!nov.tieneConyuge;
+  const nroHijos     = tieneSiradig ? (parseInt(nov.nroHijosMenores) || 0) : 0;
+  const nroHijosInc  = tieneSiradig ? (parseInt(nov.nroHijosIncapacitados) || 0) : 0;
+  const cargaConyuge  = tieneConyuge ? params.gan_cargaConyugeAnual * propMes : 0;
+  const cargaHijos    = nroHijos    * params.gan_cargaHijoAnual    * propMes;
+  const cargaHijosInc = nroHijosInc * params.gan_cargaHijoIncAnual * propMes;
   const totalCargasFam = cargaConyuge + cargaHijos + cargaHijosInc;
 
-  // ── Deducciones voluntarias con topes Art. 85 ──
-  // Ganancia neta provisoria (antes de voluntarias) = remGravAcum - dedGenAcum
+  // Deducciones voluntarias con topes Art. 85
   const ganNetaProv = remGravAcum - dedGenAcum;
   const dedVolRaw = tieneSiradig ? (nov.dedVoluntarias || {}) : {};
   const dedVolTopadas = aplicarTopesArt85(dedVolRaw, ganNetaProv, params);
@@ -196,17 +209,51 @@ async function planillaGananciasHTML(item, liq, params, nov){
   const totDedPers = mniProp + totalCargasFam + dedEspProp + dedEsp2Prop + dedEspecProp;
   const totDed     = totDedGen + totDedPers;
 
-  // ── Ganancia Sujeta a Impuesto ──
+  // Ganancia sujeta a impuesto e impuesto determinado (escala Art. 94)
   const remSujeta = Math.max(0, remGravAcum - totDed);
+  const { impuesto: impDetAcum, alicuota, tramo } = await calcImpuestoEscala(remSujeta, params);
 
-  // ── Impuesto determinado según escala ANUAL ──
-  const {impuesto: impDetAcum, alicuota, tramo} = calcImpuestoEscala(remSujeta, params);
+  // Saldo del período CON SIGNO (negativo = devolución)
+  const impMesAuto = impDetAcum - acum.retenidoAcum;
 
-  // ── IMPUESTO A RETENER ESTE MES = acumulado − ya retenido ──
-  const impARetener = Math.max(0, impDetAcum - acum.retenidoAcum);
+  return {
+    params, acum, remMes, sacMes, dedGenMes, remGravAcum, sacAcumTot, dedGenAcum,
+    mesesTranscurridos, propMes, mniProp, dedEspProp, dedEsp2Prop, dedEspecProp,
+    tieneSiradig, tieneConyuge, nroHijos, nroHijosInc, cargaConyuge, cargaHijos, cargaHijosInc,
+    totalCargasFam, dedVolRaw, dedVolTopadas, totalDedVol, totDedGen, totDedPers, totDed,
+    remSujeta, impDetAcum, alicuota, tramo, impMesAuto
+  };
+}
 
-  // Lo ingresado en novedades (si hay valor manual)
-  const impRetenidoMes = $m(item.ganancias);
+// HTML planilla Ganancias con acumulado
+async function planillaGananciasHTML(item, liq, params, nov){
+  const ed = _edEmp(item.empresa);
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const mesNombre = (meses[liq.mes-1] || '').toUpperCase() + ' ' + liq.anio;
+  const tipoDesc = ({mensual:'Mensual',quincenal:'Quincenal',sac1:'SAC 1er Sem.',sac2:'SAC 2do Sem.',vacaciones:'Vacaciones',final:'Final',complementaria:'Complementaria'})[liq.tipo] || liq.tipo;
+
+  // ── Determinación de Ganancias (acumulado) — función compartida ──
+  const G = await calcGananciasMes(item, liq, params, nov);
+  params = G.params; // resueltos por período (fecha de pago)
+  const {
+    acum, remMes, sacMes, dedGenMes, remGravAcum, sacAcumTot, dedGenAcum,
+    mesesTranscurridos, propMes, mniProp, dedEspProp, dedEsp2Prop, dedEspecProp,
+    tieneSiradig, tieneConyuge, nroHijos, nroHijosInc, cargaConyuge, cargaHijos, cargaHijosInc,
+    totalCargasFam, dedVolTopadas, totalDedVol, totDedGen, totDedPers, totDed,
+    remSujeta, impDetAcum, alicuota, tramo, impMesAuto
+  } = G;
+
+  // Conceptos exentos del mes (informativo — ya excluidos de remMes)
+  const hsExtExentas = $m(nov.hsExtrasExentas);
+  const bonoExento  = $m(nov.bonoProductividadExento);
+  const indemniz    = $m(nov.indemnizaciones);
+  const otrosExentos = $m(nov.otrosExentos);
+  const totalExento = hsExtExentas + bonoExento + indemniz + otrosExentos;
+
+  // Saldo del período con signo y lo realmente aplicado en el recibo (auto u override manual)
+  const impMes      = impMesAuto;            // automático (acumulado)
+  const impAplicado = $m(item.ganancias);    // lo que impacta el recibo
+  const diferencia  = impDetAcum - (acum.retenidoAcum + impAplicado); // 0 si es automático
 
   const fN = n => n.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const row = (lbl,val,bold,bg) => {
@@ -339,10 +386,10 @@ async function planillaGananciasHTML(item, liq, params, nov){
     ${row('Alícuota marginal aplicable', alicuota, false)}
     ${row('Tramo: hasta $'+(tramo?fN(tramo.hasta===Infinity?0:tramo.hasta):'—'), 0)}
     ${row('IMPUESTO DETERMINADO ACUMULADO', impDetAcum, true)}
-    ${row('Impuesto retenido en meses anteriores', acum.retenidoAcum)}
-    ${row('Impuesto ingresado en novedades este mes', impRetenidoMes)}
-    ${row('IMPUESTO A RETENER EN LA LIQUIDACIÓN', impARetener, true, '#e8e8e8')}
-    ${row('SALDO A PAGAR', Math.max(0, impARetener - impRetenidoMes), true, '#e0e0e0')}
+    ${row('Impuesto retenido en períodos anteriores', acum.retenidoAcum)}
+    ${row((impMes>=0?'RETENCIÓN':'DEVOLUCIÓN')+' DEL PERÍODO (automático)', Math.abs(impMes), true, '#e8e8e8')}
+    ${row('Monto aplicado en el recibo'+(item.gananciasManual?' (HARDCODE manual)':''), impAplicado, item.gananciasManual)}
+    ${row('DIFERENCIA acumulada al cierre (debe ser 0)', diferencia, true, diferencia===0?'#e0f0e0':'#ffe0e0')}
   </table>
 
   <div style="margin-top:12px;padding:8px;background:#fffae0;border:1px solid #f0d070;font-size:7.5px;color:#553">
@@ -458,7 +505,7 @@ function cargarParamsForm(){
   const claves = Object.keys(periodos).sort().reverse(); // más recientes primero
   const sel = document.getElementById('gan-periodo-sel');
   if(sel){
-    const hoy = periodoSemestralDeFecha(new Date());
+    const hoy = resolveGanParamsParaFecha(new Date())._periodo;
     const claveDefault = claves.includes(hoy) ? hoy : claves[0];
     sel.innerHTML = claves.map(k => {
       const r = periodos[k];
@@ -554,26 +601,39 @@ async function leerEscalaFromEditor(){
 }
 
 async function agregarNuevoPeriodoGan(){
-  const clave = await showPrompt({titulo:'Clave del semestre',mensaje:'Formato: YYYY-S1 o YYYY-S2 (ej: 2026-S1)',placeholder:'2026-S2',valorDefault:'2026-S2',labelOk:'Continuar'});
-  if(!clave || !/^\d{4}-S[12]$/.test(clave)){ toast('⚠ Formato inválido (usar YYYY-S1 o YYYY-S2)','var(--yellow)'); return; }
+  const clave = await showPrompt({titulo:'Clave del período',mensaje:'Mensual: YYYY-MM (ej: 2026-03) — recomendado · Semestral: YYYY-S1 / YYYY-S2',placeholder:'2026-03',valorDefault:'',labelOk:'Continuar'});
+  if(!clave) return;
+  const esMensual   = /^\d{4}-(0[1-9]|1[0-2])$/.test(clave);
+  const esSemestral = /^\d{4}-S[12]$/.test(clave);
+  if(!esMensual && !esSemestral){ toast('⚠ Formato inválido (YYYY-MM o YYYY-S1/S2)','var(--yellow)'); return; }
   const periodos = getGanParamsPorSemestre();
-  if(periodos[clave]){ toast('⚠ Ese semestre ya existe','var(--yellow)'); return; }
-  // Copia el último semestre disponible como base
-  const claves = Object.keys(periodos).sort();
-  const anterior = periodos[claves[claves.length-1]];
-  const [anio,sem] = clave.split('-');
-  const vDesde = sem === 'S1' ? `${anio}-01-01` : `${anio}-07-01`;
-  const vHasta = sem === 'S1' ? `${anio}-06-30` : `${anio}-12-31`;
+  if(periodos[clave]){ toast('⚠ Ese período ya existe','var(--yellow)'); return; }
+  // Base: la tabla vigente al inicio del nuevo período (arranca de los valores en uso)
+  const mesEff = _ganClaveAMesEfectivo(clave);
+  const anterior = resolveGanParamsParaFecha(mesEff + '-01');
+  const anio = clave.split('-')[0];
+  let _nombre, vDesde, vHasta;
+  if(esMensual){
+    const mm = clave.split('-')[1];
+    const ult = new Date(Number(anio), Number(mm), 0).getDate(); // último día del mes
+    _nombre = `Mes ${mm}/${anio}`;
+    vDesde = `${anio}-${mm}-01`;
+    vHasta = `${anio}-${mm}-${String(ult).padStart(2,'0')}`;
+  } else {
+    const sem = clave.split('-')[1];
+    _nombre = `${sem==='S1'?'1° semestre ':'2° semestre '}${anio}`;
+    vDesde = sem==='S1' ? `${anio}-01-01` : `${anio}-07-01`;
+    vHasta = sem==='S1' ? `${anio}-06-30` : `${anio}-12-31`;
+  }
   const nuevo = {
     ...anterior,
-    _nombre: `${sem==='S1'?'1° semestre ':'2° semestre '}${anio}`,
-    _vigenciaDesde: vDesde, _vigenciaHasta: vHasta,
-    _rg: 'PENDIENTE DE CARGA',
-    _requiereVerificacion: true
+    _nombre, _vigenciaDesde: vDesde, _vigenciaHasta: vHasta,
+    _rg: 'PENDIENTE DE CARGA', _requiereVerificacion: true
   };
+  delete nuevo._periodo; delete nuevo._fallback; delete nuevo._vigencia; // limpiar metadatos de resolución
   periodos[clave] = nuevo;
   saveGanParamsPorSemestre(periodos);
-  toast(`✓ Semestre ${clave} agregado (copia del anterior) — ajustá los valores`,'var(--green)');
+  toast(`✓ Período ${clave} agregado (copia del vigente) — ajustá los valores`,'var(--green)');
   cargarParamsForm(); // refrescar selector
   document.getElementById('gan-periodo-sel').value = clave;
   cargarGanPeriodoForm();

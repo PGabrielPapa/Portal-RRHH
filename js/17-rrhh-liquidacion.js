@@ -266,20 +266,56 @@ function periodoSemestralDeFecha(fecha){
   return `${anio}-${sem}`;
 }
 
-// Resuelve los parámetros Ganancias aplicables según la fecha de pago.
-// Si no hay datos para ese semestre, usa el más reciente disponible.
+// Normaliza una clave de período Ganancias a su mes de INICIO de vigencia "YYYY-MM"
+// (sortable). Soporta claves mensuales ("YYYY-MM"), semestrales ("YYYY-S1"/"YYYY-S2")
+// y anuales ("YYYY").
+function _ganClaveAMesEfectivo(clave){
+  if(!clave) return null;
+  let m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(clave);   // mensual
+  if(m) return `${m[1]}-${m[2]}`;
+  m = /^(\d{4})-S([12])$/.exec(clave);               // semestral
+  if(m) return `${m[1]}-${m[2]==='1'?'01':'07'}`;
+  m = /^(\d{4})$/.exec(clave);                        // anual
+  if(m) return `${m[1]}-01`;
+  return null;
+}
+
+// Mes "YYYY-MM" de una fecha (string ISO o Date).
+function _mesDeFecha(fecha){
+  if(!fecha) fecha = new Date();
+  const d = (typeof fecha === 'string') ? new Date(fecha + (fecha.length===10 ? 'T12:00:00' : '')) : fecha;
+  if(isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+// Resuelve los parámetros Ganancias (escala Art. 94 + deducciones Art. 30/85)
+// aplicables a la FECHA DE PAGO con granularidad MENSUAL.
+// Toma la tabla vigente al mes de pago: la de mayor inicio de vigencia <= mes de pago.
+// - Si existe una tabla mensual exacta para ese mes, se usa directamente.
+// - Compatible con claves mensuales, semestrales o anuales cargadas en el editor.
+// - _fallback=true solo si NO hay tabla previa al mes de pago, o si la elegida ya
+//   venció respecto del mes de pago (se arrastra una tabla vencida).
 function resolveGanParamsParaFecha(fechaISO){
   const todos = getGanParamsPorSemestre();
-  const claveObjetivo = periodoSemestralDeFecha(fechaISO);
-  if(todos[claveObjetivo]) return {...todos[claveObjetivo], _periodo: claveObjetivo};
-  // Fallback: el semestre más reciente disponible previo a la fecha
-  const claves = Object.keys(todos).sort();
-  let mejor = null;
-  for(const k of claves){
-    if(!claveObjetivo || k <= claveObjetivo){ mejor = k; }
+  const mesObjetivo = _mesDeFecha(fechaISO);
+  // Coincidencia mensual exacta
+  if(mesObjetivo && todos[mesObjetivo]) return {...todos[mesObjetivo], _periodo: mesObjetivo};
+  // Efectivo-dated: período vigente con mayor inicio <= mes objetivo
+  let mejorClave = null, mejorMes = null;
+  for(const k of Object.keys(todos)){
+    const mEff = _ganClaveAMesEfectivo(k);
+    if(!mEff) continue;
+    if(mesObjetivo && mEff > mesObjetivo) continue; // aún no vigente a la fecha de pago
+    if(mejorMes === null || mEff > mejorMes){ mejorMes = mEff; mejorClave = k; }
   }
-  if(mejor) return {...todos[mejor], _periodo: mejor, _fallback:true};
-  // Último recurso: el primero disponible
+  if(mejorClave){
+    let _fb = false;
+    const vh = todos[mejorClave]._vigenciaHasta; // "YYYY-MM-DD"
+    if(vh && mesObjetivo && mesObjetivo > vh.slice(0,7)) _fb = true; // tabla vencida
+    return {...todos[mejorClave], _periodo: mejorClave, _fallback:_fb};
+  }
+  // Último recurso: la más antigua disponible (fecha de pago previa a toda tabla cargada)
+  const claves = Object.keys(todos).sort();
   return {...todos[claves[0]], _periodo: claves[0], _fallback:true};
 }
 
@@ -481,10 +517,12 @@ async function addLiquidacion(rec){
   return new Promise((res,rej)=>{ const tx=db.transaction('liquidaciones','readwrite'); const r=tx.objectStore('liquidaciones').add(rec); r.onsuccess=()=>res(r.result); r.onerror=e=>rej(e.target.error); });
 }
 async function updateLiquidacion(rec){
+  if(typeof invalidarCacheGanancias === 'function') invalidarCacheGanancias();
   const db=await abrirIDB();
   return new Promise((res,rej)=>{ const tx=db.transaction('liquidaciones','readwrite'); const r=tx.objectStore('liquidaciones').put(rec); r.onsuccess=()=>res(); r.onerror=e=>rej(e.target.error); });
 }
 async function deleteLiquidacion(id){
+  if(typeof invalidarCacheGanancias === 'function') invalidarCacheGanancias();
   const db=await abrirIDB();
   return new Promise((res,rej)=>{ const tx=db.transaction('liquidaciones','readwrite'); const r=tx.objectStore('liquidaciones').delete(id); r.onsuccess=()=>res(); r.onerror=e=>rej(e.target.error); });
 }
@@ -1301,7 +1339,9 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
   // Sindicato: según código del empleado. Si no tiene código → 0%.
   const pctSindEmp = getPctSindicatoEmpleado(emp);
   const sindicato=totalHaberesRem*pctSindEmp/100;
-  const ganancias=$m(nov.ganancias);
+  // Ganancias: por defecto valor de novedad; se RECALCULA automáticamente más abajo
+  // (salvo nov.gananciasManual === true). Ver bloque GANANCIAS 4ª.
+  let ganancias=$m(nov.ganancias);
 
   // ─── REGLA SEC: Aportes OS sobre TODOS los no remunerativos ────────────
   // La paritaria del SEC obliga a que OS (3%) + ANSSAL (0,5%) se calculen
@@ -1316,6 +1356,40 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
     anssalSobreNoRem = totalExentos * params.pctAnssal     / 100;
     obraSocial += osSobreNoRem;
     anssal     += anssalSobreNoRem;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //   GANANCIAS 4ª — RETENCIÓN / DEVOLUCIÓN AUTOMÁTICA (RG ARCA 4003/2017)
+  //   El monto del período = impuesto determinado acumulado − retenido en
+  //   períodos previos del ejercicio fiscal, CON SIGNO (negativo = devolución).
+  //   Por construcción, al cierre del período:
+  //       retenido acumulado + monto del período = impuesto determinado
+  //   ⇒ la diferencia da CERO.
+  //   nov.gananciasManual === true permite HARDCODEAR nov.ganancias.
+  //   El cálculo usa los aportes obligatorios del mes ya finalizados
+  //   (incluyen los devengados sobre SAC / pagos no habituales) más el
+  //   acumulado de períodos previos; las deducciones personales declaradas
+  //   solo se consideran si hay F.572 SIRADIG importado (ver calcGananciasMes).
+  // ═══════════════════════════════════════════════════════════════
+  if(nov.gananciasManual === true){
+    ganancias = $m(nov.ganancias);
+  } else if(typeof calcGananciasMes === 'function'){
+    try {
+      const _snapGan = {
+        leg: emp.leg,
+        totalHaberesRem: totalHaberesRemFinal,
+        totalHaberes,
+        mSac,
+        jubilacion, obraSocial, anssal, pamiEmp, sindicato,
+        ganancias: 0
+      };
+      const _liqGan = { anio, mes, fechaPago: fechaPagoLiq, tipo: tipoLiq };
+      const _gRes = await calcGananciasMes(_snapGan, _liqGan, params, nov);
+      ganancias = _gRes.impMesAuto;   // con signo: negativo = devolución
+    } catch(_eGan){
+      console.warn('Ganancias: autocálculo falló, se usa valor de novedad.', _eGan);
+      ganancias = $m(nov.ganancias);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -1529,7 +1603,7 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
     pctSindicatoEmp: pctSindEmp,
     pctSindicatoPatronal: pctSindPatronal,
     pctAntigPorAnio: pctAntigPorAnio,
-    ganancias, embargo, anticiposDesc, mOtrosD, otrosD,
+    ganancias, gananciasManual: nov.gananciasManual === true, embargo, anticiposDesc, mOtrosD, otrosD,
     // Trazabilidad embargos: lista detallada + agregados
     embargos: embargosList,
     mAlimentos, mComun,                         // por capa
@@ -2113,7 +2187,7 @@ async function renderNovedades(){
             style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:${bg};color:${color};cursor:${_bloqueada?'not-allowed':'pointer'};font-family:var(--font-mono);${_disStyle}"
             title="${title}">${label}</button>`;
         })()}</td>
-        <td style="${tdStyle}">${inp('ganancias',nov.ganancias||0,80)}</td>
+        <td style="${tdStyle}" title="Retención/devolución de Ganancias. Por defecto se calcula AUTOMÁTICAMENTE (acumulado RG 4003/17, con signo: negativo = devolución). Tildá 'M' para hardcodear el monto.">${inp('ganancias',nov.ganancias||0,68)}<label style="font-size:9px;color:var(--t3);cursor:pointer;display:inline-flex;align-items:center;gap:2px;margin-left:3px" title="Manual (hardcode): usa el monto cargado en vez del cálculo automático">${chk('gananciasManual',nov.gananciasManual)}M</label></td>
         <td style="${tdStyle}">${inp('ajusteSueldo',nov.ajusteSueldo||0,70)}</td>
         <td style="${tdStyle};background:rgba(34,197,94,.04)" title="Cumplimiento de objetivos (REM)">${inp('cumplimientoObjetivos',nov.cumplimientoObjetivos||0,80)}</td>
         <td style="${tdStyle}">${inp('sac',nov.sac||0,70)}</td>
@@ -3972,7 +4046,7 @@ function renderPreviewTabla(items){
       <td style="${tdS('right',false,'var(--red)')}">${fmtPesos(i.anssal)}</td>
       <td style="${tdS('right',false,'var(--red)')}">${fmtPesos(i.pamiEmp)}</td>
       <td style="${tdS('right',false,'var(--red)')}">${fmtPesos(i.sindicato)}</td>
-      <td style="${tdS('right',false,'var(--red)')}">${i.ganancias?fmtPesos(i.ganancias):'-'}</td>
+      <td style="${tdS('right',false,'var(--red)')}">${$m(i.ganancias) ? `<span style="color:${$m(i.ganancias)<0?'var(--green)':'var(--red)'}">${fmtPesos(Math.abs(i.ganancias))}${$m(i.ganancias)<0?' ↩':''}</span>` : '-'}</td>
       <td style="${tdS('right',false,'var(--red)')}">${i.anticiposDesc?fmtPesos(i.anticiposDesc):'-'}</td>
       <td style="${tdS('right',false,'var(--red)')}">${i.embargo?fmtPesos(i.embargo):'-'}${
         i.embargoTopeAplicado
@@ -4703,7 +4777,12 @@ function buildConceptRows(item, params){
      20900,
      (item.pctSindicatoEmp != null ? item.pctSindicatoEmp : params.pctSindicatoEmp).toFixed(2),
      item.sindicato);
-  pR('Retención Imp. Ganancias',           90000, '',                                 item.ganancias);
+  // Ganancias: si es negativo, es una DEVOLUCIÓN del impuesto → va como haber
+  if($m(item.ganancias) < 0){
+    pH('Devolución Imp. Ganancias',        9300, '',                                 -$m(item.ganancias));
+  } else {
+    pR('Retención Imp. Ganancias',         90000, '',                                 item.ganancias);
+  }
   pR('Descuento anticipo haberes',         10500, '',                                 item.anticiposDesc);
   pR('Embargo judicial',                   10600, '',                                 item.embargo);
   // Suspensión disciplinaria: descuento por días no trabajados por sanción aplicada

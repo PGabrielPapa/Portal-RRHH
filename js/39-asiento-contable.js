@@ -57,6 +57,7 @@ const PLAN_CUENTAS_DEFAULT = {
   aportePamiAPagar:   { cod: '2.1.1.013', nombre: 'Aportes Ley 19032 / PAMI a Pagar',   tipo: 'C' },
   sindAPagar:         { cod: '2.1.1.014', nombre: 'Cuota Sindical a Pagar',             tipo: 'C' },
   ganAPagar:          { cod: '2.1.1.015', nombre: 'Retención Ganancias 4ta. a Depositar', tipo: 'C' },
+  ganAFavor:          { cod: '1.1.3.015', nombre: 'Ganancias 4ta. — Saldo a Favor a Recuperar', tipo: 'D' },
   contribAPagar:      { cod: '2.1.1.020', nombre: 'Contribuciones Patronales a Pagar (SIPA)', tipo: 'C' },
   contribOSAPagar:    { cod: '2.1.1.021', nombre: 'Contribuciones OS Patronales a Pagar', tipo: 'C' },
   contribPamiAPagar:  { cod: '2.1.1.022', nombre: 'Contribuciones PAMI Patronales a Pagar', tipo: 'C' },
@@ -220,7 +221,13 @@ function buildAsientoContable(liq){
     pushLinea('anssalAPagar',       anssal,        glosaLiq);
     pushLinea('aportePamiAPagar',   aportePami,    glosaLiq);
     pushLinea('sindAPagar',         sindEmp,       glosaLiq);
-    pushLinea('ganAPagar',          ganancias,     glosaLiq);
+    // Ganancias neta del período (con signo): >=0 retención a depositar (crédito);
+    // <0 devolución neta al empleado -> saldo a favor a recuperar de ARCA (débito).
+    if(ganancias >= 0){
+      pushLinea('ganAPagar',          ganancias,     glosaLiq);
+    } else {
+      pushLinea('ganAFavor',         -ganancias,     glosaLiq + ' — devolución neta (saldo a favor)');
+    }
     pushLinea('contribAPagar',      jubPat,        glosaLiq);
     pushLinea('contribOSAPagar',    osPat,         glosaLiq);
     pushLinea('contribPamiAPagar',  pamiPat,       glosaLiq);

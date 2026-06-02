@@ -275,6 +275,10 @@ function _lsdGenerarF901(liq, items, empresaCUIT){
     filaConcepto('pamiEmp',    -$m(item.pamiEmp),    null);
     filaConcepto('anssal',     -$m(item.anssal),     null);
     filaConcepto('sindicato',  -$m(item.sindicato),  null);
+    // NOTA: si item.ganancias < 0 es una DEVOLUCIÓN; aquí se emite con signo
+    // invertido (el neto resulta correcto). Una devolución bajo el código 306
+    // de retención puede requerir tratamiento/concepto específico según la
+    // versión vigente del Libro de Sueldos Digital (ARCA) — verificar al cierre anual.
     filaConcepto('ganancias',  -$m(item.ganancias),  null);
     filaConcepto('embargo',    -$m(item.embargo),    null);
     filaConcepto('anticipos',  -$m(item.anticiposDesc), null);
