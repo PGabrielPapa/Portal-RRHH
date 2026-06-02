@@ -156,8 +156,11 @@ async function calcLiquidacionAnualGanTodos(anioFiscal, empresaFiltro){
       (l.items||[]).some(i => i.leg===emp.leg));
     if(!tuvo) continue;
     // SIRADIG definitivo: última novedad conocida del empleado
-    const novFinal = (novedades && novedades[emp.leg]) ? novedades[emp.leg] : _buscarUltimaNov(liquidaciones, emp.leg, anioFiscal);
+    const siradigDef = getSiradigDefinitivo(emp.leg, anioFiscal); // prioridad: F.572 definitivo
+    const novFinal = siradigDef
+      || ((novedades && novedades[emp.leg]) ? novedades[emp.leg] : _buscarUltimaNov(liquidaciones, emp.leg, anioFiscal));
     const r = await calcLiquidacionAnualGan(emp, anioFiscal, liquidaciones, novFinal);
+    r._siradigDef = !!siradigDef;
     resultados.push(r);
   }
   return resultados;
@@ -284,15 +287,17 @@ function generarF1359Txt(anioFiscal, empresaNombre, resultados, opts){
 
     // ── Registro 05 — Deducciones Generales (478) ──
     const dv = r.dedVolTopadas || {};
-    const cuotaMed   = $m(dv.cuotaMedica);
-    const segMuerte  = $m(dv.seguroVida);
+    const cuotaMed   = $m(dv.cuotasMedicas);
+    const primaMuerte= $m(dv.primaMuerte);
+    const segVida    = $m(dv.seguroVida);
     const sepelio    = $m(dv.gastosSepelio);
     const donaciones = $m(dv.donaciones);
     const alq40      = $m(dv.alquileres);          // inc h) 40%
     const honMed     = $m(dv.honorariosMedicos);
-    const hipot      = $m(dv.interesesHipotecarios);
-    const domestico  = $m(dv.servicioDomestico);
+    const hipot      = $m(dv.intHipotecarios);
+    const domestico  = $m(dv.servDomestico);
     const educacion  = $m(dv.educacion);
+    const sgr        = $m(dv.aportesSGR);
     const totalDedGen = r.totalDedGen;
     lineas.push(
       '05' + cuil +
@@ -301,8 +306,8 @@ function generarF1359Txt(anioFiscal, empresaNombre, resultados, opts){
       _f1359Num(r.obraSocial,15) + _f1359Num(0,15) +     // 7,8 obra social (+ANSSAL)
       _f1359Num(r.sindicato,15) + _f1359Num(0,15) +      // 9,10 sindicato
       _f1359Num(cuotaMed,15) +                           // 11 cuota médico asist.
-      _f1359Num(segMuerte,15) +                          // 12 primas seguro muerte
-      _f1359Num(0,15) +                                  // 13 seguro mixto SSN
+      _f1359Num(primaMuerte,15) +                        // 12 primas seguro muerte
+      _f1359Num(segVida,15) +                            // 13 seguro vida/mixto SSN
       _f1359Num(0,15) +                                  // 14 FCI retiro
       _f1359Num(sepelio,15) +                            // 15 gastos sepelio
       _f1359Num(0,15) +                                  // 16 rodados viajantes
@@ -311,7 +316,7 @@ function generarF1359Txt(anioFiscal, empresaNombre, resultados, opts){
       _f1359Num(r.pamiEmp,15) +                          // 19 descuentos obligatorios ley (PAMI 19.032)
       _f1359Num(honMed,15) +                             // 20 honorarios médicos
       _f1359Num(hipot,15) +                              // 21 intereses hipotecarios
-      _f1359Num(0,15) +                                  // 22 SGR
+      _f1359Num(sgr,15) +                                // 22 SGR (aportes capital social/fondo riesgo)
       _f1359Num(domestico,15) +                          // 23 servicio doméstico
       _f1359Num(0,15) +                                  // 24 cajas complementarias
       _f1359Num(0,15) +                                  // 25 fondos compensadores
@@ -575,7 +580,10 @@ async function ejecutarLiqAnualGan(){
         <td style="${td}">${f(r.impuestoDet)}</td>
         <td style="${td}">${f(r.retenidoAnual)}</td>
         <td style="${td};color:${col};font-weight:600">${f(Math.abs(r.diferencia))}<div style="font-size:9px">${etq}</div></td>
-        <td style="${td}"><button onclick="abrirCertificadoAnual('${r.leg}')" style="font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg2);color:var(--t1);cursor:pointer">Certificado</button></td>
+        <td style="${td};white-space:nowrap">
+          <button onclick="abrirSiradigDefinitivo('${r.leg}')" title="Cargar/editar SIRADIG definitivo del ejercicio (F.572 al 31/03)" style="font-size:10px;padding:3px 8px;margin-right:4px;border:1px solid ${r._siradigDef?'rgba(34,197,94,.45)':'var(--border)'};border-radius:4px;background:${r._siradigDef?'rgba(34,197,94,.10)':'var(--bg2)'};color:${r._siradigDef?'var(--green)':'var(--t2)'};cursor:pointer">${r._siradigDef?'✓ SIRADIG':'SIRADIG'}</button>
+          <button onclick="abrirCertificadoAnual('${r.leg}')" style="font-size:10px;padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg2);color:var(--t1);cursor:pointer">Certificado</button>
+        </td>
       </tr>`;
     }).join('');
     cont.innerHTML = `
@@ -610,4 +618,121 @@ function guardarYAvisarLiqAnual(){
   if(!window._liqAnualResultados || !window._liqAnualAnio) return;
   guardarLiqAnualParaAbril(window._liqAnualAnio, window._liqAnualResultados);
   if(typeof toast==='function') toast(`✓ Guardado: se imputará en los haberes de abril ${window._liqAnualAnio+1}`,'var(--green)');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SIRADIG DEFINITIVO DEL EJERCICIO (F.572 al 31/03 del año siguiente)
+//  Almacén propio por (ejercicio, legajo), independiente de las novedades
+//  mensuales. La liquidación anual lo usa con prioridad sobre el SIRADIG mensual.
+//  Las claves de dedVoluntarias coinciden EXACTAMENTE con aplicarTopesArt85.
+// ═══════════════════════════════════════════════════════════════════════════
+const SIRADIG_DEF_KEY = 'leiten_siradig_definitivo_v1';
+// Campos de deducciones voluntarias Art. 85 (clave → etiqueta)
+const _SIRADIG_DEDVOL_CAMPOS = [
+  ['cuotasMedicas',    'Cuotas médico-asistenciales (prepaga)'],
+  ['honorariosMedicos','Honorarios médicos y paramédicos'],
+  ['primaMuerte',      'Primas de seguro para caso de muerte'],
+  ['seguroVida',       'Seguros de vida / mixtos (SSN)'],
+  ['gastosSepelio',    'Gastos de sepelio'],
+  ['donaciones',       'Donaciones (Art. 26 inc. e/f)'],
+  ['alquileres',       'Alquiler casa-habitación (40%)'],
+  ['intHipotecarios',  'Intereses créditos hipotecarios'],
+  ['servDomestico',    'Personal de servicio doméstico'],
+  ['educacion',        'Servicios/herramientas educativas (cargas)'],
+  ['aportesSGR',       'Aportes a capital social / fondo de riesgo SGR']
+];
+
+function getSiradigDefStore(){
+  try { return JSON.parse(localStorage.getItem(SIRADIG_DEF_KEY) || '{}'); } catch(e){ return {}; }
+}
+function saveSiradigDefStore(o){ try { localStorage.setItem(SIRADIG_DEF_KEY, JSON.stringify(o)); } catch(e){} }
+// Devuelve el SIRADIG definitivo de (leg, año) o null. Tiene la forma que espera
+// calcLiquidacionAnualGan: { _importadoSiradig, tieneConyuge, nroHijosMenores,
+// nroHijosIncapacitados, dedVoluntarias:{...} }.
+function getSiradigDefinitivo(leg, anioFiscal){
+  const ej = getSiradigDefStore()[String(anioFiscal)];
+  if(!ej) return null;
+  return ej[String(leg)] || null;
+}
+
+// Abre el modal de carga del SIRADIG definitivo para un empleado y el ejercicio activo
+async function abrirSiradigDefinitivo(leg){
+  const anio = window._liqAnualAnio;
+  if(!anio){ if(typeof toast==='function') toast('⚠ Primero calculá la liquidación anual','var(--yellow)'); return; }
+  if(currentUser?.role !== 'rrhh'){ if(typeof toast==='function') toast('⚠ Solo RR.HH.','var(--red)'); return; }
+  const r = (window._liqAnualResultados||[]).find(x => String(x.leg)===String(leg));
+  const nom = r ? r.nom : leg;
+  const actual = getSiradigDefinitivo(leg, anio) || {};
+  const dv = actual.dedVoluntarias || {};
+
+  const inp = (id,val)=>`<input id="sd-${id}" type="number" step="0.01" value="${val||''}" placeholder="0" style="width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--t1);font-size:12px;font-family:var(--font-mono);text-align:right">`;
+  const filasDV = _SIRADIG_DEDVOL_CAMPOS.map(([k,lbl])=>`
+    <tr><td style="padding:4px 10px 4px 0;font-size:12px;color:var(--t2)">${lbl}</td>
+        <td style="padding:4px 0;text-align:right">${inp('dv-'+k, dv[k])}</td></tr>`).join('');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-siradig-def';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+  overlay.innerHTML = `<div class="card" style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);max-width:560px;width:100%;max-height:90vh;overflow:auto">
+    <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0">
+      <div style="font-size:14px;font-weight:600;color:var(--t1)">SIRADIG definitivo — Ejercicio ${anio}</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:2px">${nom} · Legajo ${leg} · F.572 informado al 31/03/${anio+1}</div>
+    </div>
+    <div style="padding:18px 22px">
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Cargas de familia</div>
+      <table style="margin-bottom:14px"><tbody>
+        <tr><td style="padding:4px 10px 4px 0;font-size:12px;color:var(--t2)">Cónyuge / unión convivencial</td><td style="padding:4px 0;text-align:right"><input id="sd-tieneConyuge" type="checkbox" ${actual.tieneConyuge?'checked':''} style="width:16px;height:16px;accent-color:var(--accent)"></td></tr>
+        <tr><td style="padding:4px 10px 4px 0;font-size:12px;color:var(--t2)">Cantidad de hijos / hijastros</td><td style="padding:4px 0;text-align:right"><input id="sd-nroHijosMenores" type="number" min="0" value="${actual.nroHijosMenores||0}" style="width:70px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--t1);font-size:12px;text-align:right"></td></tr>
+        <tr><td style="padding:4px 10px 4px 0;font-size:12px;color:var(--t2)">Hijos incapacitados para el trabajo</td><td style="padding:4px 0;text-align:right"><input id="sd-nroHijosIncapacitados" type="number" min="0" value="${actual.nroHijosIncapacitados||0}" style="width:70px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--t1);font-size:12px;text-align:right"></td></tr>
+      </tbody></table>
+      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Deducciones voluntarias Art. 85 (montos anuales, se aplican topes)</div>
+      <table style="width:100%"><tbody>${filasDV}</tbody></table>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid var(--border);background:var(--bg2);display:flex;gap:8px;justify-content:space-between;align-items:center;position:sticky;bottom:0">
+      <button onclick="prefillSiradigDesdeMensual('${leg}')" style="font-size:11px;padding:6px 12px;border:1px solid var(--border);border-radius:5px;background:var(--bg1);color:var(--t2);cursor:pointer">↺ Prefill desde SIRADIG mensual</button>
+      <div style="display:flex;gap:8px">
+        <button onclick="document.getElementById('modal-siradig-def').remove()" style="font-size:12px;padding:7px 14px;border:1px solid var(--border);border-radius:5px;background:var(--bg1);color:var(--t2);cursor:pointer">Cancelar</button>
+        <button onclick="guardarSiradigDefinitivo('${leg}')" style="font-size:12px;padding:7px 16px;border:none;border-radius:5px;background:var(--accent);color:#fff;cursor:pointer">Guardar</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(overlay);
+}
+
+function prefillSiradigDesdeMensual(leg){
+  const anio = window._liqAnualAnio;
+  getLiquidaciones().then(liqs=>{
+    const nov = _buscarUltimaNov(liqs, leg, anio) || {};
+    const set=(id,v)=>{ const el=document.getElementById('sd-'+id); if(el){ if(el.type==='checkbox') el.checked=!!v; else el.value=(v||v===0)?v:''; } };
+    set('tieneConyuge', nov.tieneConyuge);
+    set('nroHijosMenores', nov.nroHijosMenores||0);
+    set('nroHijosIncapacitados', nov.nroHijosIncapacitados||0);
+    const dv = nov.dedVoluntarias || {};
+    _SIRADIG_DEDVOL_CAMPOS.forEach(([k])=> set('dv-'+k, dv[k]));
+    if(typeof toast==='function') toast('↺ Prefilled desde el SIRADIG mensual — ajustá y guardá','var(--t3)');
+  });
+}
+
+function guardarSiradigDefinitivo(leg){
+  const anio = window._liqAnualAnio;
+  if(!anio) return;
+  const num = id => { const el=document.getElementById('sd-'+id); return el ? (parseFloat(el.value)||0) : 0; };
+  const chk = id => { const el=document.getElementById('sd-'+id); return el ? el.checked : false; };
+  const dedVoluntarias = {};
+  _SIRADIG_DEDVOL_CAMPOS.forEach(([k])=>{ const v = num('dv-'+k); if(v) dedVoluntarias[k]=v; });
+  const rec = {
+    _importadoSiradig: Date.now(), _definitivo: true,
+    _cargadoPor: currentUser?.emp?.nom || 'RRHH', _fecha: new Date().toLocaleString('es-AR'),
+    tieneConyuge: chk('tieneConyuge'),
+    nroHijosMenores: Math.max(0, Math.round(num('nroHijosMenores'))),
+    nroHijosIncapacitados: Math.max(0, Math.round(num('nroHijosIncapacitados'))),
+    dedVoluntarias
+  };
+  const store = getSiradigDefStore();
+  if(!store[String(anio)]) store[String(anio)] = {};
+  store[String(anio)][String(leg)] = rec;
+  saveSiradigDefStore(store);
+  if(typeof logAuditX === 'function') logAuditX('liquidacion','siradig_definitivo_cargado',{ anioFiscal:anio, leg, por: currentUser?.emp?.nom });
+  const m = document.getElementById('modal-siradig-def'); if(m) m.remove();
+  if(typeof toast==='function') toast(`✓ SIRADIG definitivo guardado — recalculando…`,'var(--green)');
+  if(typeof ejecutarLiqAnualGan === 'function') ejecutarLiqAnualGan(); // recalcula con el dato nuevo
 }
