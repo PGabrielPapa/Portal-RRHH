@@ -373,21 +373,20 @@ function descargarF1359Txt(anioFiscal, empresaNombre, resultados){
 // ═══════════════════════════════════════════════════════════════════════════
 //  CERTIFICADO (HTML imprimible) — formato del manual F.1359
 // ═══════════════════════════════════════════════════════════════════════════
-function generarCertificadoAnualHTML(r, empresaNombre){
+// Cuerpo del certificado (sin wrapper de página ni botón) — reutilizable en
+// la ventana de impresión y en la generación de PDF para puesta a disposición.
+function _certAnualBody(r, empresaNombre){
   const datosEmp = (typeof getEmpresaDatos === 'function') ? getEmpresaDatos(empresaNombre)
                  : (EMPRESA_DATOS_LIQ[empresaNombre] || {cuit:''});
   const f = (n)=> (typeof fmtPesos==='function') ? fmtPesos(n) : '$ '+($m(n)).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const row = (label, val, bold, bg)=>`<tr><td style="padding:3px 8px;${bold?'font-weight:700':''};${bg?`background:${bg}`:''}">${label}</td><td style="padding:3px 8px;text-align:right;font-family:monospace;${bold?'font-weight:700':''};${bg?`background:${bg}`:''}">${val}</td></tr>`;
   const esDev = r.diferencia < 0;
   const saldoLabel = esDev ? 'SALDO A FAVOR DEL TRABAJADOR (devolución)' : 'SALDO A PAGAR (retención adicional)';
-
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Liquidación Anual Ganancias ${r.anioFiscal} — ${r.nom}</title>
-  <style>body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;margin:24px;max-width:820px}
-  h1{font-size:15px;text-align:center;margin:0 0 4px}h2{font-size:12px;background:#1E6B3A;color:#fff;padding:4px 8px;margin:14px 0 0}
-  table{width:100%;border-collapse:collapse;margin:0}.muted{color:#555;font-size:11px}
-  .hdr{display:flex;justify-content:space-between;border-bottom:2px solid #1E6B3A;padding-bottom:6px;margin-bottom:8px}
-  @media print{.noprint{display:none}}</style></head><body>
-  <button class="noprint" onclick="window.print()" style="padding:7px 16px;background:#1E6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-bottom:10px">🖨 Imprimir / Guardar PDF</button>
+  return `<style>.cert{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;max-width:820px}
+  .cert h1{font-size:15px;text-align:center;margin:0 0 4px}.cert h2{font-size:12px;background:#1E6B3A;color:#fff;padding:4px 8px;margin:14px 0 0}
+  .cert table{width:100%;border-collapse:collapse;margin:0}.cert .muted{color:#555;font-size:11px}
+  .cert .hdr{display:flex;justify-content:space-between;border-bottom:2px solid #1E6B3A;padding-bottom:6px;margin-bottom:8px}</style>
+  <div class="cert">
   <h1>LIQUIDACIÓN DE IMPUESTO A LAS GANANCIAS — 4ta. CATEGORÍA RELACIÓN DE DEPENDENCIA</h1>
   <div class="muted" style="text-align:center;margin-bottom:8px">F.1359 v2.0 — Art. 21 inc. a) RG ARCA 4003/2017 (mod. RG 5683/2025) — Período Fiscal ${r.anioFiscal}</div>
   <div class="hdr"><div><strong>Beneficiario:</strong> ${r.nom}<br><span class="muted">CUIL ${r.cuil} · Legajo ${r.leg} · Meses trabajados: ${r.mesesTrabajados}</span></div>
@@ -422,6 +421,14 @@ function generarCertificadoAnualHTML(r, empresaNombre){
   ${row(saldoLabel, f(Math.abs(r.diferencia)), true, esDev?'#e0f0e0':'#ffe9e9')}</table>
 
   <p class="muted" style="margin-top:14px">Montos anuales del período ${r.paramsPeriodo||'—'} (vigencia ${r.paramsVigencia||'—'}).${r.requiereVerif?' ⚠ Valores de tabla marcados como estimativos — verificar contra RG oficial.':''} El saldo se imputa con los haberes de abril ${r.anioFiscal+1} (Art. 21 RG 4003/2017).</p>
+  </div>`;
+}
+
+function generarCertificadoAnualHTML(r, empresaNombre){
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Liquidación Anual Ganancias ${r.anioFiscal} — ${r.nom}</title>
+  <style>body{margin:24px}@media print{.noprint{display:none}}</style></head><body>
+  <button class="noprint" onclick="window.print()" style="padding:7px 16px;background:#1E6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-bottom:10px">🖨 Imprimir / Guardar PDF</button>
+  ${_certAnualBody(r, empresaNombre)}
   </body></html>`;
 }
 
@@ -431,6 +438,85 @@ function abrirCertificadoAnual(leg){
   if(!r) return;
   const html = generarCertificadoAnualHTML(r, r.empresa);
   const w = window.open('', '_blank'); w.document.write(html); w.document.close();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PUESTA A DISPOSICIÓN AL EMPLEADO — publica el certificado anual como PDF en
+//  el store 'ganancias' (mismo circuito que publicarGananciasPDF mensual).
+// ═══════════════════════════════════════════════════════════════════════════
+async function publicarCertificadosAnuales(){
+  const res = window._liqAnualResultados, anio = window._liqAnualAnio;
+  if(!res || !res.length || !anio){ if(typeof toast==='function') toast('⚠ Primero calculá la liquidación anual','var(--yellow)'); return; }
+  if(currentUser?.role !== 'rrhh'){ if(typeof toast==='function') toast('⚠ Solo RR.HH.','var(--red)'); return; }
+  if(typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined'){ toast('⚠ jsPDF no disponible — recargá la página','var(--yellow)'); return; }
+  if(typeof window.html2canvas !== 'function'){ toast('⚠ html2canvas no disponible — recargá la página','var(--yellow)'); return; }
+  if(typeof setGanancia !== 'function'){ toast('⚠ Store de ganancias no disponible','var(--red)'); return; }
+
+  const _cfm = (typeof showConfirm === 'function') ? await showConfirm({ titulo:'Confirmar', labelOk:'Publicar',
+    mensaje:`¿Publicar el certificado de liquidación anual ${anio} para <strong>${res.length}</strong> empleado${res.length!==1?'s':''}?<br><br>Cada empleado podrá verlo y descargarlo desde su portal de Ganancias.`, peligroso:false })
+    : confirm(`¿Publicar certificado anual ${anio} para ${res.length} empleados?`);
+  if(!_cfm) return;
+
+  // Modal de progreso
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+  overlay.innerHTML = `<div class="card" style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:0;max-width:560px;width:100%">
+    <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg2)"><div style="font-size:14px;font-weight:600;color:var(--t1)">📅 Publicando certificados anuales ${anio}</div></div>
+    <div style="padding:22px">
+      <div id="pub-lag-prog" style="font-size:12px;color:var(--t1);margin-bottom:10px;font-family:var(--font-mono)">Iniciando…</div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:99px;height:10px;overflow:hidden"><div id="pub-lag-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2));height:100%;width:0%;transition:width .2s"></div></div>
+      <div id="pub-lag-detail" style="font-size:10px;color:var(--t3);margin-top:8px;font-family:var(--font-mono);min-height:14px"></div>
+    </div></div>`;
+  document.body.appendChild(overlay);
+  const elProg=document.getElementById('pub-lag-prog'), elBar=document.getElementById('pub-lag-bar'), elDetail=document.getElementById('pub-lag-detail');
+
+  const { jsPDF } = window.jspdf || window;
+  let exitos=0, fallas=0; const errores=[];
+  const periodoLabelAnual = `${anio} (Liquidación Anual)`;
+
+  for(let i=0;i<res.length;i++){
+    const r = res[i];
+    elBar.style.width = Math.round((i/res.length)*100)+'%';
+    elProg.textContent = `${i+1} / ${res.length} · ${r.nom?.split(',')[0] || r.leg}`;
+    const tempDiv = document.createElement('div');
+    tempDiv.style.cssText = 'position:fixed;left:-99999px;top:0;width:900px;background:#fff;padding:16px';
+    tempDiv.innerHTML = _certAnualBody(r, r.empresa);
+    document.body.appendChild(tempDiv);
+    try {
+      const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      const canvas = await window.html2canvas(tempDiv, { scale:1.5, useCORS:true, backgroundColor:'#ffffff' });
+      if(!canvas.width || !canvas.height) throw new Error('canvas vacío');
+      const pageH=297, margin=8, drawW=210-margin*2;
+      const pxPorPagina = Math.floor(canvas.width * (pageH - margin*2) / drawW);
+      let srcY=0, pagina=0;
+      while(srcY < canvas.height){
+        const sliceH = Math.min(pxPorPagina, canvas.height - srcY);
+        if(sliceH<=0) break;
+        const sc = document.createElement('canvas'); sc.width=canvas.width; sc.height=sliceH;
+        sc.getContext('2d').drawImage(canvas, 0, -srcY);
+        const img = sc.toDataURL('image/jpeg', 0.82);
+        const drawH = (sliceH * drawW)/canvas.width;
+        if(pagina>0) pdf.addPage();
+        pdf.addImage(img,'JPEG',margin,margin,drawW,drawH);
+        srcY += sliceH; pagina++;
+      }
+      const blob = pdf.output('blob');
+      const base64 = await new Promise((rs,rj)=>{ const fr=new FileReader(); fr.onload=()=>rs(fr.result.split(',')[1]); fr.onerror=rj; fr.readAsDataURL(blob); });
+      const key = `${r.leg}_LA${anio}`;   // LA = Liquidación Anual (no colisiona con períodos mensuales AAAA-MM)
+      await setGanancia(key, { key, leg: r.leg, nom: r.nom||'', emp: r.empresa||'',
+        periodo: periodoLabelAnual, tipoDoc: 'anual', anioFiscal: anio, data: base64,
+        uploadedAt: new Date().toLocaleString('es-AR'), uploadedBy: currentUser?.emp?.nom || 'RRHH' });
+      exitos++; elDetail.textContent = `✓ ${r.leg}`;
+    } catch(err){ fallas++; errores.push(`${r.leg}: ${err.message||err}`); elDetail.textContent = `✕ ${r.leg}: ${err.message||err}`; }
+    finally { tempDiv.remove(); }
+    if(i%3===0) await new Promise(rs=>setTimeout(rs,30));
+  }
+
+  elBar.style.width='100%';
+  elProg.innerHTML = `<strong style="color:${fallas?'var(--yellow)':'var(--green)'}">${fallas?'⚠':'✓'}</strong> ${exitos} de ${res.length} publicados${fallas?` · ${fallas} fallaron`:''}`;
+  if(typeof logAuditX === 'function') logAuditX('liquidacion','ganancias_anual_publicada',{ anioFiscal:anio, exitos, fallas, por: currentUser?.emp?.nom });
+  setTimeout(()=>overlay.remove(), 1800);
+  if(typeof toast==='function') toast(`✓ Certificado anual ${anio} publicado a ${exitos} empleado(s)`, fallas?'var(--yellow)':'var(--green)');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -495,6 +581,7 @@ async function ejecutarLiqAnualGan(){
     cont.innerHTML = `
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
       <button onclick="guardarYAvisarLiqAnual()" style="padding:7px 14px;background:#1E6B3A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Guardar para imputar en abril ${anio+1}</button>
+      <button onclick="publicarCertificadosAnuales()" style="padding:7px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">📤 Publicar certificado al empleado</button>
       ${emp?`<button onclick="descargarF1359Txt(${anio}, ${JSON.stringify(emp)}, window._liqAnualResultados)" style="padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">⬇ Generar F.1359 .txt (ARCA)</button>`
         :`<span style="font-size:11px;color:var(--yellow);align-self:center">Elegí una empresa para generar el F.1359 .txt (el archivo es por CUIT/agente de retención).</span>`}
     </div>

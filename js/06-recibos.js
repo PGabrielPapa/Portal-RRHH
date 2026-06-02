@@ -183,9 +183,13 @@ async function setCumpleanos(leg, fecha){ // fecha = 'DD/MM'
 }
 function periodoLabel(ym){ // "2025-04" → "Abril 2025"
   if(!ym) return '';
-  const [y,m] = ym.split('-');
+  const parts = String(ym).split('-');
+  if(parts.length < 2) return String(ym);            // período no estándar (p.ej. anual) → tal cual
+  const [y,m] = parts;
+  const mi = parseInt(m);
+  if(isNaN(mi) || mi < 1 || mi > 12) return String(ym);
   const meses = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  return `${meses[parseInt(m)]} ${y}`;
+  return `${meses[mi]} ${y}`;
 }
 
 // ── Empleado: ver sus recibos ──
