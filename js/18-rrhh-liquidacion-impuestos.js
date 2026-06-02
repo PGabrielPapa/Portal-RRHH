@@ -183,10 +183,14 @@ async function calcGananciasMes(item, liq, params, nov){
 
   // Deducciones personales PROPORCIONALES (a los meses transcurridos)
   const mesesTranscurridos = liq.mes; // enero=1
-  const propMes = mesesTranscurridos / 12;
+  // LIQUIDACIÓN FINAL (Art. 21 inc. b / Art. 7 RG 4003/2017): se usan los montos
+  // ANUALES completos de deducciones (no se prorratean por meses trabajados); la
+  // tabla 1er/2do semestre la resuelve resolveGanParamsParaFecha por fecha de pago.
+  const esLiqFinal = (liq.tipo === 'final');
+  const propMes = esLiqFinal ? 1 : (mesesTranscurridos / 12);
   const mniProp      = params.gan_mniAnual    * propMes;
-  const dedEspProp   = params.gan_dedEspAnual  * propMes;
-  const dedEsp2Prop  = params.gan_dedEsp2Anual * propMes;
+  let dedEspProp     = params.gan_dedEspAnual  * propMes;
+  let dedEsp2Prop    = params.gan_dedEsp2Anual * propMes;
   const dedEspecProp = params.gan_dedEspecifica * propMes;
 
   // Cargas de familia y deducciones voluntarias: SOLO con F.572 SIRADIG importado
@@ -206,6 +210,15 @@ async function calcGananciasMes(item, liq, params, nov){
   const totalDedVol = Object.values(dedVolTopadas).reduce((s,v)=>s+v, 0);
 
   const totDedGen  = dedGenAcum + totalDedVol;
+  // La deducción especial (y su 12ava parte) NO puede generar quebranto (Art. 25 LIG):
+  // se limita a la ganancia neta remanente tras deducciones generales, GNI, cargas y
+  // deducción específica. Si el resto da negativo, la remuneración sujeta queda en CERO.
+  {
+    const _baseAntesEsp = remGravAcum - totDedGen - mniProp - totalCargasFam - dedEspecProp;
+    const _dedEspMax = Math.max(0, _baseAntesEsp);
+    const _sumEsp = dedEspProp + dedEsp2Prop;
+    if(_sumEsp > _dedEspMax && _sumEsp > 0){ const _e = _dedEspMax / _sumEsp; dedEspProp *= _e; dedEsp2Prop *= _e; }
+  }
   const totDedPers = mniProp + totalCargasFam + dedEspProp + dedEsp2Prop + dedEspecProp;
   const totDed     = totDedGen + totDedPers;
 

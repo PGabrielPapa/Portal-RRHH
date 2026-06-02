@@ -112,10 +112,19 @@ async function calcLiquidacionAnualGan(emp, anioFiscal, liquidaciones, novFinal)
   const cargaHijos    = nroHijos    * $m(params.gan_cargaHijoAnual);
   const cargaHijosInc = nroHijosInc * $m(params.gan_cargaHijoIncAnual);
   const totalCargasFam = cargaConyuge + cargaHijos + cargaHijosInc;
-  const totalDedArt30 = mni + dedEsp + dedEsp2 + dedEspec + totalCargasFam;
+  // La deducción especial (y 12ava) no puede generar quebranto (Art. 25 LIG): se topea
+  // a la ganancia neta remanente. Si el impuesto anual diera negativo, se informa CERO.
+  let dedEspCap = dedEsp, dedEsp2Cap = dedEsp2;
+  {
+    const _baseAntesEsp = remGravadaTotal - totalDedGen - mni - totalCargasFam - dedEspec;
+    const _dedEspMax = Math.max(0, _baseAntesEsp);
+    const _sumEsp = dedEsp + dedEsp2;
+    if(_sumEsp > _dedEspMax && _sumEsp > 0){ const _e = _dedEspMax / _sumEsp; dedEspCap *= _e; dedEsp2Cap *= _e; }
+  }
+  const totalDedArt30 = mni + dedEspCap + dedEsp2Cap + dedEspec + totalCargasFam;
 
   // 5) Remuneración sujeta, impuesto determinado anual y diferencia
-  const remSujeta = Math.max(0, remGravadaTotal - totalDedGen - totalDedArt30);
+  const remSujeta = Math.max(0, Math.round((remGravadaTotal - totalDedGen - totalDedArt30) * 100) / 100);
   const { impuesto: impuestoDet, alicuota } = await calcImpuestoEscala(remSujeta, params);
   const diferencia = impuestoDet - retenidoAnual; // >0 retener / <0 devolver
 
@@ -131,7 +140,7 @@ async function calcLiquidacionAnualGan(emp, anioFiscal, liquidaciones, novFinal)
     jubilacion, obraSocial: obraSocial + anssal, sindicato, pamiEmp,
     dedVolTopadas, totalDedVol, totalDedGen,
     // Deducciones Art. 30
-    mni, dedEsp, dedEsp2, dedEspec,
+    mni, dedEsp: dedEspCap, dedEsp2: dedEsp2Cap, dedEspec,
     nroHijos, nroHijosInc, tieneConyuge, cargaConyuge, cargaHijos, cargaHijosInc,
     totalCargasFam, totalDedArt30, tieneSiradig,
     // Determinación
@@ -155,6 +164,10 @@ async function calcLiquidacionAnualGanTodos(anioFiscal, empresaFiltro){
     const tuvo = liquidaciones.some(l => l.estado==='aprobada' && l.anio===anioFiscal &&
       (l.items||[]).some(i => i.leg===emp.leg));
     if(!tuvo) continue;
+    // Art. 21 RG 4003/2017: el agente queda exceptuado de la liquidación ANUAL cuando
+    // en el ejercicio ya practicó la liquidación FINAL del beneficiario.
+    const tuvoFinal = liquidaciones.some(l => l.estado==='aprobada' && l.anio===anioFiscal && l.tipo==='final' && (l.items||[]).some(i => i.leg===emp.leg));
+    if(tuvoFinal) continue;
     // SIRADIG definitivo: última novedad conocida del empleado
     const siradigDef = getSiradigDefinitivo(emp.leg, anioFiscal); // prioridad: F.572 definitivo
     const novFinal = siradigDef
