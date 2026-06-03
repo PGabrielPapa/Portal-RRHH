@@ -4190,8 +4190,16 @@ function validarLiquidacionPreAprobar(liq){
                    + $m(i.diasMaternidad) + $m(i.diasExcedencia) + $m(i.diasVac);
     const diasSusp = $m(i.diasSuspension);
     const totalDias = diasTrab + diasLic + diasSusp;
-    if(totalDias > habilesPeriodo){
-      errores.push(`${ident}: suma días (${diasTrab}+${diasLic}+${diasSusp}=${totalDias}) excede hábiles del período (${habilesPeriodo})`);
+    // Tope según régimen: los MENSUALIZADOS se computan por días CORRIDOS
+    // (calendario del período), no por hábiles. Solo UOCRA (Ley 22.250) usa
+    // hábiles, que es su base de cálculo del jornal.
+    const _itemEsHabiles = (i.diasBaseDescripcion === 'hábiles');
+    const _esQuincLiq = (liq.tipo === 'quincenal_1' || liq.tipo === 'quincenal_2');
+    const topeDias = _itemEsHabiles
+      ? habilesPeriodo
+      : (_esQuincLiq ? 15 : ($m(i.diasMes) || 30));
+    if(totalDias > topeDias){
+      errores.push(`${ident}: suma días (${diasTrab}+${diasLic}+${diasSusp}=${totalDias}) excede los días del período (${topeDias})`);
     }
 
     // 6. Empleado en situación 'baja' sin liqFinalDatos cargada (warning)
