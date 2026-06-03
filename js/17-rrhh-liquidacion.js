@@ -1719,8 +1719,10 @@ function liqEmpresaCambio(){
     if(!empresa){
       infoEl.textContent = '';
     } else {
-      const activos = getNomina().filter(e => !e._deBaja && !e.egreso && (e.emp||'') === empresa);
-      infoEl.textContent = `${activos.length} empleado${activos.length!==1?'s':''} activo${activos.length!==1?'s':''}`;
+      const activos = getNomina().filter(e => !e._deBaja && !e.egreso && (empresa==='todas' || (e.emp||'') === empresa));
+      infoEl.textContent = (empresa==='todas')
+        ? `${activos.length} empleado${activos.length!==1?'s':''} activo${activos.length!==1?'s':''} — todas las empresas`
+        : `${activos.length} empleado${activos.length!==1?'s':''} activo${activos.length!==1?'s':''}`;
     }
   }
   // Si alcance es individual, refrescar la lista de empleados
@@ -1760,7 +1762,7 @@ function buscarEmpLiq(){
   const empresa = document.getElementById('liq-empresa')?.value || '';
   // Filtrar por empresa si está seleccionada; sin empresa = todos
   const nomina  = getNomina().filter(e =>
-    !e._deBaja && !e.egreso && (!empresa || e.emp === empresa)
+    !e._deBaja && !e.egreso && (!empresa || empresa === 'todas' || e.emp === empresa)
   );
   // Sin texto: mostrar todos de la empresa; con texto: filtrar
   const matches = q.length >= 1
