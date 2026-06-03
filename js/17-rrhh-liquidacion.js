@@ -1481,8 +1481,8 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
   // Alícuota ART: desde la empresa en IDB/cache o desde ART_SEED.
   // Fallback a params.pctArt solo si no hay ART configurada en ningún lado.
   let _pctArtVigente = params.pctArt || 1.5;
-  if(liq?.empresa && typeof resolveAlicuotaArtParaEmpresa === 'function'){
-    const _empNombre = liq.empresa;
+  if(emp?.emp && typeof resolveAlicuotaArtParaEmpresa === 'function'){
+    const _empNombre = emp.emp;
     let _artList = null;
     // 1) Intentar desde la cache de ABM Empresas
     if(typeof _empresasABMCache !== 'undefined' && _empresasABMCache?.length){
