@@ -1470,7 +1470,16 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
   const mOtrosD=otrosD.reduce((s,d)=>s+$m(d.monto),0);
 
   const totalDescuentos=jubilacion+obraSocial+anssal+pamiEmp+sindicato+ganancias+embargo+anticiposDesc+mOtrosD+mDescSuspension+_ccTotalDesc+_ccTotalAporte+ajusteGananciasAnual;
-  const netoAPagar=Math.max(0,totalHaberes-totalDescuentos);
+  // ─ Redondeo del recibo a CERO CENTAVOS ──────────────────────────
+  // Concepto calculado que lleva el neto al número entero ($) más próximo
+  // hacia ARRIBA: el neto a pagar siempre termina en .00. El redondeo es la
+  // diferencia (0..0,99) que se suma. Identidad del recibo:
+  //   Neto a pagar = Total Haberes − Total Descuentos + Redondeo
+  const _netoPrevio=Math.max(0,totalHaberes-totalDescuentos);
+  const _netoCent=Math.round(_netoPrevio*100)/100;        // a centavos (saca ruido flotante)
+  const netoAPagar=Math.ceil(_netoCent);                  // ENTERO: el neto termina en .00
+  const redondeo=Math.round((netoAPagar-_netoPrevio)*100)/100;  // 0..0,99 que se suma
+  totalHaberes=Math.round((netoAPagar+totalDescuentos)*100)/100; // mantiene Haberes − Descuentos = Neto
 
   // ─ Contribuciones patronales (sin tope máximo — Ley 26.417) ─
   // Se calculan sobre REMUNERATIVOS (los conceptos exentos no generan contribuciones)
@@ -1627,7 +1636,7 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
     licenciasAplicadas: nov.licenciasAplicadas || [],
     // Referencia compacta a las novedades (para módulos que consultan flags ad-hoc)
     nov: { _importadoSiradig: !!nov._importadoSiradig, hsExtra50: nov.hsExtra50, hsExtra100: nov.hsExtra100 },
-    totalDescuentos, netoAPagar,
+    totalDescuentos, netoAPagar, redondeo,
     jubPatronal, osPatronal, pamiPatronal, desempleo, art, sindPatronal, totalContrib,
     // Régimen UOCRA Ley 22.250 — contribuciones patronales adicionales
     // (todas en cero si el empleado no es de UOCRA)
@@ -4839,6 +4848,15 @@ function buildConceptRows(item, params){
       }
     }
   });
+
+  // ── Redondeo del recibo a cero centavos (siempre hacia arriba) ──
+  // Plug que lleva el neto del recibo exactamente al entero (item.netoAPagar):
+  // absorbe la diferencia de centavos entre la sumatoria de conceptos y el neto.
+  // Normalmente es un haber positivo (el neto se redondea hacia arriba).
+  const _sumPrevioRows = R.reduce((s,r)=>s + $m(r.h) - $m(r.r) + $m(r.a), 0);
+  const _redPlug = Math.round(($m(item.netoAPagar) - _sumPrevioRows) * 100) / 100;
+  if(_redPlug > 0)      pH('Redondeo', 9999, '', _redPlug);
+  else if(_redPlug < 0) pR('Redondeo', 9999, '', -_redPlug);
 
   return R;
 }
