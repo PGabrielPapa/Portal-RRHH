@@ -1684,7 +1684,7 @@ function resetNuevoLiqForm(){
 async function liqPoblarEmpresas(){
   const sel = document.getElementById('liq-empresa');
   if(!sel) return;
-  sel.innerHTML = '<option value="">— Seleccioná una empresa —</option>';
+  sel.innerHTML = '<option value="">— Seleccioná una empresa —</option>' + '<option value="todas">Todas las empresas</option>';
 
   // La fuente de verdad para el VALUE siempre es e.emp de la nómina
   // (es lo que usa el filtro nomina.filter(e=>e.emp===liq.empresa)).
@@ -3968,11 +3968,22 @@ async function calcularYRenderPreview(){
   }
 
   const items=[];
+  const _erroresCalc=[];
   for(const emp of nomina){
-    const nov=_novedadesActuales[emp.leg]||{};
-    const anticipo=$m(nov.anticipos);
-    const item=await calcularItemLiquidacion(emp,params,nov,liq.anio,liq.mes,anticipo,liq.fechaPago,liq.tipo);
-    items.push(item);
+    try {
+      const nov=_novedadesActuales[emp.leg]||{};
+      const anticipo=$m(nov.anticipos);
+      const item=await calcularItemLiquidacion(emp,params,nov,liq.anio,liq.mes,anticipo,liq.fechaPago,liq.tipo);
+      items.push(item);
+    } catch(_eItem){
+      // No abortar toda la liquidación por el error de un empleado: registrarlo
+      // y seguir, para que el resto se calcule y el problema sea VISIBLE.
+      console.error(`Liquidación: error al calcular legajo ${emp.leg} (${emp.nom||''}):`, _eItem);
+      _erroresCalc.push(`${emp.nom||emp.leg}: ${(_eItem && _eItem.message) || _eItem}`);
+    }
+  }
+  if(_erroresCalc.length && typeof toast==='function'){
+    toast(`⚠ ${_erroresCalc.length} empleado(s) con error en el cálculo (ver consola). Primero: ${_erroresCalc[0]}`, 'var(--red)', 7000);
   }
 
   // Guardar items en la liquidación.
