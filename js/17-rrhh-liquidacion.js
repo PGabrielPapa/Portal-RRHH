@@ -4889,6 +4889,73 @@ function reciboUnaCopiaPag(item, liq, pageRows, params, empDB, tipo, pagActual, 
       +'font-family:'+(opts.m?'Courier New,monospace':'Arial,sans-serif')+';'
       +'white-space:nowrap;border-collapse:collapse">'+v+'</td>';
   };
+  // ── DECRETO 407/2026 · Costos del empleador y composición salarial ──
+  const baseRem = $m(item.totalHaberesRem || item.totalHaberes);
+  // Contribuciones a cargo del EMPLEADOR
+  const cJub  = $m(item.jubPatronal);
+  const cFne  = $m(item.desempleo);
+  const cOS   = $m(item.osPatronal);
+  const cPami = $m(item.pamiPatronal);
+  const cArt  = $m(item.art);
+  const cSind = $m(item.sindPatronal);
+  const cScvo = $m(item.scvo);                                   // Seguro Colectivo de Vida Obligatorio (si se carga)
+  const cCCT  = $m(item.totalContribUOCRA) + $m(item.ccTotalContribPat);
+  const subTotalContrib = $m(item.totalContrib);
+  // Aportes a cargo del TRABAJADOR (ya descontados del bruto)
+  const aJub  = $m(item.jubilacion);
+  const aOS   = $m(item.obraSocial) + $m(item.anssal);
+  const aPami = $m(item.pamiEmp);
+  const aSind = $m(item.sindicato);
+  // Totales por concepto (empleador + trabajador) — Detalle Decreto 407
+  const segSegSoc   = cJub + cFne + aJub;       // Seg. Social: SIPA + FNE + Asig.Fam. (emp) + jubilación (trab)
+  const segObraSoc  = cOS + aOS;
+  const segInssjp   = cPami + aPami;            // INSSJP / PAMI (Ley 19.032)
+  const segSindical = cSind + aSind;
+  const segArt      = cArt;
+  const segScvo     = cScvo;
+  const costoTotal  = $m(item.totalCosto) || ($m(item.totalHaberes) + subTotalContrib);
+  const otrosTrab   = $m(item.ganancias) + $m(item.embargo) + $m(item.anticiposDesc) + $m(item.mOtrosD) + $m(item.mDescSuspension) + $m(item.ajusteGananciasAnual);
+  const segOtros    = cCCT + (otrosTrab > 0 ? otrosTrab : 0);
+  const segNeto     = $m(netoGlob);
+  // Composición salarial
+  const compRemun = $m(item.totalHaberesRem);
+  const compNoRem = $m(item.totalExentos);
+  const compDesc  = $m(item.totalDescuentos);
+  const pctTxt = p => ($m(p)).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}) + '%';
+  // Detalle empleador/trabajador (bloque compacto)
+  const detRow = (label, emp, trab) => `
+    <tr><td colspan="2" style="border:1px solid #ccc;padding:1.5px 4px;font-weight:bold;background:#f7f7f7">${label}: <span style="font-family:Courier New,monospace">$ ${fN(emp+trab)}</span></td></tr>
+    <tr><td style="border:1px solid #ccc;padding:1px 4px 1px 12px;width:56%">Empleador</td><td style="border:1px solid #ccc;padding:1px 4px;text-align:right;font-family:Courier New,monospace">$ ${fN(emp)}</td></tr>
+    <tr><td style="border:1px solid #ccc;padding:1px 4px 1px 12px">Trabajador</td><td style="border:1px solid #ccc;padding:1px 4px;text-align:right;font-family:Courier New,monospace">$ ${fN(trab)}</td></tr>`;
+  // Gráfico de torta del costo total empleador (SVG con segmentos)
+  const pieSegs = [
+    ['Sueldo Neto', segNeto, '#2563eb'],
+    ['Seguridad Social', segSegSoc, '#dc2626'],
+    ['Costo Sindical', segSindical, '#16a34a'],
+    ['Obra Social', segObraSoc, '#9333ea'],
+    ['INSSJP (PAMI)', segInssjp, '#ea580c'],
+    ['ART', segArt, '#0891b2'],
+  ];
+  if(segScvo>0.005)  pieSegs.push(['SCVO', segScvo, '#65a30d']);
+  if(segOtros>0.005) pieSegs.push(['Otros', segOtros, '#6b7280']);
+  const pieTotal = pieSegs.reduce((s,x)=>s+$m(x[1]),0) || 1;
+  let _angPie=-Math.PI/2; const _cxP=52,_cyP=52,_rP=48;
+  const _ptP=a=>`${(_cxP+_rP*Math.cos(a)).toFixed(2)} ${(_cyP+_rP*Math.sin(a)).toFixed(2)}`;
+  const pieSvg = `<svg width="104" height="104" viewBox="0 0 104 104">${
+    pieSegs.map(function(seg){
+      const val=$m(seg[1]); const frac=val/pieTotal; if(frac<=0) return '';
+      const a2=_angPie+frac*2*Math.PI; const large=(a2-_angPie)>Math.PI?1:0;
+      const d = frac>=0.9999
+        ? `M ${_cxP} ${(_cyP-_rP)} A ${_rP} ${_rP} 0 1 1 ${(_cxP-0.01).toFixed(2)} ${(_cyP-_rP)} Z`
+        : `M ${_cxP} ${_cyP} L ${_ptP(_angPie)} A ${_rP} ${_rP} 0 ${large} 1 ${_ptP(a2)} Z`;
+      _angPie=a2; return `<path d="${d}" fill="${seg[2]}" stroke="#fff" stroke-width="0.7"/>`;
+    }).join('')
+  }</svg>`;
+  const pieLegend = pieSegs.map(function(seg){
+    const pct=(($m(seg[1])/pieTotal)*100).toFixed(1);
+    return `<div style="display:flex;align-items:center;gap:3px;margin-bottom:1px"><span style="display:inline-block;width:7px;height:7px;background:${seg[2]};flex:none"></span><span>${seg[0]} — ${pct}%</span></div>`;
+  }).join('');
+
   const MIN_ROWS=18;
   const rowsHtml=pageRows.map(function(r){
     return '<tr>'+td(r.desc)+td(r.cod,{a:'center'})+td(r.unid,{a:'center'})
@@ -4983,6 +5050,54 @@ function reciboUnaCopiaPag(item, liq, pageRows, params, empDB, tipo, pagActual, 
     </tr>
   </table>
 
+  ${pagActual===1 ? `
+  <!-- DECRETO 407/2026 · COSTO TOTAL EMPLEADOR (expuesto antes del bruto y neto) -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:0;border-top:2px solid #333">
+    <tr style="background:#e8e8e8">
+      <td colspan="3" style="border:1px solid #999;padding:4px 6px;font-size:9.5px;font-weight:bold">COSTO TOTAL EMPLEADOR</td>
+      <td style="border:1px solid #999;padding:4px 6px;font-size:10px;font-weight:bold;text-align:right;font-family:Courier New,monospace">$ ${esUltima?fN(costoTotal):''}</td>
+    </tr>
+    <tr style="background:#f5f5f5">
+      <td style="border:1px solid #999;padding:2px 5px;font-size:8px;font-weight:bold;width:48%">Concepto</td>
+      <td style="border:1px solid #999;padding:2px 5px;font-size:8px;font-weight:bold;text-align:center;width:12%">Unidad</td>
+      <td style="border:1px solid #999;padding:2px 5px;font-size:8px;font-weight:bold;text-align:right;width:20%">Base</td>
+      <td style="border:1px solid #999;padding:2px 5px;font-size:8px;font-weight:bold;text-align:right">Monto</td>
+    </tr>
+    ${(function(){
+      const pctArtEff = baseRem>0 ? (cArt/baseRem*100) : $m(params.pctArt);
+      const filas = [
+        ['Contribución Jubilatoria SIPA (Ley 24.241)', pctTxt(params.pctJubPatronal), baseRem, cJub, true],
+        ['Fondo Nacional de Empleo (Ley 24.013)', pctTxt(params.pctDesempleo), baseRem, cFne, true],
+        ['Contribución Obra Social', pctTxt(params.pctOsPatronal), baseRem, cOS, true],
+        ['Contribución INSSJP / PAMI (Ley 19.032)', pctTxt(params.pctPamiPatronal), baseRem, cPami, true],
+        ['A.R.T. (Ley 24.557)', pctTxt(pctArtEff), baseRem, cArt, true],
+        ['Contribución Sindical Patronal', pctTxt(params.pctSindicatoPatronal), baseRem, cSind, true],
+        ['Seguro Colectivo de Vida Obligatorio (Dto. 1567/74)', 'fijo', '', cScvo, cScvo>0],
+        ['Costo derivado del CCT / convencional', '', '', cCCT, cCCT>0],
+      ];
+      return filas.filter(f=>f[4]).map(([c,u,b,m])=>`<tr>
+        <td style="border:1px solid #999;padding:2px 5px;font-size:8px">${c}</td>
+        <td style="border:1px solid #999;padding:2px 5px;font-size:8px;text-align:center;font-family:Courier New,monospace">${u}</td>
+        <td style="border:1px solid #999;padding:2px 5px;font-size:8px;text-align:right;font-family:Courier New,monospace">${b!==''?fN(b):''}</td>
+        <td style="border:1px solid #999;padding:2px 5px;font-size:8px;text-align:right;font-family:Courier New,monospace">${fN(m)}</td>
+      </tr>`).join('');
+    })()}
+    <tr style="background:#f0f0f0">
+      <td colspan="3" style="border:1px solid #999;padding:3px 5px;font-size:8.5px;font-weight:bold;text-align:right">SUB TOTAL CONTRIBUCIONES EMPLEADOR</td>
+      <td style="border:1px solid #999;padding:3px 5px;font-size:8.5px;font-weight:bold;text-align:right;font-family:Courier New,monospace">$ ${fN(subTotalContrib)}</td>
+    </tr>
+  </table>
+  <div style="font-size:6.5px;color:#777;margin:2px 0 4px;font-style:italic;line-height:1.3">Costo laboral total a cargo del empleador, expuesto conforme al Decreto 407/2026 (reglamentación del art. 140 LCT). La Seguridad Social del empleador incluye SIPA, Fondo Nacional de Empleo y Asignaciones Familiares.</div>
+
+  <!-- SUELDO BRUTO -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:0">
+    <tr style="background:#e8e8e8">
+      <td style="border:1px solid #999;padding:4px 6px;font-size:9.5px;font-weight:bold">SUELDO BRUTO</td>
+      <td style="border:1px solid #999;padding:4px 6px;font-size:10px;font-weight:bold;text-align:right;font-family:Courier New,monospace;width:28%">$ ${esUltima?fN(totGlobH+totGlobA):''}</td>
+    </tr>
+  </table>
+  ` : ''}
+
   <!-- TABLA DE CONCEPTOS -->
   <table style="width:100%;border-collapse:collapse;margin-bottom:0">
     <thead>
@@ -5014,68 +5129,39 @@ function reciboUnaCopiaPag(item, liq, pageRows, params, empDB, tipo, pagActual, 
   </table>
 
   ${esUltima ? `
-  <!-- ════════════════════════════════════════════════════════════
-       BLOQUE INFORMATIVO · CONTRIBUCIONES PATRONALES
-       Solo en última página · No afecta el neto a cobrar
-  ════════════════════════════════════════════════════════════ -->
-  <div style="margin:6px 0 4px 0;padding:4px 6px;border:1px solid #999;background:#fafafa">
-    <div style="font-size:8px;font-weight:bold;color:#333;margin-bottom:3px;letter-spacing:.3px;display:flex;justify-content:space-between;align-items:baseline">
-      <span style="text-transform:uppercase">Contribuciones Patronales del Empleador</span>
-      <span style="font-weight:normal;color:#888;font-size:7px;font-style:italic">Informativo — no afecta el neto a cobrar</span>
+  <!-- DECRETO 407/2026 · COMPOSICIÓN SALARIAL + SUELDO NETO -->
+  <table style="width:100%;border-collapse:collapse;margin:5px 0 0">
+    <tr style="background:#f5f5f5">
+      <td style="border:1px solid #999;padding:3px 6px;font-size:8px;font-weight:bold;width:24%">COMPOSICIÓN SALARIAL</td>
+      <td style="border:1px solid #999;padding:3px 6px;font-size:8px;text-align:center">Remunerativo: <b style="font-family:Courier New,monospace">$ ${fN(compRemun)}</b></td>
+      <td style="border:1px solid #999;padding:3px 6px;font-size:8px;text-align:center">No Remunerativo: <b style="font-family:Courier New,monospace">$ ${fN(compNoRem)}</b></td>
+      <td style="border:1px solid #999;padding:3px 6px;font-size:8px;text-align:center">Descuentos: <b style="font-family:Courier New,monospace">$ ${fN(compDesc)}</b></td>
+    </tr>
+    <tr style="background:#e8e8e8">
+      <td colspan="3" style="border:1px solid #999;padding:4px 6px;font-size:10px;font-weight:bold">SUELDO NETO</td>
+      <td style="border:1px solid #999;padding:4px 6px;font-size:11px;font-weight:bold;text-align:right;font-family:Courier New,monospace">$ ${fN(segNeto)}</td>
+    </tr>
+  </table>
+
+  <!-- DETALLE DE LA COMPOSICIÓN SALARIAL + GRÁFICO DE TORTA -->
+  <div style="border:1px solid #999;margin:4px 0;padding:5px 7px">
+    <div style="font-size:8.5px;font-weight:bold;text-align:center;margin-bottom:4px;text-decoration:underline">Detalle de la composición salarial</div>
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <table style="border-collapse:collapse;font-size:7.5px;width:60%">
+        ${detRow('Total Costo Sindical', cSind, aSind)}
+        ${detRow('Total Seguridad Social', cJub+cFne, aJub)}
+        ${detRow('Total Obra Social', cOS, aOS)}
+        ${detRow('Total costo INSSJP (PAMI)', cPami, aPami)}
+        ${detRow('Total costo ART', cArt, 0)}
+        ${detRow('Total Costo SCVO', cScvo, 0)}
+      </table>
+      <div style="width:40%;text-align:center">
+        <div style="font-size:8px;font-weight:bold;margin-bottom:3px">Costo total empleador</div>
+        ${pieSvg}
+        <div style="font-size:6.5px;text-align:left;margin-top:4px">${pieLegend}</div>
+      </div>
     </div>
-    <table style="width:100%;border-collapse:collapse;font-size:8px">
-      <thead>
-        <tr style="background:#f0f0f0">
-          <td style="border:1px solid #bbb;padding:2px 5px;font-weight:bold">Concepto</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;font-weight:bold;text-align:center;width:12%">Código</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;font-weight:bold;text-align:center;width:13%">Alícuota</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;font-weight:bold;text-align:right;width:18%">Monto</td>
-        </tr>
-      </thead>
-      <tbody>
-        ${item.jubPatronal ? `<tr>
-          <td style="border:1px solid #bbb;padding:2px 5px">Aportes patronales SIPA (Ley 24.241)</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">80000</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">${(params.pctJubPatronal||0).toFixed(2)}%</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:right;font-family:Courier New,monospace">${fN(item.jubPatronal)}</td>
-        </tr>` : ''}
-        ${item.osPatronal ? `<tr>
-          <td style="border:1px solid #bbb;padding:2px 5px">Contribución Obra Social</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">80200</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">${(params.pctOsPatronal||0).toFixed(2)}%</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:right;font-family:Courier New,monospace">${fN(item.osPatronal)}</td>
-        </tr>` : ''}
-        ${item.pamiPatronal ? `<tr>
-          <td style="border:1px solid #bbb;padding:2px 5px">Contribución Ley 19.032 (PAMI)</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">80100</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">${(params.pctPamiPatronal||0).toFixed(2)}%</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:right;font-family:Courier New,monospace">${fN(item.pamiPatronal)}</td>
-        </tr>` : ''}
-        ${item.desempleo ? `<tr>
-          <td style="border:1px solid #bbb;padding:2px 5px">Fondo Nacional de Empleo (Ley 24.013)</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">80300</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">${(params.pctDesempleo||0).toFixed(2)}%</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:right;font-family:Courier New,monospace">${fN(item.desempleo)}</td>
-        </tr>` : ''}
-        ${item.art ? `<tr>
-          <td style="border:1px solid #bbb;padding:2px 5px">ART (Ley 24.557)</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">80400</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">${(params.pctArt||0).toFixed(2)}%</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:right;font-family:Courier New,monospace">${fN(item.art)}</td>
-        </tr>` : ''}
-        ${item.sindPatronal ? `<tr>
-          <td style="border:1px solid #bbb;padding:2px 5px">Contribución Sindical Patronal</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">80900</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:center;font-family:Courier New,monospace">${(params.pctSindicatoPatronal||0).toFixed(2)}%</td>
-          <td style="border:1px solid #bbb;padding:2px 5px;text-align:right;font-family:Courier New,monospace">${fN(item.sindPatronal)}</td>
-        </tr>` : ''}
-        <tr style="background:#f5f5f5">
-          <td colspan="3" style="border:1px solid #bbb;padding:3px 5px;text-align:right;font-weight:bold">TOTAL Contribuciones Patronales (a cargo del empleador):</td>
-          <td style="border:1px solid #bbb;padding:3px 5px;text-align:right;font-family:Courier New,monospace;font-weight:bold">${fN(item.totalContrib)}</td>
-        </tr>
-      </tbody>
-    </table>
-    <div style="font-size:7px;color:#888;margin-top:3px;font-style:italic;line-height:1.3">Las contribuciones patronales están a cargo exclusivo del empleador (Leyes 24.241, 24.013, 24.557, 19.032 y modificatorias) y no afectan el neto a cobrar del empleado. Información expuesta a los fines de transparencia salarial.</div>
+    <div style="font-size:6.5px;color:#777;margin-top:4px;font-style:italic;line-height:1.3">Nota: la Seguridad Social del empleador incluye SIPA, Fondo Nacional de Empleo y Asignaciones Familiares. Las contribuciones patronales (Leyes 24.241, 24.013, 24.557, 19.032 y modif.) son a cargo exclusivo del empleador y no afectan el neto a cobrar. Cuadro expuesto conforme al Decreto 407/2026 (art. 140 LCT).</div>
   </div>
   ` : ''}
 
