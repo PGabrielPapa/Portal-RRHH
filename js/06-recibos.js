@@ -1098,14 +1098,29 @@ async function verFormularioGanancias(periodo){
     const params = (typeof getLiqParams === 'function') ? getLiqParams() : {};
     const nov = { _importadoSiradig: (item && item.nov && item.nov._importadoSiradig) || false };
     const html = await planillaGananciasHTML(item, liq, params, nov);
-    const w = window.open('', '_blank');
-    if(w && !w.closed){ w.document.open(); w.document.write(html); w.document.close(); }
-    else {
-      const blob = new Blob([html], { type:'text/html' });
-      const url = URL.createObjectURL(blob);
-      if(!window.open(url, '_blank')) location.href = url;
-      setTimeout(()=>URL.revokeObjectURL(url), 60000);
-    }
+
+    // Visualización en modal in-app (iframe srcdoc) — no depende de popups,
+    // que en el entorno embebido suelen quedar bloqueados.
+    const lbl = (typeof periodoLabel === 'function' ? periodoLabel(periodo) : periodo) || periodo;
+    const prev = document.getElementById('modal-f1357');
+    if(prev) prev.remove();
+    const ov = document.createElement('div');
+    ov.id = 'modal-f1357';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;flex-direction:column;padding:16px;box-sizing:border-box';
+    ov.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;color:#fff;margin-bottom:10px;flex-wrap:wrap">
+        <div style="font-size:15px;font-weight:600;flex:1;min-width:160px">Impuesto a las Ganancias — F.1357 · ${lbl}</div>
+        <button id="f1357-print" style="background:#fff;color:#111;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px">🖨 Imprimir / PDF</button>
+        <button id="f1357-close" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.4);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px">✕ Cerrar</button>
+      </div>
+      <iframe id="f1357-frame" style="flex:1;width:100%;border:none;border-radius:8px;background:#fff"></iframe>`;
+    document.body.appendChild(ov);
+    const frame = ov.querySelector('#f1357-frame');
+    frame.srcdoc = html;
+    const cerrar = ()=> ov.remove();
+    ov.querySelector('#f1357-close').onclick = cerrar;
+    ov.addEventListener('click', e=>{ if(e.target===ov) cerrar(); });
+    ov.querySelector('#f1357-print').onclick = ()=>{ try{ frame.contentWindow.focus(); frame.contentWindow.print(); }catch(_){ } };
   } catch(e){ console.error('verFormularioGanancias:', e); toast('⚠ Error al generar el formulario','var(--red)'); }
 }
 
