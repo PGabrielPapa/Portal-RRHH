@@ -1036,7 +1036,7 @@ async function renderGanancias(){
                   <td style="padding:8px 6px">${periodoLabel(d.periodo)||d.periodo}</td>
                   <td style="padding:8px 6px;text-align:right;color:${montoCol};font-weight:600">${montoTxt}</td>
                   <td style="padding:8px 6px;text-align:right;color:var(--t2)">${fmtPesos(Math.abs(d.acum))}${d.acum<-0.005?' a favor':''}</td>
-                  <td style="padding:8px 6px;text-align:center">${tienePDF?`<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="verGanancia('${leg}_${d.periodo}')">Ver</button>`:'<span style="color:var(--t3);font-size:11px">—</span>'}</td>
+                  <td style="padding:8px 6px;text-align:center"><button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="verFormularioGanancias('${d.periodo}')">Ver F.1357</button></td>
                 </tr>`;
               }).join('')}
             </tbody>
@@ -1077,6 +1077,36 @@ async function renderGanancias(){
     return;
   }
   div.innerHTML = tablaHTML + pdfHTML;
+}
+
+// Genera y abre el formulario F.1357 (Control de Liquidación del Impuesto a las
+// Ganancias) del empleado para un período, a partir de la liquidación mensual.
+async function verFormularioGanancias(periodo){
+  try{
+    if(!currentUser){ return; }
+    const leg = currentUser.emp.leg;
+    let liqs = [];
+    try { liqs = (typeof getLiquidaciones === 'function') ? await getLiquidaciones() : []; } catch(_){ liqs = []; }
+    const liq = (liqs || [])
+      .filter(l => l && l.estado !== 'borrador' && l.tipo !== 'final' && l.tipo !== 'alimentos'
+                && Array.isArray(l.items) && l.items.some(i => i.leg === leg)
+                && (l.periodo === periodo || `${l.anio}-${String(l.mes).padStart(2,'0')}` === periodo))
+      .sort((a,b)=> $m(b.id) - $m(a.id))[0];
+    if(!liq){ toast('⚠ No se encontró la liquidación del período','var(--yellow)'); return; }
+    if(typeof planillaGananciasHTML !== 'function'){ toast('⚠ Módulo de ganancias no disponible — recargá la página','var(--yellow)'); return; }
+    const item = liq.items.find(i => i.leg === leg);
+    const params = (typeof getLiqParams === 'function') ? getLiqParams() : {};
+    const nov = { _importadoSiradig: (item && item.nov && item.nov._importadoSiradig) || false };
+    const html = await planillaGananciasHTML(item, liq, params, nov);
+    const w = window.open('', '_blank');
+    if(w && !w.closed){ w.document.open(); w.document.write(html); w.document.close(); }
+    else {
+      const blob = new Blob([html], { type:'text/html' });
+      const url = URL.createObjectURL(blob);
+      if(!window.open(url, '_blank')) location.href = url;
+      setTimeout(()=>URL.revokeObjectURL(url), 60000);
+    }
+  } catch(e){ console.error('verFormularioGanancias:', e); toast('⚠ Error al generar el formulario','var(--red)'); }
 }
 
 async function verGanancia(key){

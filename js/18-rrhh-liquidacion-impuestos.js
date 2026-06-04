@@ -49,6 +49,9 @@ async function acumularGananciasEmpleado(leg, anio, mesHasta){
   let remGravAcum = 0;
   let sacAcum     = 0;
   let dedGenAcum  = 0;
+  let jubAcum     = 0;
+  let osAcum      = 0;
+  let sindAcum    = 0;
   let retenidoAcum = 0;
   const itemsPrevios = [];
 
@@ -58,13 +61,16 @@ async function acumularGananciasEmpleado(leg, anio, mesHasta){
     // Usar base remunerativa (sin exentos) como remGrav acumulado
     remGravAcum  += (item.totalHaberesRem !== undefined ? item.totalHaberesRem : item.totalHaberes) || 0;
     sacAcum      += (item.mSac || 0);
+    jubAcum      += (item.jubilacion || 0);
+    osAcum       += (item.obraSocial || 0) + (item.anssal || 0) + (item.pamiEmp || 0);
+    sindAcum     += (item.sindicato || 0);
     dedGenAcum   += (item.jubilacion || 0) + (item.obraSocial || 0)
                   + (item.anssal || 0) + (item.pamiEmp || 0) + (item.sindicato || 0);
     retenidoAcum += (item.ganancias || 0);
     itemsPrevios.push({mes:liq.mes, item});
   }
 
-  return {remGravAcum, sacAcum, dedGenAcum, retenidoAcum, itemsPrevios, periodosAcumulados: previas.length};
+  return {remGravAcum, sacAcum, dedGenAcum, jubAcum, osAcum, sindAcum, retenidoAcum, itemsPrevios, periodosAcumulados: previas.length};
 }
 
 // Aplica topes del Art. 85 LIG a las deducciones voluntarias
@@ -256,168 +262,208 @@ async function planillaGananciasHTML(item, liq, params, nov){
     remSujeta, impDetAcum, alicuota, tramo, impMesAuto
   } = G;
 
-  // Conceptos exentos del mes (informativo — ya excluidos de remMes)
-  const hsExtExentas = $m(nov.hsExtrasExentas);
-  const bonoExento  = $m(nov.bonoProductividadExento);
-  const indemniz    = $m(nov.indemnizaciones);
-  const otrosExentos = $m(nov.otrosExentos);
-  const totalExento = hsExtExentas + bonoExento + indemniz + otrosExentos;
+  // Desglose acumulado de aportes (acumulado previo + mes actual)
+  const jubTot  = $m(acum.jubAcum)  + $m(item.jubilacion);
+  const osTot   = $m(acum.osAcum)   + $m(item.obraSocial) + $m(item.anssal) + $m(item.pamiEmp);
+  const sindTot = $m(acum.sindAcum) + $m(item.sindicato);
+  const remBrutaNoHab = remGravAcum - sacAcumTot;
 
-  // Saldo del período con signo y lo realmente aplicado en el recibo (auto u override manual)
-  const impMes      = impMesAuto;            // automático (acumulado)
-  const impAplicado = $m(item.ganancias);    // lo que impacta el recibo
-  const diferencia  = impDetAcum - (acum.retenidoAcum + impAplicado); // 0 si es automático
+  // Retención del período (lo que impacta el recibo del mes; con signo)
+  const impPeriodo  = $m(item.ganancias);   // = impMesAuto salvo override manual
+  const dv = dedVolTopadas || {};
 
-  const fN = n => n.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const row = (lbl,val,bold,bg) => {
-    const bStyle = bold?'font-weight:bold;':'font-weight:normal;';
-    const bgStyle = bg?`background:${bg};`:'';
+  // Fechas / cabecera
+  const fLiqDate = new Date(liq.anio, liq.mes, 0);   // último día del período
+  const ddmmyyyy = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const fechaGen = liq.fechaPago ? liq.fechaPago : ddmmyyyy(new Date());
+  const fechaLiq = ddmmyyyy(fLiqDate);
+  const periodoMMYY = `${String(liq.mes).padStart(2,'0')}/${liq.anio}`;
+  const nroLiq = (liq.id != null ? liq.id : (liq.numero || item.leg));
+  // "Tablas utilizadas": período de los valores de Ganancias resueltos por fecha de pago
+  let tablasUtil = periodoMMYY;
+  if(params && typeof params._ganPeriodo === 'string'){
+    const m = params._ganPeriodo.match(/(\d{4})-(\d{2})/);
+    if(m) tablasUtil = `${m[2]}/${m[1]}`;
+  }
+
+  const fN = n => $m(n).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  // Renglón de dato: etiqueta | $ | valor (derecha, monoespaciado)
+  const r = (lbl,val,opt) => {
+    opt = opt || {};
+    const bold = opt.bold ? 'font-weight:bold;' : '';
+    const bg   = opt.bg ? `background:${opt.bg};` : '';
     return `<tr>
-      <td style="padding:2px 8px;font-size:8px;border:1px solid #ccc;${bStyle}${bgStyle};width:78%">${lbl}</td>
-      <td style="padding:2px 6px;font-size:8px;border:1px solid #ccc;text-align:right;font-family:Courier New,monospace;${bStyle}${bgStyle};width:4%">$</td>
-      <td style="padding:2px 8px;font-size:8px;border:1px solid #ccc;text-align:right;font-family:Courier New,monospace;${bStyle}${bgStyle};width:18%">${fN(val)}</td>
+      <td style="padding:1.5px 8px;font-size:7.5px;border:1px solid #c9c9c9;${bold}${bg}">${lbl}</td>
+      <td style="padding:1.5px 4px;font-size:7.5px;border:1px solid #c9c9c9;text-align:left;width:14px;${bold}${bg}">$</td>
+      <td style="padding:1.5px 8px;font-size:7.5px;border:1px solid #c9c9c9;text-align:right;font-family:'Courier New',monospace;white-space:nowrap;${bold}${bg};width:120px">${fN(val)}</td>
     </tr>`;
   };
-  const seccion = (titulo) => `<tr><td colspan="3" style="padding:3px 8px;font-size:8.5px;font-weight:bold;background:#e8e8e8;border:1px solid #aaa">${titulo}</td></tr>`;
-  const subsec  = (titulo) => `<tr><td colspan="3" style="padding:2px 8px;font-size:8px;font-style:italic;background:#f5f5f5;border:1px solid #ccc">${titulo}</td></tr>`;
+  // Encabezado de sección (banda) y subtítulo
+  const secc = t => `<tr><td colspan="3" style="padding:2.5px 8px;font-size:8px;font-weight:bold;border:1px solid #999;background:#fff">${t}</td></tr>`;
+  const sub  = t => `<tr><td colspan="3" style="padding:2px 8px;font-size:7.5px;font-weight:bold;border:1px solid #c9c9c9;background:#fff">${t}</td></tr>`;
+  const rows = arr => arr.map(([l,v])=>r(l,v)).join('');
+
+  // ── Listas de renglones (formato AFIP F.1357) ──
+  const exLabels = [
+    'Asignaciones Familiares',
+    'Intereses por préstamos al empleador',
+    'Indemnizaciones establecidas en los inc. c), d) y e) del Apartado "A" - Anexo II de la RG 4003/2017',
+    'Remuneraciones bajo el Art. 1° de la Ley N° 19.640 "Territorio Nacional de Tierra del Fuego A.I.A.S."',
+    'Remuneraciones bajo el CCT 396/2204 "Petroleros - Personal de Pozo" - Art. 1° Ley N° 26.176',
+    'Cursos y Seminarios establecidos en el inc. o) del Apartado "A" - Anexo II de la RG 4003/2017',
+    'Indumentaria y equipamiento provistos por el empleador',
+    'Ajustes de Períodos Anteriores sobre Remuneraciones Exentas o No Alcanzadas'
+  ];
+
+  const cuerpo = `
+    ${secc('REMUNERACIONES GRAVADAS')}
+    ${sub('Abonadas por el agente de retención')}
+    ${rows([
+      ['Remuneración bruta y no habituales', remBrutaNoHab],
+      ['SAC', 0],
+      ['SAC (RG 4003/17 Anexo II C.)', sacAcumTot],
+      ['Ajustes de Períodos Anteriores sobre Remuneraciones Gravadas', 0],
+    ])}
+    ${sub('Otros empleos')}
+    ${rows([
+      ['Otros Empleos - Remuneración bruta y no habituales', 0],
+      ['Otros Empleos - SAC', 0],
+      ['Otros Empleos - Ajustes de Períodos Anteriores sobre Remuneraciones Gravadas', 0],
+    ])}
+    ${r('TOTAL REMUNERACIÓN GRAVADA', remGravAcum, {bold:true})}
+
+    ${secc('REMUNERACIONES EXENTAS o NO ALCANZADAS')}
+    ${sub('Abonadas por el agente de retención')}
+    ${rows(exLabels.map(l=>[l,0]))}
+    ${sub('Otros empleos')}
+    ${rows(exLabels.map(l=>['Otros Empleos - '+l,0]))}
+    ${r('TOTAL REMUNERACIÓN NO GRAVADA / NO ALCANZADA / EXENTA', 0, {bold:true})}
+    ${r('TOTAL REMUNERACIONES', remGravAcum, {bold:true})}
+
+    ${secc('DEDUCCIONES GENERALES')}
+    ${rows([
+      ['Aportes para fondos de Jubilaciones, retiros, pensiones o subsidios - ANSES', jubTot],
+      ['Otros Empleos - Aportes para fondos de Jubilaciones, retiros, pensiones o subsidios - ANSES', 0],
+      ['Aportes para fondos de Jubilaciones, retiros, pensiones o subsidios - Cajas Previsionales Provinciales, Municipales o para Profesionales', 0],
+      ['Otros Empleos - Aportes para fondos de Jubilaciones, retiros, pensiones o subsidios - Cajas Previsionales Provinciales, Municipales o para Profesionales', 0],
+      ['Aportes a Obras Sociales', osTot],
+      ['Otros Empleos - Aportes a Obras Sociales', 0],
+      ['Cuotas Sindicales', sindTot],
+      ['Otros Empleos - Cuotas Sindicales', 0],
+      ['Cuotas Médico Asistenciales', dv.cuotasMedicas],
+      ['Primas de Seguro para el caso de Muerte', dv.primaMuerte],
+      ['Seguro de Muerte/Mixtos Sujetos al control de la SSN', 0],
+      ['Adquisición de Cuotapartes de FCI con fines de Retiro', 0],
+      ['Gastos de Sepelio', dv.gastosSepelio],
+      ['Amortización Impositiva e Intereses por adquisición de Rodados para Corredores y Viajantes de Comercio', 0],
+      ['Donaciones a Fiscos Nac./Prov./Mun./Inst. Art. 26 Inc e) y f) LIG', dv.donaciones],
+      ['Alquileres de Inmuebles destinados a Casa-Habitación para Inquilinos No Propietarios - Art. 85 inc. h) - 40%', dv.alquileres],
+      ['Descuentos Obligatorios por Ley Nacional, Provincial o Municipal', 0],
+      ['Honorarios por Servicios de Asistencia Sanitaria, Médica y Paramédica', dv.honorariosMedicos],
+      ['Intereses Créditos Hipotecarios', dv.intHipotecarios],
+      ['Aportes al Cap.Soc./Fondo Riesgo de Socios Protectores de SGR', dv.aportesSGR],
+      ['Empleados del Servicio Doméstico', dv.servDomestico],
+      ['Cajas Complementarias de Previsión', 0],
+      ['Fondos Compensadores de Previsión', 0],
+      ['Otros Aportes para fondos de Jubilaciones, retiros, pensiones o subsidios - incluido ANSES Autónomos', 0],
+      ['Seguros de Retiro Privados -Sujetos al Control de la SSN', dv.seguroVida],
+      ['Indumentaria/ y Equipamiento -Uso exclusivo y carácter obligatorio - Adquiridos por empleado', 0],
+      ['Servicios y Herramientas con Fines Educativos para Cargas de Familia', dv.educacion],
+      ['Alquileres de Inmuebles destinados a Casa-Habitación para Inquilinos y Propietarios - Art. 85 inc. k) - 10%', 0],
+      ['Antártida Argentina - Adicional remunerativo para personal civil y militar', 0],
+      ['Actores - Retribución pagada a los representantes - RG 2442/08', 0],
+    ])}
+    ${r('TOTAL DEDUCCIONES GENERALES', totDedGen, {bold:true})}
+
+    ${secc('DEDUCCIONES PERSONALES')}
+    ${rows([
+      ['Ganancia No Imponible', mniProp],
+      ['Cargas de familia', totalCargasFam],
+      ['Deducción Especial', dedEspProp],
+      ['Deducción especial 2do párrafo artículo 30 de la ley del gravamen (12° parte)', dedEsp2Prop],
+      ['Deducción Específica', dedEspecProp],
+    ])}
+    ${r('TOTAL DEDUCCIONES PERSONALES', totDedPers, {bold:true})}
+
+    ${secc('DETERMINACIÓN DEL IMPUESTO')}
+    ${r('REMUNERACIÓN SUJETA A IMPUESTO', remSujeta, {bold:true})}
+    ${r('Alícuota aplicable artículo 94 de la Ley de Impuesto a las Ganancias', alicuota)}
+    ${r('IMPUESTO DETERMINADO', impDetAcum, {bold:true})}
+    ${r('Impuesto retenido', acum.retenidoAcum)}
+    ${r('Periodo 2024 - Pago a Cuenta Art. 8° del Decreto 652/24 - Impuesto Retenido conforme a la Ley 27.725.', 0)}
+    ${r('Período 2024 - Diferencia Art. 83 de la Ley 27.743 - "Deducción Especial" según Art. 8° del Decreto 652/2024', 0)}
+    ${r('Pagos a cuenta', 0)}
+    ${r('IMPUESTO A RETENER DE LA LIQUIDACIÓN', impPeriodo, {bold:true, bg:'#f0f0f0'})}
+    ${r('SALDO A PAGAR', 0, {bold:true})}`;
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Planilla Ganancias ${item.leg} ${periodoMM(liq)}</title>
+  <title>F.1357 Ganancias ${item.leg} ${periodoMMYY}</title>
   <style>
-    @page{size:letter portrait;margin:12mm}
-    body{margin:0;padding:8px;font-family:Arial,sans-serif;font-size:8px}
-    table{width:100%;border-collapse:collapse}
+    @page{size:letter portrait;margin:10mm}
+    body{margin:0;padding:8px;font-family:Arial,Helvetica,sans-serif;font-size:7.5px;color:#000}
+    table{border-collapse:collapse}
     .no-print{margin-bottom:10px}
     @media print{.no-print{display:none}}
   </style></head><body>
 
   <div class="no-print">
-    <button onclick="window.print()" style="padding:7px 16px;background:#1E6B3A;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-right:8px">🖨 Imprimir / Guardar PDF</button>
-    <span style="font-size:11px;color:#555">${item.nom} — Ganancias ${periodoMM(liq)} — ACUMULADO</span>
+    <button onclick="window.print()" style="padding:7px 16px;background:#1E6B3A;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-right:8px">🖨 Imprimir / Guardar PDF</button>
+    <span style="font-size:11px;color:#555">${item.nom} — Impuesto a las Ganancias — ${periodoMMYY}</span>
   </div>
 
-  <!-- ENCABEZADO -->
-  <table style="margin-bottom:10px">
+  <!-- ENCABEZADO F.1357 -->
+  <table style="width:100%;margin-bottom:8px">
     <tr>
-      <td style="width:58%;vertical-align:top">
-        <div style="font-size:10px;font-weight:bold;text-align:center;margin-bottom:4px">
-          CONTROL DE LIQUIDACIÓN DEL IMPUESTO A LAS GANANCIAS<br>
-          4ta. CATEGORÍA RELACIÓN DE DEPENDENCIA<br>
-          <span style="font-size:8px;font-weight:normal">RG ARCA 4003/2017 — Liquidación acumulada Enero → ${meses[liq.mes-1]} ${liq.anio}</span>
+      <td style="width:55%;vertical-align:top;padding-right:10px">
+        <div style="font-size:10px;font-weight:bold;text-align:center;margin-bottom:6px;line-height:1.3">
+          CONTROL DE LIQUIDACIÓN DEL IMPUESTO A LAS GANANCIAS<br>4ta. CATEGORÍA RELACIÓN DE DEPENDENCIA
         </div>
-        <div style="font-size:8px;margin-bottom:2px"><b>Fecha:</b> ${liq.fechaPago||new Date().toLocaleDateString('es-AR')}</div>
-        <div style="font-size:8px;margin-bottom:2px"><b>Beneficiario:</b> ${item.cuil||'—'}, ${item.nom}</div>
-        <div style="font-size:8px;margin-bottom:2px"><b>Nro. de legajo:</b> ${item.leg}</div>
+        <div style="font-size:8px;margin-bottom:3px"><b>Fecha:</b> ${fechaGen}</div>
+        <div style="font-size:8px;margin-bottom:3px"><b>Beneficiario:</b> ${item.cuil||'—'}, ${item.nom}</div>
+        <div style="font-size:8px;margin-bottom:3px"><b>Nro. de legajo:</b> ${item.leg}</div>
         <div style="font-size:8px"><b>Agente de retención:</b> ${ed.cuit}, ${item.empresa}</div>
       </td>
-      <td style="width:42%;vertical-align:top">
-        <table style="border-collapse:collapse;width:100%;font-size:8px">
+      <td style="width:45%;vertical-align:top">
+        <table style="width:100%;font-size:7.5px">
           <tr>
-            <td style="border:1px solid #999;padding:2px 6px;font-weight:bold;width:33%">PERIODO ABONADO</td>
-            <td style="border:1px solid #999;padding:2px 6px;font-weight:bold;width:22%">LIQUIDACION</td>
-            <td style="border:1px solid #999;padding:2px 6px;font-weight:bold">DESCRIPCION</td>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:bold;text-align:center;width:30%">PERIODO ABONADO</td>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:bold;text-align:center;width:24%">LIQUIDACION</td>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:bold;text-align:center">DESCRIPCION DEL PAGO</td>
           </tr>
           <tr>
-            <td style="border:1px solid #999;padding:2px 6px;text-align:center">${periodoMM(liq)}</td>
-            <td style="border:1px solid #999;padding:2px 6px;text-align:center">${item.leg}</td>
-            <td style="border:1px solid #999;padding:2px 6px">${mesNombre}</td>
+            <td style="border:1px solid #999;padding:2px 5px;text-align:center">${periodoMMYY}</td>
+            <td style="border:1px solid #999;padding:2px 5px;text-align:center">${nroLiq}</td>
+            <td style="border:1px solid #999;padding:2px 5px;text-align:center">${mesNombre}</td>
           </tr>
           <tr>
-            <td style="border:1px solid #999;padding:2px 6px;font-weight:bold">PERIODO FISCAL</td>
-            <td colspan="2" style="border:1px solid #999;padding:2px 6px;font-weight:bold">MESES ACUMULADOS</td>
+            <td colspan="2" style="border:1px solid #999;padding:2px 5px;font-weight:bold;text-align:center">PERIODO FISCAL</td>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:bold;text-align:center">TABLAS UTILIZADAS</td>
           </tr>
           <tr>
-            <td style="border:1px solid #999;padding:2px 6px;text-align:center">${liq.anio}</td>
-            <td colspan="2" style="border:1px solid #999;padding:2px 6px;text-align:center">${mesesTranscurridos} / 12 (${(propMes*100).toFixed(1)}%)</td>
+            <td colspan="2" style="border:1px solid #999;padding:2px 5px;text-align:center">${periodoMMYY}</td>
+            <td style="border:1px solid #999;padding:2px 5px;text-align:center">${tablasUtil}</td>
           </tr>
           <tr>
-            <td style="border:1px solid #999;padding:2px 6px;font-weight:bold">TIPO DE LIQUIDACION</td>
-            <td colspan="2" style="border:1px solid #999;padding:2px 6px;font-weight:bold">FECHA</td>
+            <td colspan="2" style="border:1px solid #999;padding:2px 5px;font-weight:bold;text-align:center">TIPO DE LIQUIDACION</td>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:bold;text-align:center">FECHA DE LIQUIDACION</td>
           </tr>
           <tr>
-            <td style="border:1px solid #999;padding:2px 6px;text-align:center">${tipoDesc}</td>
-            <td colspan="2" style="border:1px solid #999;padding:2px 6px;text-align:center">${liq.fechaPago||''}</td>
+            <td colspan="2" style="border:1px solid #999;padding:2px 5px;text-align:center">${tipoDesc}</td>
+            <td style="border:1px solid #999;padding:2px 5px;text-align:center">${fechaLiq}</td>
           </tr>
         </table>
       </td>
     </tr>
   </table>
 
-  <table>
-    ${seccion('REMUNERACIONES GRAVADAS (ACUMULADO ENERO → '+meses[liq.mes-1].toUpperCase()+')')}
-    ${subsec('Abonadas por el agente de retención')}
-    ${row('Remuneración bruta y no habituales (acumulado)', remGravAcum - sacAcumTot)}
-    ${row('SAC acumulado (RG 4003/17 Anexo II C.)', sacAcumTot)}
-    ${row('Mes actual — Remuneración gravada', remMes - sacMes)}
-    ${row('Mes actual — SAC', sacMes)}
-    ${row('TOTAL REMUNERACIÓN GRAVADA ACUMULADA', remGravAcum, true, '#f0f0f0')}
+  <table style="width:100%">${cuerpo}</table>
 
-    ${seccion('REMUNERACIONES EXENTAS / NO ALCANZADAS (mes actual)')}
-    ${row('Horas extras exentas (Art. 82 LIG)', hsExtExentas)}
-    ${row('Bono productividad exento', bonoExento)}
-    ${row('Indemnizaciones Art. 180 bis', indemniz)}
-    ${row('Otros conceptos exentos', otrosExentos)}
-    ${row('TOTAL EXENTO MES', totalExento, true, '#f0f0f0')}
-
-    ${seccion('DEDUCCIONES GENERALES (ACUMULADO)')}
-    ${row('Aportes Jubilación ANSES (acumulado)', acum.dedGenAcum * 0.55 + $m(item.jubilacion))}
-    ${row('Aportes Obra Social (acumulado)', dedGenAcum - (acum.dedGenAcum * 0.55 + $m(item.jubilacion)))}
-    ${row('TOTAL APORTES EMPLEADO (acumulado)', dedGenAcum, true)}
-    ${subsec(tieneSiradig
-      ? 'Deducciones voluntarias con topes Art. 85 LIG aplicados (origen: SIRADIG F.572)'
-      : 'Deducciones voluntarias — sin SIRADIG importado, no se aplican (Art. 85 LIG queda en $0)')}
-    ${row('Cuotas Médico-Asistenciales (Art. 85 inc. f — tope 5% gan. neta)', dedVolTopadas.cuotasMedicas)}
-    ${row('Honorarios Médicos y Paramédicos (Art. 85 inc. h — 40% facturado, tope 5% gan. neta)', dedVolTopadas.honorariosMedicos)}
-    ${row('Seguros de Vida/Retiro (Art. 85 inc. b — tope combinado con primas muerte)', dedVolTopadas.seguroVida)}
-    ${row('Primas de Seguro para caso de Muerte (Art. 85 inc. b)', dedVolTopadas.primaMuerte)}
-    ${row('Gastos de Sepelio (Art. 85 inc. d — tope $'+fN(params.gan_topeGastosSepelio)+')', dedVolTopadas.gastosSepelio)}
-    ${row('Donaciones (Art. 85 inc. c — tope '+params.gan_topePctDonaciones+'% gan. neta)', dedVolTopadas.donaciones)}
-    ${row('Servicio Doméstico (Ley 26.063 — tope MNI anual)', dedVolTopadas.servDomestico)}
-    ${row('Alquileres casa-habitación (Art. 85 inc. g — 40%, tope MNI)', dedVolTopadas.alquileres)}
-    ${row('Intereses Créditos Hipotecarios (Art. 85 inc. a — tope $'+fN(params.gan_topeIntHipotecarios||0)+')', dedVolTopadas.intHipotecarios)}
-    ${row('Educación / Herramientas cargas familia (Ley 27.743 — tope 40% MNI)', dedVolTopadas.educacion)}
-    ${row('Aportes Cap.Soc./Fondo Riesgo SGR (Ley 24.467)', dedVolTopadas.aportesSGR)}
-    ${row('TOTAL DEDUCCIONES VOLUNTARIAS', totalDedVol, true)}
-    ${row('TOTAL DEDUCCIONES GENERALES', totDedGen, true, '#f0f0f0')}
-
-    ${seccion('DEDUCCIONES PERSONALES (proporcional a '+mesesTranscurridos+'/12 meses)')}
-    ${row('Ganancia No Imponible (MNI)', mniProp)}
-    ${subsec(tieneSiradig
-      ? 'Cargas de familia (Art. 30 inc. b LIG) — desglosadas (origen: SIRADIG F.572)'
-      : 'Cargas de familia — sin SIRADIG importado, no se aplican (quedan en $0)')}
-    ${row('Cónyuge/Conviviente'+(tieneConyuge?' ✓':''), cargaConyuge)}
-    ${row('Hijos menores de 18 ('+nroHijos+')', cargaHijos)}
-    ${row('Hijos incapacitados ('+nroHijosInc+')', cargaHijosInc)}
-    ${row('Total Cargas de Familia', totalCargasFam, true)}
-    ${row('Deducción Especial', dedEspProp)}
-    ${row('Deducción Especial 2° párr. Art.30 (12va parte)', dedEsp2Prop)}
-    ${row('Deducción Específica (jubilados)', dedEspecProp)}
-    ${row('TOTAL DEDUCCIONES PERSONALES', totDedPers, true, '#f0f0f0')}
-
-    ${seccion('DETERMINACIÓN DEL IMPUESTO (Art. 94 LIG)')}
-    ${row('REMUNERACIÓN SUJETA A IMPUESTO (acumulada)', remSujeta, true)}
-    ${row('Alícuota marginal aplicable', alicuota, false)}
-    ${row('Tramo: hasta $'+(tramo?fN(tramo.hasta===Infinity?0:tramo.hasta):'—'), 0)}
-    ${row('IMPUESTO DETERMINADO ACUMULADO', impDetAcum, true)}
-    ${row('Impuesto retenido en períodos anteriores', acum.retenidoAcum)}
-    ${row((impMes>=0?'RETENCIÓN':'DEVOLUCIÓN')+' DEL PERÍODO (automático)', Math.abs(impMes), true, '#e8e8e8')}
-    ${row('Monto aplicado en el recibo'+(item.gananciasManual?' (HARDCODE manual)':''), impAplicado, item.gananciasManual)}
-    ${row('DIFERENCIA acumulada al cierre (debe ser 0)', diferencia, true, diferencia===0?'#e0f0e0':'#ffe0e0')}
-  </table>
-
-  <div style="margin-top:12px;padding:8px;background:#fffae0;border:1px solid #f0d070;font-size:7.5px;color:#553">
-    <b>NOTAS LEGALES — Impuesto a las Ganancias 4ª Categoría (Rel. Dependencia):</b><br>
-    • Marco normativo: Ley 20.628 (t.o. 2019 y mod.), Ley 27.743/2024 "Paquete Fiscal", RG ARCA 4003/17 (ex AFIP).<br>
-    • Liquidación acumulada desde enero del ejercicio fiscal (${acum.periodosAcumulados} períodos previos + mes actual).<br>
-    • Deducciones personales (Art. 30) prorrateadas a ${mesesTranscurridos}/12 meses según RG 4003 Anexo II.<br>
-    • Deducción Especial 2° párr. Art. 30: 1/12 de (MNI + Ded. Esp.) — corresponde al tratamiento del SAC.<br>
-    • Topes Art. 85 LIG aplicados automáticamente. Montos sujetos a actualización semestral por RIPTE.<br>
-    • Escala progresiva Art. 94 LIG — 9 tramos. Alícuota marginal aplicada: ${alicuota}%.<br>
-    • <b>Valores del período:</b> ${params._ganPeriodo||'—'} (vigencia ${params._ganVigencia||'—'}) — ${params._ganRG||''}.${params._ganFallback?' <span style="color:#c00"><b>⚠ No hay datos específicos para el período de la fecha de pago — se usó el más reciente disponible.</b></span>':''}${params._ganRequiereVerif?' <span style="color:#c00"><b>⚠ Valores estimativos — verificar contra RG oficial.</b></span>':''}<br>
-    • <b>Estado F.572 SIRADIG:</b> ${tieneSiradig
-      ? `<span style="color:#0a0">✓ importado el ${new Date(nov._importadoSiradig).toLocaleDateString('es-AR')}</span> — se aplican cargas de familia y deducciones voluntarias declaradas.`
-      : `<span style="color:#c00"><b>⚠ No importado</b></span> — solo se aplican Ganancia No Imponible y Deducción Especial. Cargas de familia y deducciones voluntarias quedan en $0 hasta que el empleado presente F.572.`}<br>
-    • Cargas de familia${tieneSiradig?'':' (s/SIRADIG, ignoradas)'}: ${tieneConyuge?'cónyuge ✓ ':''}${nroHijos?nroHijos+' hijo/s menor/es ':''}${nroHijosInc?nroHijosInc+' hijo/s incapacitado/s':''}${!tieneConyuge && !nroHijos && !nroHijosInc ? 'ninguna':''}.
+  <div style="margin-top:8px;font-size:7px;color:#444;line-height:1.5">
+    <div>(1) Liquidación acumulada Enero → ${meses[liq.mes-1]} ${liq.anio} (RG ARCA 4003/2017). Deducciones personales prorrateadas a ${mesesTranscurridos}/12.</div>
+    <div>(2) ${tieneSiradig
+      ? 'F.572 SIRADIG importado: se aplican cargas de familia y deducciones del Art. 85 declaradas.'
+      : 'Sin F.572 SIRADIG: solo se aplican Ganancia No Imponible y Deducción Especial; cargas de familia y deducciones voluntarias en $0.'}</div>
+    ${impPeriodo<0?'<div style="color:#057a3a"><b>El importe a retener de la liquidación es negativo: corresponde una DEVOLUCIÓN a favor del empleado.</b></div>':''}
   </div>
 
   </body></html>`;
