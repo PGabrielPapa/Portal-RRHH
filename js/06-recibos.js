@@ -955,35 +955,128 @@ async function deleteGanancia(key){
   });
 }
 
+// ── Empleado: importar el impuesto a las ganancias de su liquidación mensual ──
+// Recolecta, desde las liquidaciones de haberes ya confirmadas (no borrador), el
+// impuesto a las ganancias del empleado por período. item.ganancias trae el signo:
+// positivo = retención del mes; negativo = devolución/reintegro a favor.
+async function _gananciasDesdeLiquidaciones(leg){
+  let liqs = [];
+  try { liqs = (typeof getLiquidaciones === 'function') ? await getLiquidaciones() : []; }
+  catch(_){ liqs = []; }
+  const porPeriodo = {};   // periodo -> registro (gana la liquidación de mayor id)
+  (liqs || []).forEach(liq => {
+    if(!liq || !Array.isArray(liq.items)) return;
+    if(liq.estado === 'borrador') return;                          // solo confirmadas
+    if(liq.tipo === 'final' || liq.tipo === 'alimentos') return;   // detalle de haberes mensual
+    const it = liq.items.find(x => x.leg === leg);
+    if(!it) return;
+    const periodo = liq.periodo || (liq.anio && liq.mes ? `${liq.anio}-${String(liq.mes).padStart(2,'0')}` : null);
+    if(!periodo) return;
+    const reg = {
+      periodo,
+      anio: liq.anio || +String(periodo).slice(0,4),
+      mes:  liq.mes  || +String(periodo).slice(5,7),
+      impuesto: $m(it.ganancias),               // con signo
+      tipo: liq.tipo, estado: liq.estado, liqId: liq.id
+    };
+    const prev = porPeriodo[periodo];
+    if(!prev || ($m(reg.liqId) >= $m(prev.liqId))) porPeriodo[periodo] = reg;
+  });
+  return Object.values(porPeriodo).sort((a,b)=> b.periodo.localeCompare(a.periodo));
+}
+
 // ── Empleado: ver sus ganancias ──
 async function renderGanancias(){
   if(!currentUser) return;
   const leg = currentUser.emp.leg;
-  const [todos, readLog] = await Promise.all([getGanancias(), getReadLog()]);
   const div = document.getElementById('list-ganancias');
   if(!div) return;
+  const [todos, readLog, detalle] = await Promise.all([
+    getGanancias(), getReadLog(), _gananciasDesdeLiquidaciones(leg)
+  ]);
+
+  // 1) Tabla del impuesto importada de la liquidación mensual (año fiscal más reciente)
+  let tablaHTML = '';
+  if(detalle.length){
+    const anioActual = Math.max(...detalle.map(d=>d.anio));
+    const delAnio = detalle.filter(d=>d.anio===anioActual);
+    const totalAnio = delAnio.reduce((s,d)=>s + d.impuesto, 0);
+    let acum = 0;
+    const filas = [...delAnio].sort((a,b)=>a.periodo.localeCompare(b.periodo))
+      .map(d=>{ acum = Math.round((acum + d.impuesto)*100)/100; return { ...d, acum }; })
+      .sort((a,b)=>b.periodo.localeCompare(a.periodo));
+    tablaHTML = `
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div class="card-title" style="margin:0">Impuesto a las Ganancias ${anioActual}</div>
+            <div style="font-size:11px;color:var(--t3)">Importado de tu liquidación de haberes mensual</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Retenido en el año</div>
+            <div style="font-size:18px;font-weight:700;color:${totalAnio>0?'var(--red)':'var(--green)'}">${fmtPesos(Math.abs(totalAnio))}${totalAnio<0?' a favor':''}</div>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead><tr style="border-bottom:1px solid var(--border);color:var(--t3);text-align:left">
+              <th style="padding:8px 6px;font-weight:600">Período</th>
+              <th style="padding:8px 6px;font-weight:600;text-align:right">Impuesto del mes</th>
+              <th style="padding:8px 6px;font-weight:600;text-align:right">Acumulado</th>
+              <th style="padding:8px 6px;font-weight:600;text-align:center">Planilla</th>
+            </tr></thead>
+            <tbody>
+              ${filas.map(d=>{
+                const dev = d.impuesto < -0.005;
+                const sinRet = Math.abs(d.impuesto) < 0.005;
+                const tienePDF = !!todos[`${leg}_${d.periodo}`];
+                const montoCol = sinRet ? 'var(--t3)' : (dev ? 'var(--green)' : 'var(--t1)');
+                const montoTxt = sinRet ? '—' : (dev ? '+ '+fmtPesos(Math.abs(d.impuesto))+' (devol.)' : fmtPesos(d.impuesto));
+                return `<tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:8px 6px">${periodoLabel(d.periodo)||d.periodo}</td>
+                  <td style="padding:8px 6px;text-align:right;color:${montoCol};font-weight:600">${montoTxt}</td>
+                  <td style="padding:8px 6px;text-align:right;color:var(--t2)">${fmtPesos(Math.abs(d.acum))}${d.acum<-0.005?' a favor':''}</td>
+                  <td style="padding:8px 6px;text-align:center">${tienePDF?`<button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="verGanancia('${leg}_${d.periodo}')">Ver</button>`:'<span style="color:var(--t3);font-size:11px">—</span>'}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size:10.5px;color:var(--t3);margin-top:8px;line-height:1.5">
+          El impuesto del mes es la retención de Impuesto a las Ganancias (4ta categoría) calculada en tu recibo. Un valor en verde indica una devolución a tu favor.
+        </div>
+      </div>`;
+  }
+
+  // 2) Planillas PDF publicadas por RR.HH. (si las hubiera)
   const propios = Object.entries(todos)
     .filter(([k]) => k.startsWith(leg+'_'))
     .sort((a,b) => b[0].localeCompare(a[0]));
-  if(!propios.length){
+  const leidos = new Set(readLog.filter(r=>r.leg===leg && r.tipo==='ganancia').map(r=>r.periodo));
+  let pdfHTML = '';
+  if(propios.length){
+    pdfHTML = `<div style="font-size:12px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin:4px 2px 10px">Planillas publicadas</div>` +
+      `<div class="card" style="padding:0;overflow:hidden">` +
+      propios.map(([key,rec])=>{
+        const leidoFlag = leidos.has(rec.periodo);
+        return `<div class="rec-row">
+          <div style="font-size:22px;margin-right:4px">🧾</div>
+          <div style="flex:1">
+            <div class="rec-periodo">Período: ${periodoLabel(rec.periodo)||rec.periodo}</div>
+            <div class="rec-meta">${rec.nom} · ${rec.emp} · Cargado: ${rec.uploadedAt}</div>
+          </div>
+          <span class="${leidoFlag?'rec-badge-leido':'rec-badge-nuevo'}">${leidoFlag?'✓ Leído':'● Nuevo'}</span>
+          <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;margin-left:8px" onclick="verGanancia('${key}')">Ver</button>
+          <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="downloadGanancia('${key}')">↓ Descargar</button>
+        </div>`;
+      }).join('') + `</div>`;
+  }
+
+  if(!tablaHTML && !pdfHTML){
     div.innerHTML='<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">No tenés cálculos de ganancias disponibles aún</div></div>';
     return;
   }
-  const leidos = new Set(readLog.filter(r=>r.leg===leg && r.tipo==='ganancia').map(r=>r.periodo));
-  div.innerHTML = `<div class="card" style="padding:0;overflow:hidden">` +
-    propios.map(([key,rec])=>{
-      const leidoFlag = leidos.has(rec.periodo);
-      return `<div class="rec-row">
-        <div style="font-size:22px;margin-right:4px">🧾</div>
-        <div style="flex:1">
-          <div class="rec-periodo">Período: ${periodoLabel(rec.periodo)||rec.periodo}</div>
-          <div class="rec-meta">${rec.nom} · ${rec.emp} · Cargado: ${rec.uploadedAt}</div>
-        </div>
-        <span class="${leidoFlag?'rec-badge-leido':'rec-badge-nuevo'}">${leidoFlag?'✓ Leído':'● Nuevo'}</span>
-        <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;margin-left:8px" onclick="verGanancia('${key}')">Ver</button>
-        <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="downloadGanancia('${key}')">↓ Descargar</button>
-      </div>`;
-    }).join('') + `</div>`;
+  div.innerHTML = tablaHTML + pdfHTML;
 }
 
 async function verGanancia(key){
