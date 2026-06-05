@@ -1,7 +1,7 @@
 # Portal RR.HH. — Grupo LEITEN · Estado del proyecto (handoff)
 
 > Documento de contexto para retomar el proyecto en **Claude Cowork** o **Claude Code**.
-> Última actualización del estado: junio 2026. Versión de caché vigente: **`?v=20260603i`**.
+> Última actualización del estado: junio 2026. Versión de caché vigente: **`?v=20260605a`**.
 
 ---
 
@@ -72,10 +72,10 @@ entradas ya cacheadas: por eso **hay que subir la versión en CADA cambio de ass
 
 ```bash
 # Subir la versión (ejemplo: de 'i' a 'j') y luego desplegar
-sed -i 's/?v=20260603i/?v=20260603j/g' index.html
+sed -i 's/?v=20260605a/?v=20260603j/g' index.html
 ```
 
-- Versión vigente: **`?v=20260603i`**.
+- Versión vigente: **`?v=20260605a`**.
 - Los `data/*.js` **no** se versionan (solo `js/` y `css`).
 
 ---

@@ -515,7 +515,7 @@ function navRRHH(sub){
   });
   if(!sub) return;
   if(sub==='solicitudes'){ renderRRHH(); renderPendientesGerentes(); }
-  if(sub==='recibos'){ renderReadLog(); }
+  if(sub==='recibos'){ renderReadLog(); if(typeof repRecReset==='function') repRecReset(); }
   if(sub==='contraseñas'){ renderPwdTable(); renderSolicitudesBlanqueo(); }
   if(sub==='delegacion'){ renderDelegacionSub(); }
   if(sub==='licencias'){ renderLicenciasAdmin(); rrhhLicTab('comp'); }
