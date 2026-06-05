@@ -27,3 +27,6 @@ tmp/
 # Backups locales
 *.bak
 *.backup
+
+# Reportes locales con datos sensibles (no publicar)
+reportes/
