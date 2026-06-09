@@ -1,7 +1,7 @@
 # Portal RR.HH. — Grupo LEITEN · Estado del proyecto (handoff)
 
 > Documento de contexto para retomar el proyecto en **Claude Cowork** o **Claude Code**.
-> Última actualización del estado: junio 2026. Versión de caché vigente: **`?v=20260605a`**.
+> Última actualización del estado: junio 2026 (sesión Cowork del 09/06). Versión de caché vigente: **`?v=20260609g`**.
 
 ---
 
@@ -72,10 +72,10 @@ entradas ya cacheadas: por eso **hay que subir la versión en CADA cambio de ass
 
 ```bash
 # Subir la versión (ejemplo: de 'i' a 'j') y luego desplegar
-sed -i 's/?v=20260605a/?v=20260603j/g' index.html
+sed -i 's/?v=20260609g/?v=20260610a/g' index.html
 ```
 
-- Versión vigente: **`?v=20260605a`**.
+- Versión vigente: **`?v=20260609g`**.
 - Los `data/*.js` **no** se versionan (solo `js/` y `css`).
 
 ---
@@ -97,6 +97,36 @@ sed -i 's/?v=20260605a/?v=20260603j/g' index.html
 ## 5. Trabajo reciente (lo último que hicimos)
 
 En orden cronológico (commits más recientes arriba):
+
+### Sesión 09/06/2026 (Cowork) — auditoría, pendientes, import y refactor de identidad
+
+0. **Identidad empresa+legajo (refactor, enfoque migración-free)** (`d51425e`,
+   `03d3258`) — **PROBLEMA RESUELTO:** el legajo NO es único global, puede
+   repetirse entre empresas; antes el sistema asumía legajo único y la
+   importación de altas de otras empresas con legajos ya usados se rechazaba.
+   **Solución:** ver §9 (modelo de identidad). Los empleados del seed quedan
+   intactos (legajo "pelado"); solo las **altas** usan el uid compuesto
+   `slug(empresa)-legajo`. Helpers en `js/20`: `empSlug`, `makeUid`, `asUid`,
+   `empByUid`, `legD`. **Sin migración de datos** (los recibos/domicilios
+   existentes siguen keyed por su legajo original).
+1. **Importación de Excel de altas (ABM) — reparada** (`169b2b8`) — la rama
+   `.xlsx` de `importarAltasMasivas` (`js/20`) era un stub que no parseaba nada.
+   Ahora parsea con SheetJS (ya cargado inline), deriva el DNI del CUIL si falta
+   la columna, deduplica por **empresa+legajo**, y nunca falla en silencio
+   (try/catch + `reader.onerror`). Botón **"📋 Plantilla altas"**
+   (`descargarPlantillaAltas`) con los encabezados exactos. Mensajes de
+   resultado siempre explícitos (éxito / motivo del problema).
+2. **Tope de retención 35% Ganancias (RG 4003/17)** (`3698c8c`) — implementado:
+   la retención mensual se limita al 35% del neto (`params.gan_topeRetencionPct`,
+   default 35) y el excedente se difiere (se traslada solo vía acumulados). El
+   F.1357 muestra el remanente en "SALDO A PAGAR". **Validar con un caso real.**
+3. **SCVO parametrizable** (`3698c8c`) — `params.scvoPercapita` (cargo patronal
+   fijo per cápita, Dto. 1567/74). Default 0; **falta cargar el valor vigente**
+   en Parámetros para que impacte.
+4. **Refactor seguro** (`3698c8c`) — `parseInt(x)` → `parseInt(x, 10)` en 56
+   sitios. Sin cambios de lógica.
+5. **Auditoría completa** — sin bugs críticos (0 errores de sintaxis, ESLint
+   limpio, sandbox sin errores de carga, sin secretos commiteados).
 
 1. **F.1357 no se visualizaba** (`d975bc2`) — el visor del empleado abría con
    `window.open('','_blank')+document.write`, bloqueado en el iframe de la app.
@@ -138,13 +168,17 @@ RR.HH.) — script en `/home/claude/manual/manual.js` (fuera del repo).
 
 ## 7. Pendientes / próximos pasos
 
-- **SCVO (Seguro Colectivo de Vida Obligatorio, Dto. 1567/74):** hoy figura en $0
-  porque no está parametrizado. Falta cargar el valor per cápita del empleador.
+- **SCVO (Dto. 1567/74):** ✅ ya parametrizado (`params.scvoPercapita`). Pendiente
+  operativo: **cargar el valor per cápita vigente** en Parámetros (default 0).
 - **Asignaciones Familiares:** van incluidas dentro de "Seguridad Social" del
   empleador (no como línea separada). Evaluar si se requiere desglose propio.
-- **Tope de retención del 35% (RG 4003/17):** no implementado. Hoy el F.1357
-  muestra "Saldo a Pagar = 0" porque se retiene el importe completo. Pendiente:
-  limitar la retención mensual al 35% del neto y exponer el remanente como saldo.
+- **Tope de retención del 35% (RG 4003/17):** ✅ implementado
+  (`params.gan_topeRetencionPct`, default 35). El F.1357 expone el remanente en
+  "SALDO A PAGAR". Pendiente: **validar contra una liquidación real**.
+- **Pulido visual del legajo:** el barrido con `legD()` cubrió las pantallas
+  principales; si una pantalla puntual muestra el uid con prefijo
+  (`SINISSA-000074`) para un empleado nuevo repetido, envolver esa visualización
+  con `legD(...)`.
 - **Manual de usuario:** se puede ampliar con capturas de pantalla y glosario.
 
 ### Otros proyectos relacionados (estado de repos por confirmar)
@@ -166,3 +200,43 @@ RR.HH.) — script en `/home/claude/manual/manual.js` (fuera del repo).
    para retomar sin re-explicar todo.
 4. Recordá: subir `?v=` en cada cambio de asset y verificar con `node --check`
    antes de desplegar.
+
+---
+
+## 9. Modelo de identidad de empleados (empresa + legajo)
+
+> Importante para no romper recibos/datos al tocar `js/20-rrhh-abm.js`.
+
+El **legajo no es único global**: puede repetirse entre las empresas. La
+identidad interna de cada empleado es el **uid** = `slug(empresa)-legajo`
+(p. ej. `SINISSA-000074`). Helpers en `js/20`:
+
+- `empSlug(emp)` → slug estable de la empresa (mayúsculas, sin símbolos).
+- `makeUid(emp, legNum)` → uid compuesto.
+- `asUid(valor, emp)` → normaliza (si ya es uid lo deja).
+- `empByUid(uid)` / `empByLeg(leg)` → resolución de empleado.
+- `legD(valor)` → número de legajo **a mostrar** (quita el prefijo del uid;
+  no-op para legajos pelados). **Usar en toda visualización del legajo.**
+
+### Regla clave (enfoque migración-free)
+
+`getNomina()` arma la nómina así:
+
+- **Empleados del seed (`DB` en `data/empleados.js`):** conservan su legajo
+  "pelado" en `e.leg` (sus legajos del seed son únicos). **No se migran**:
+  recibos (`${leg}_${periodo}`), `DOMICILIOS[leg]`, `CUMPLE_DATA`, overrides y
+  bajas siguen keyed por el legajo original. `e.legNum === e.leg`.
+- **Altas (importadas / manuales):** `e.leg` = uid compuesto; `e.legNum` = número
+  visible. Esto permite legajos repetidos entre empresas sin colisión de claves.
+
+La **deduplicación e identidad se computan por uid** (`makeUid(e.emp, e.legNum)`)
+para todos: un duplicado real (misma empresa + mismo legajo) se rechaza, y un
+legajo repetido en **otra** empresa se acepta.
+
+### Al editar código
+
+- **Claves de storage e identidad** (recibos, ganancias, evaluaciones, IDs de
+  elementos DOM, identidad pasada a handlers `onclick`): usar **`e.leg`** (el uid).
+- **Visualización del número de legajo**: usar **`legD(e.leg)`** o **`e.legNum`**.
+- Las altas se guardan en `lsg_abm_altas` con el legajo pelado; `getNomina()`
+  les calcula el uid en runtime.
