@@ -1573,7 +1573,7 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
   const totalContrib=jubPatronal+osPatronal+pamiPatronal+desempleo+art+sindPatronal+scvo+totalContribUOCRA+_ccTotalContribPat;
 
   return {
-    leg:emp.leg, nom:emp.nom, empresa:emp.emp, lugar:emp.lugar||'', cuil:emp.cuil||'',
+    leg:emp.leg, legNum:emp.legNum||emp.leg, nom:emp.nom, empresa:emp.emp, lugar:emp.lugar||'', cuil:emp.cuil||'',
     diasMes, habiles, diasTrab, ausentismo, anios,
     diasBase, diasBaseDescripcion,
     bruto, sueldoBasico, valHora, valorDia155, valorDiaComun,

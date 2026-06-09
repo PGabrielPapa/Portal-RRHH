@@ -7,11 +7,32 @@ function saveAbmBajas(b){ localStorage.setItem('lsg_abm_bajas',JSON.stringify(b)
 function getAbmAltas(){ try{return JSON.parse(localStorage.getItem('lsg_abm_altas')||'[]');}catch{return[];} }
 function saveAbmAltas(a){ localStorage.setItem('lsg_abm_altas',JSON.stringify(a)); }
 
+// ─── IDENTIDAD EMPRESA+LEGAJO ───────────────────────────────────────────
+// El legajo NO es único global: puede repetirse entre empresas. La identidad
+// interna del empleado es el "uid" compuesto = slug(empresa)-legajo. Se guarda
+// en e.leg (para que todas las búsquedas y claves de storage que ya usan .leg
+// queden únicas), y el número de legajo "a mostrar" queda en e.legNum.
+function empSlug(emp){ return String(emp||'').toUpperCase().replace(/[^A-Z0-9]/g,'') || 'SINEMP'; }
+function makeUid(emp, legNum){ return empSlug(emp) + '-' + String(legNum==null?'':legNum).trim(); }
+// Compatibilidad: si un valor ya viene compuesto (tiene guion y prefijo de
+// slug) se devuelve igual; si es un legajo "pelado" se intenta resolver con la
+// empresa provista.
+function asUid(value, emp){
+  const v = String(value==null?'':value).trim();
+  if(v.includes('-') && /^[A-Z0-9]+-/.test(v)) return v;   // ya es uid
+  return emp!=null ? makeUid(emp, v) : v;
+}
+
 function getNomina(){
   const ov=getAbmOverrides(), bj=getAbmBajas(), al=getAbmAltas();
-  const base = DB.map(e=>({ ...e, ...(ov[e.leg]||{}), egreso:bj[e.leg]?.fecha||null, _deBaja:!!bj[e.leg] }));
-  const altas = al.map(e=>({ ...e, _esAlta:true, _deBaja:!!bj[e.leg], egreso:bj[e.leg]?.fecha||null }));
+  const base = DB.map(e=>{ const uid=makeUid(e.emp, e.leg); return { ...e, ...(ov[uid]||ov[e.leg]||{}), egreso:(bj[uid]||bj[e.leg])?.fecha||null, _deBaja:!!(bj[uid]||bj[e.leg]) }; });
+  const altas = al.map(e=>{ const uid=makeUid(e.emp, e.legNum!=null?e.legNum:e.leg); return { ...e, _esAlta:true, _deBaja:!!(bj[uid]||bj[e.leg]), egreso:(bj[uid]||bj[e.leg])?.fecha||null }; });
   const todos = [...base, ...altas];
+  // Asignar identidad compuesta: legNum = número visible, leg = uid único.
+  for(const e of todos){
+    if(e.legNum == null) e.legNum = e.leg;          // número de legajo "lindo"
+    e.leg = makeUid(e.emp, e.legNum);               // identidad única interna
+  }
   // Default: empleados sin código de sindicato cargado → "FC" (Fuera de Convenio)
   // FC NO calcula presentismo ni antigüedad en la liquidación.
   for(const e of todos){
@@ -25,7 +46,11 @@ function getNomina(){
 
 // ── Helpers canónicos: siempre devuelven la versión ACTUAL del empleado
 // (con los cambios del ABM aplicados). Usar estos en vez de DB.find/filter.
-function empByLeg(leg){  return getNomina().find(e => e.leg === leg) || null; }
+function empByUid(uid){  return getNomina().find(e => e.leg === uid) || null; }
+// empByLeg: acepta uid compuesto o, por compatibilidad, número de legajo pelado
+// (en cuyo caso devuelve la PRIMera coincidencia — ambiguo si se repite entre
+// empresas; preferir empByUid cuando se conoce la empresa).
+function empByLeg(leg){  const n=getNomina(); return n.find(e => e.leg === leg) || n.find(e => e.legNum === leg) || null; }
 function empByCuil(cuil){ return getNomina().find(e => e.cuil === cuil) || null; }
 function empByDni(dni){  return getNomina().find(e => e.dni === dni) || null; }
 
@@ -1142,7 +1167,7 @@ function renderAbmLista(){
   if(estado==='activos') lista=lista.filter(e=>!e._deBaja&&!e.egreso);
   if(estado==='bajas')   lista=lista.filter(e=>e._deBaja||e.egreso);
   if(empresa) lista=lista.filter(e=>e.emp===empresa);
-  if(q) lista=lista.filter(e=>e.nom.toLowerCase().includes(q)||e.leg.includes(q)||(e.dni||'').includes(q)||(e.emp||'').toLowerCase().includes(q));
+  if(q) lista=lista.filter(e=>e.nom.toLowerCase().includes(q)||(e.legNum||e.leg||'').includes(q)||e.leg.includes(q)||(e.dni||'').includes(q)||(e.emp||'').toLowerCase().includes(q));
   lista.sort((a,b)=>a.nom.localeCompare(b.nom));
   if(!lista.length){
     wrap.innerHTML='<div style="padding:16px 18px;color:var(--t3);font-size:13px">Sin resultados</div>';
@@ -1176,7 +1201,7 @@ function renderAbmLista(){
       }
     }
     return`<div style="display:grid;grid-template-columns:80px 1fr 120px 120px 70px 100px 80px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);gap:6px;${baja?'opacity:.55':''}">
-      <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3)">${e.leg}</div>
+      <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3)">${e.legNum||e.leg}</div>
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;overflow:hidden;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
           ${e.foto
@@ -2043,8 +2068,11 @@ function importarAltasMasivas(input){
         errores.push(`Legajo ${leg||'?'}: faltan campos obligatorios`);
         err++; continue;
       }
-      if(legSet.has(leg)){
-        errores.push(`Legajo ${leg}: ya existe (ignorado)`);
+      // Identidad única = empresa + legajo (el legajo puede repetirse entre
+      // empresas; lo que NO puede repetirse es el par empresa+legajo).
+      const uid = makeUid(emp, leg);
+      if(legSet.has(uid)){
+        errores.push(`Legajo ${leg} en ${emp}: ya existe (ignorado)`);
         dup++; continue;
       }
       if(dniSet.has(dni)){
@@ -2081,7 +2109,7 @@ function importarAltasMasivas(input){
         const partes = [calle, nro].filter(Boolean);
         if(piso)  partes.push(`Piso ${piso}`);
         if(depto) partes.push(`Dto ${depto}`);
-        DOMICILIOS[leg] = {
+        DOMICILIOS[uid] = {
           dom:    partes.join(' ').trim(),
           ciudad: `${loc}${prov?', '+prov:''}${cp?' ('+cp+')':''}`,
           mail:   r['E-mail']||''
@@ -2091,12 +2119,12 @@ function importarAltasMasivas(input){
       // Cumpleaños
       if(nac && /^\d{2}\/\d{2}(\/\d{4})?$/.test(nac)){
         const fechaCumple = nac.substring(0,5); // DD/MM
-        const existing = CUMPLE_DATA.findIndex(c=>c.leg===leg);
+        const existing = CUMPLE_DATA.findIndex(c=>c.leg===uid);
         if(existing>=0) CUMPLE_DATA[existing].fecha = nac;
-        else CUMPLE_DATA.push({leg, fecha: nac});
+        else CUMPLE_DATA.push({leg: uid, fecha: nac});
       }
 
-      legSet.add(leg);
+      legSet.add(uid);
       dniSet.add(dni);
       ok++;
     }
