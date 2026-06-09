@@ -1935,6 +1935,35 @@ function exportarNominaExcel(){
   toast(`✓ Nómina exportada — ${rows.length} empleados activos`, 'var(--green)');
 }
 
+// Descarga una plantilla .xlsx con los ENCABEZADOS EXACTOS que espera
+// importarAltasMasivas() + una fila de ejemplo. Evita el desajuste de columnas
+// con el export de nómina (que usa otros nombres y no incluye DNI).
+function descargarPlantillaAltas(){
+  const headers = [
+    'Legajo*','DNI*','CUIL*','Apellido y Nombre*','Empresa*','Fecha Ingreso*',
+    'Fecha Nacimiento','Ubicación','Categoría','Tramo','Sueldo Bruto','Sueldo Neto','E-mail',
+    'Domicilio Calle','Número','Piso','Departamento','Localidad','Provincia','Código Postal'
+  ];
+  const ejemplo = [
+    '001234','30111222','20-30111222-3','PEREZ, JUAN','LEITEN S.A.','01/06/2026',
+    '15/03/1990','Planta Central','OPERARIO','A','1500000','1200000','juan.perez@leiten.com.ar',
+    'Av. Siempreviva','742','','','Salta','Salta','4400'
+  ];
+  if(typeof XLSX === 'undefined'){
+    // Fallback CSV (separado por ;)
+    const csv = headers.join(';') + '\n' + ejemplo.join(';');
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'plantilla_altas.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    return;
+  }
+  const ws = XLSX.utils.aoa_to_sheet([headers, ejemplo]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Altas');
+  XLSX.writeFile(wb, 'plantilla_altas.xlsx');
+}
+
 function importarAltasMasivas(input){
   const file = input.files[0];
   if(!file){ return; }
@@ -1958,14 +1987,31 @@ function importarAltasMasivas(input){
         rows.push(obj);
       }
     } else {
-      // XLSX: leer con FileReader como binario, parsear manualmente usando columnas fijas
-      // Columnas fijas de la plantilla (A=0 … T=19)
-      const ab = e.target.result;
-      // Usar SheetJS si está disponible (cargado inline), si no, parsear como zip
-      // Fallback: leer como CSV luego de conversión básica
-      // Para simplicidad en este portal standalone, pedimos CSV o delegamos al usuario
-      toast('⚠ Para importar, descargá la plantilla, completala y guardala como CSV (separado por ;)', 'var(--yellow)');
-      return;
+      // XLSX vía SheetJS (cargado inline en index.html: xlsx.full.min.js).
+      // Se construyen las MISMAS filas (objetos keyed por encabezado) que el
+      // path CSV, para que la validación y el alta de abajo funcionen igual.
+      if(typeof XLSX === 'undefined'){
+        toast('⚠ Lector de Excel no disponible. Guardá la plantilla como CSV (separado por ;) e importá ese archivo.', 'var(--yellow)');
+        return;
+      }
+      try{
+        const wb  = XLSX.read(e.target.result, { type:'array' });
+        const ws  = wb.Sheets[wb.SheetNames[0]];
+        const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false, blankrows:false });
+        if(!aoa.length){ toast('⚠ El archivo no contiene datos', 'var(--yellow)'); return; }
+        const header = (aoa[0]||[]).map(h=>String(h).trim().replace(/[*]/g,'').trim());
+        for(let i=1; i<aoa.length; i++){
+          const vals = aoa[i] || [];
+          if(!String(vals[0]??'').trim()) continue;
+          const obj = {};
+          header.forEach((h,j)=>{ obj[h] = String(vals[j]??'').trim(); });
+          rows.push(obj);
+        }
+      }catch(errXlsx){
+        console.error('Error al leer XLSX:', errXlsx);
+        toast('⚠ No se pudo leer el Excel. Verificá que sea un .xlsx válido o usá CSV (separado por ;).', 'var(--red)');
+        return;
+      }
     }
 
     if(!rows.length){ toast('⚠ El archivo no contiene datos', 'var(--yellow)'); return; }
@@ -1980,8 +2026,14 @@ function importarAltasMasivas(input){
 
     for(const r of rows){
       const leg  = (r['Legajo']||'').padStart(6,'0');
-      const dni  = (r['DNI']||'').trim();
       const cuil = (r['CUIL']||'').trim();
+      let   dni  = (r['DNI']||'').trim();
+      // El DNI viene embebido en el CUIL (XX-DNI-D). Si la planilla no trae
+      // columna DNI (p. ej. el export de nómina no la incluye), lo derivamos.
+      if(!dni && cuil){
+        const _d = cuil.replace(/\D/g,'');
+        if(_d.length >= 11) dni = String(parseInt(_d.slice(2,10),10) || '').trim();
+      }
       const nom  = (r['Apellido y Nombre']||'').trim().toUpperCase();
       const emp  = (r['Empresa']||'').trim();
       const ing  = (r['Fecha Ingreso']||'').trim();
