@@ -1996,6 +1996,7 @@ function importarAltasMasivas(input){
 
   const reader = new FileReader();
   reader.onload = function(e){
+   try{
     let rows = [];
 
     // Leer CSV o XLSX
@@ -2147,6 +2148,14 @@ function importarAltasMasivas(input){
         setTimeout(()=>d.remove(), 8000);
       }, 500);
     }
+   }catch(_impErr){
+     console.error('Importación de altas: error inesperado', _impErr);
+     toast('⚠ Error al procesar el archivo: ' + (_impErr && _impErr.message ? _impErr.message : _impErr), 'var(--red)');
+   }
+  };
+  reader.onerror = function(){
+    console.error('Importación de altas: FileReader falló', reader.error);
+    toast('⚠ No se pudo leer el archivo seleccionado.', 'var(--red)');
   };
 
   if(file.name.endsWith('.csv')){
