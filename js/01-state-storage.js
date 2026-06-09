@@ -104,3 +104,13 @@ function savePassword(dni, pwd){ const p=getPasswords(); p[dni]=pwd; localStorag
 
 let loginEmp = null; // employee found in step 1
 
+// ── Handler global: captura cualquier promesa rechazada sin catch ──────────
+// Evita que errores async silenciosos congelen la UI sin feedback al usuario.
+window.addEventListener('unhandledrejection', event => {
+  console.error('[Portal RR.HH.] Promesa no manejada:', event.reason);
+  if(typeof toast === 'function'){
+    toast('⚠ Ocurrió un error inesperado. Si la pantalla no responde, recargá con Ctrl+Shift+R.', 'var(--red)');
+  }
+  event.preventDefault();
+});
+

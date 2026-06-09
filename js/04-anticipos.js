@@ -927,6 +927,7 @@ function renderDelList(){
 }
 
 async function confirmarDelegacion(e){
+  if(!currentUser?.emp?.dni) return;
   const inicio = document.getElementById('del-inicio').value;
   const fin    = document.getElementById('del-fin').value;
   if(!inicio || !fin){
@@ -938,32 +939,36 @@ async function confirmarDelegacion(e){
   const fmtDisplay = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; };
   const nombre = e.nom.split(',')[0].trim();
   const _cfm = await showConfirm({titulo:'Confirmar acción', mensaje:`¿Delegar tus autorizaciones a ${e.nom}?<br><br>Período: ${fmtDisplay(inicio)} al ${fmtDisplay(fin)}<br><br>${nombre} podrá aprobar en tu lugar durante ese período.`, labelOk:'Confirmar', peligroso:true});
-    if(!_cfm) return;
-  saveDelegacion({
-    deleganteDni: currentUser.emp.dni,
-    deleganteNom: currentUser.emp.nom,
-    deleganteLeg: currentUser.emp.leg,
-    delegadoDni: e.dni,
-    delegadoNom: e.nom,
-    delegadoLeg: e.leg,
-    delegadoEmp: e.emp,
-    delegadoPor: currentUser.emp.nom,
-    inicio,
-    fin,
-    fecha: new Date().toLocaleDateString('es-AR')
-  });
-  if(typeof logAuditX === 'function'){
-    logAuditX('delegacion', 'crear', {
-      delegante: currentUser.emp.nom,
-      delegado: e.nom,
+  if(!_cfm) return;
+  try{
+    saveDelegacion({
+      deleganteDni: currentUser.emp.dni,
+      deleganteNom: currentUser.emp.nom,
+      deleganteLeg: currentUser.emp.leg,
+      delegadoDni: e.dni,
+      delegadoNom: e.nom,
+      delegadoLeg: e.leg,
+      delegadoEmp: e.emp,
+      delegadoPor: currentUser.emp.nom,
+      inicio,
+      fin,
+      fecha: new Date().toLocaleDateString('es-AR')
+    });
+    if(typeof logAuditX === 'function'){
+      logAuditX('delegacion', 'crear', {
+        delegante: currentUser.emp.nom,
+        delegado: e.nom,
       inicio, fin
     });
   }
   cerrarDelegacion();
   actualizarBannerDelegacion();
-  // Refrescar el panel para mostrar la nueva delegación
   if(typeof renderDelegacionSub === 'function') renderDelegacionSub();
   toast(`✓ Autorización delegada a ${nombre} hasta el ${fmtDisplay(fin)}`, 'var(--green)');
+  }catch(err){
+    console.error('confirmarDelegacion:', err);
+    toast('⚠ No se pudo guardar la delegación. Intentá de nuevo.', 'var(--red)');
+  }
 }
 
 async function revocarDelegacion(){
@@ -974,17 +979,22 @@ async function revocarDelegacion(){
   }
   const nombre = (d.delegadoNom || '').split(',')[0].trim() || 'la persona delegada';
   const _cfm = await showConfirm({titulo:'Confirmar acción', mensaje:`¿Revocar tu delegación a ${d.delegadoNom || 'la persona delegada'}?`, labelOk:'Confirmar', peligroso:true});
-    if(!_cfm) return;
-  clearDelegacion();
-  if(typeof logAuditX === 'function'){
-    logAuditX('delegacion', 'revocar', {
-      delegante: currentUser?.emp?.nom,
-      delegado: d.delegadoNom
-    });
+  if(!_cfm) return;
+  try{
+    clearDelegacion();
+    if(typeof logAuditX === 'function'){
+      logAuditX('delegacion', 'revocar', {
+        delegante: currentUser?.emp?.nom,
+        delegado: d.delegadoNom
+      });
+    }
+    actualizarBannerDelegacion();
+    if(typeof renderDelegacionSub === 'function') renderDelegacionSub();
+    toast(`✓ Delegación a ${nombre} revocada`, 'var(--yellow)');
+  }catch(err){
+    console.error('revocarDelegacion:', err);
+    toast('⚠ No se pudo revocar la delegación. Intentá de nuevo.', 'var(--red)');
   }
-  actualizarBannerDelegacion();
-  if(typeof renderDelegacionSub === 'function') renderDelegacionSub();
-  toast(`✓ Delegación a ${nombre} revocada`, 'var(--yellow)');
 }
 
 function actualizarBannerDelegacion(){

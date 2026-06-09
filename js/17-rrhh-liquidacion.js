@@ -4466,7 +4466,7 @@ async function abrirHistorialReaperturas(){
 }
 
 async function _limpiarHistorialReaperturas(){
-  const _cfm = await showConfirm({titulo:'Confirmar acción', mensaje:`'¿Limpiar TODO el historial de reaperturas?<br><br>Esta acción es irreversible y debería usarse solo para mantenimiento.'`, labelOk:'Confirmar', peligroso:true});
+  const _cfm = await showConfirm({titulo:'Confirmar acción', mensaje:`¿Limpiar TODO el historial de reaperturas?<br><br>Esta acción es irreversible y debería usarse solo para mantenimiento.`, labelOk:'Confirmar', peligroso:true});
     if(!_cfm) return;
   localStorage.removeItem('lsg_liq_reaperturas');
   if(typeof logAuditX === 'function') logAuditX('admin', 'limpiar_log_reaperturas', { por: currentUser?.emp?.nom });

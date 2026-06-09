@@ -3,6 +3,9 @@
 // ═══   Módulo 02 — carga después de 01-state-storage                  ═══
 // ═══════════════════════════════════════════════════════════════════════
 
+// Escapa caracteres HTML para evitar inyección en innerHTML (XSS).
+const _escAuth = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
 function loginStep1(){
   const dni = document.getElementById('ls-dni').value.trim();
   const errEl = document.getElementById('ls-err-1');
@@ -30,7 +33,7 @@ function loginStep1(){
   const pwds = getPasswords();
   if(pwds[dni]){
     // Returning user
-    document.getElementById('ls-empname').innerHTML = `<strong>${found.nom}</strong><br><span style="font-size:11px;color:var(--t3)">${found.leg} · ${found.emp}</span>`;
+    document.getElementById('ls-empname').innerHTML = `<strong>${_escAuth(found.nom)}</strong><br><span style="font-size:11px;color:var(--t3)">${_escAuth(found.leg)} · ${_escAuth(found.emp)}</span>`;
     showLoginStep('ls-step2');
     setTimeout(()=>document.getElementById('ls-pwd').focus(),100);
   } else {

@@ -194,11 +194,13 @@ function periodoLabel(ym){ // "2025-04" → "Abril 2025"
 
 // ── Empleado: ver sus recibos ──
 async function renderRecibos(){
-  if(!currentUser) return;
-  const leg = currentUser.emp.leg;
-  const recibos = await getRecibos();
-  const readLog = await getReadLog();
+  const leg = currentUser?.emp?.leg;
+  if(!leg) return;
   const div = document.getElementById('list-recibos');
+  if(!div) return;
+  try{
+    const recibos = await getRecibos();
+    const readLog = await getReadLog();
   // Filter recibos for this employee
   const propios = Object.entries(recibos)
     .filter(([k]) => k.startsWith(leg + '_'))
@@ -224,6 +226,10 @@ async function renderRecibos(){
       </div>`;
     }).join('') + `</div>`;
   actualizarCntRecibos();
+  }catch(err){
+    console.error('renderRecibos:', err);
+    if(div) div.innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">No se pudieron cargar los recibos. Recargá la página.</div></div>';
+  }
 }
 
 async function actualizarCntRecibos(){
@@ -987,13 +993,14 @@ async function _gananciasDesdeLiquidaciones(leg){
 
 // ── Empleado: ver sus ganancias ──
 async function renderGanancias(){
-  if(!currentUser) return;
-  const leg = currentUser.emp.leg;
+  const leg = currentUser?.emp?.leg;
+  if(!leg) return;
   const div = document.getElementById('list-ganancias');
   if(!div) return;
-  const [todos, readLog, detalle] = await Promise.all([
-    getGanancias(), getReadLog(), _gananciasDesdeLiquidaciones(leg)
-  ]);
+  try{
+    const [todos, readLog, detalle] = await Promise.all([
+      getGanancias(), getReadLog(), _gananciasDesdeLiquidaciones(leg)
+    ]);
 
   // 1) Tabla del impuesto importada de la liquidación mensual (año fiscal más reciente)
   let tablaHTML = '';
@@ -1077,6 +1084,10 @@ async function renderGanancias(){
     return;
   }
   div.innerHTML = tablaHTML + pdfHTML;
+  }catch(err){
+    console.error('renderGanancias:', err);
+    if(div) div.innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">No se pudieron cargar los datos de ganancias. Recargá la página.</div></div>';
+  }
 }
 
 // Genera y abre el formulario F.1357 (Control de Liquidación del Impuesto a las
