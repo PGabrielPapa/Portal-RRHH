@@ -25,14 +25,19 @@ function asUid(value, emp){
 
 function getNomina(){
   const ov=getAbmOverrides(), bj=getAbmBajas(), al=getAbmAltas();
-  const base = DB.map(e=>{ const uid=makeUid(e.emp, e.leg); return { ...e, ...(ov[uid]||ov[e.leg]||{}), egreso:(bj[uid]||bj[e.leg])?.fecha||null, _deBaja:!!(bj[uid]||bj[e.leg]) }; });
-  const altas = al.map(e=>{ const uid=makeUid(e.emp, e.legNum!=null?e.legNum:e.leg); return { ...e, _esAlta:true, _deBaja:!!(bj[uid]||bj[e.leg]), egreso:(bj[uid]||bj[e.leg])?.fecha||null }; });
+  // EMPLEADOS DEL SEED (DB): conservan su legajo "pelado" como e.leg, IGUAL que
+  // siempre (sus legajos del seed son únicos globalmente). NO se migran sus
+  // datos: recibos, domicilios, etc. siguen keyed por el legajo original.
+  const base = DB.map(e=>({ ...e, legNum:e.leg, ...(ov[e.leg]||{}), egreso:bj[e.leg]?.fecha||null, _deBaja:!!bj[e.leg] }));
+  // ALTAS (importadas / manuales): identidad compuesta empresa+legajo (uid) en
+  // e.leg, para permitir legajos repetidos entre empresas sin colisión. El
+  // número de legajo visible queda en e.legNum.
+  const altas = al.map(e=>{
+    const legNum = (e.legNum!=null ? e.legNum : e.leg);
+    const uid    = asUid(e.leg, e.emp) || makeUid(e.emp, legNum);
+    return { ...e, legNum, leg:uid, ...(ov[uid]||{}), _esAlta:true, _deBaja:!!bj[uid], egreso:bj[uid]?.fecha||null };
+  });
   const todos = [...base, ...altas];
-  // Asignar identidad compuesta: legNum = número visible, leg = uid único.
-  for(const e of todos){
-    if(e.legNum == null) e.legNum = e.leg;          // número de legajo "lindo"
-    e.leg = makeUid(e.emp, e.legNum);               // identidad única interna
-  }
   // Default: empleados sin código de sindicato cargado → "FC" (Fuera de Convenio)
   // FC NO calcula presentismo ni antigüedad en la liquidación.
   for(const e of todos){
@@ -46,7 +51,7 @@ function getNomina(){
 
 // ── Helpers canónicos: siempre devuelven la versión ACTUAL del empleado
 // (con los cambios del ABM aplicados). Usar estos en vez de DB.find/filter.
-function empByUid(uid){  return getNomina().find(e => e.leg === uid) || null; }
+function empByUid(uid){  return getNomina().find(e => e.leg === uid || makeUid(e.emp, e.legNum) === uid) || null; }
 // empByLeg: acepta uid compuesto o, por compatibilidad, número de legajo pelado
 // (en cuyo caso devuelve la PRIMera coincidencia — ambiguo si se repite entre
 // empresas; preferir empByUid cuando se conoce la empresa).
@@ -2043,7 +2048,7 @@ function importarAltasMasivas(input){
     if(!rows.length){ toast('⚠ El archivo no contiene datos', 'var(--yellow)'); return; }
 
     const nomina = getNomina();
-    const legSet = new Set(nomina.map(e=>e.leg));
+    const legSet = new Set(nomina.map(e=>makeUid(e.emp, e.legNum)));  // identidad = empresa+legajo
     const dniSet = new Set(nomina.map(e=>e.dni));
     const altas  = getAbmAltas();
 
