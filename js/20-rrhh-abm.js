@@ -2133,10 +2133,23 @@ function importarAltasMasivas(input){
     saveAbmAltas(altas);
     renderAbmLista();
 
-    let msg = `✓ ${ok} empleado${ok!==1?'s':''} importado${ok!==1?'s':''}`;
-    if(dup) msg += ` · ${dup} duplicado${dup!==1?'s':''}`;
-    if(err) msg += ` · ${err} con error`;
-    toast(msg, ok>0?'var(--green)':'var(--yellow)');
+    // Mensaje de resultado SIEMPRE explícito: éxito o problema concreto.
+    if(ok > 0){
+      let msg = `✓ Importación realizada con éxito — ${ok} empleado${ok!==1?'s':''} cargado${ok!==1?'s':''}`;
+      const extra = [];
+      if(dup) extra.push(`${dup} duplicado${dup!==1?'s':''} omitido${dup!==1?'s':''}`);
+      if(err) extra.push(`${err} con error`);
+      if(extra.length) msg += ` (${extra.join(' · ')} — ver detalle)`;
+      toast(msg, 'var(--green)');
+    } else {
+      // No se cargó ninguno: informar el motivo.
+      let msg;
+      if(err && dup)      msg = `⚠ No se importó ningún empleado: ${err} con error y ${dup} duplicado${dup!==1?'s':''}. Revisá el detalle.`;
+      else if(err)        msg = `⚠ No se importó ningún empleado: ${err} registro${err!==1?'s':''} con error. Revisá el detalle.`;
+      else if(dup)        msg = `⚠ No se importó ningún empleado: ${dup===1?'el registro ya existía':'los '+dup+' registros ya existían'} (empresa + legajo duplicado).`;
+      else                msg = `⚠ No se importó ningún empleado. Verificá que el archivo tenga datos y las columnas correctas (usá "Plantilla altas").`;
+      toast(msg, 'var(--red)');
+    }
 
     if(errores.length){
       console.warn('Errores de importación:', errores);
