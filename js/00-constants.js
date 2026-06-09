@@ -313,10 +313,10 @@ function _abrirSelectorEmpleado(titulo, modalId, onSelectFn){
       <div id="${listaId}" style="max-height:320px;overflow-y:auto;padding:8px 20px 16px;display:flex;flex-direction:column;gap:4px">
         ${nomina.sort((a,b)=>(a.nom||'').localeCompare(b.nom||'')).map(e=>`
           <div style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;background:var(--bg2);transition:background .1s"
-            data-leg="${e.leg}" data-nom="${(e.nom||'').toLowerCase()} ${e.leg}"
+            data-leg="${e.leg}" data-nom="${(e.nom||'').toLowerCase()} ${legD(e.leg)}"
             onmouseover="this.style.background='var(--bg1)'" onmouseout="this.style.background='var(--bg2)'">
             <div style="font-size:13px;font-weight:500;color:var(--t1)">${e.nom}</div>
-            <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">Leg ${e.leg} · ${e.emp||''}</div>
+            <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">Leg ${legD(e.leg)} · ${e.emp||''}</div>
           </div>`).join('')}
       </div>
     </div>`;

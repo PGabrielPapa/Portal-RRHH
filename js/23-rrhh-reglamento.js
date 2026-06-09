@@ -465,7 +465,7 @@ async function rrhhLicPoblarEmpleados(){
   );
   nomina.sort((a,b) => (a.nom||'').localeCompare(b.nom||''));
   sel.innerHTML = `<option value="">— Seleccioná un empleado (${nomina.length}) —</option>` +
-    nomina.map(e => `<option value="${e.leg}">${e.nom} · Leg. ${e.leg} · ${e.emp}</option>`).join('');
+    nomina.map(e => `<option value="${e.leg}">${e.nom} · Leg. ${legD(e.leg)} · ${e.emp}</option>`).join('');
   // Reset contenido
   const cont = document.getElementById('rrhh-lic-emp-content');
   if(cont) cont.innerHTML = '<div style="padding:40px;color:var(--t3);font-size:12px;text-align:center;font-style:italic">Seleccioná un empleado para ver su historial de licencias</div>';
@@ -518,7 +518,7 @@ async function renderInformesAdmin(){
             ${tomada?`<span style="font-size:10px;font-family:var(--font-mono);background:rgba(34,197,94,.12);color:var(--green);padding:1px 7px;border-radius:8px;border:1px solid rgba(34,197,94,.3)">✓ Tomada — impacta liquidación</span>`:''}
           </div>
           <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono);margin-bottom:4px">
-            Leg. ${l.leg} · ${l.emp||'—'} · ${l.area||'—'} · ${l.lugar||'—'}
+            Leg. ${legD(l.leg)} · ${l.emp||'—'} · ${l.area||'—'} · ${l.lugar||'—'}
           </div>
           <div style="font-size:11px;color:var(--t2)">
             📅 ${fmtD(l.desde)} → ${fmtD(l.hasta)} · <strong>${l.dias} día${l.dias!==1?'s':''}</strong> · Informado: ${l.presentadoEl||'—'} ${l.presentadoHora||''}

@@ -192,7 +192,7 @@ async function abrirModalPlanillaGalicia(){
       <div style="margin-top:10px;max-height:180px;overflow-y:auto">
         ${sinCBU.map(e => `
           <div style="font-size:11px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono)">
-            ${e.leg} · ${e.nom} · ${e._empresa}
+            ${legD(e.leg)} · ${e.nom} · ${e._empresa}
           </div>`).join('')}
       </div>
       <div style="font-size:11px;color:var(--t3);margin-top:8px;line-height:1.5">
@@ -208,7 +208,7 @@ async function abrirModalPlanillaGalicia(){
       <div style="margin-top:10px;max-height:200px;overflow-y:auto">
         ${sumaIncompleta.map(e => `
           <div style="font-size:11px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono)">
-            <div>${e.leg} · ${e.nom} · ${e._empresa}</div>
+            <div>${legD(e.leg)} · ${e.nom} · ${e._empresa}</div>
             <div style="color:var(--red);margin-top:2px">Suma actual: ${e._suma.toFixed(2)}% (${e._cbusActivos.length} cuenta${e._cbusActivos.length!==1?'s':''})</div>
           </div>`).join('')}
       </div>

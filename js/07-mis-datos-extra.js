@@ -1108,7 +1108,7 @@ function abrirDetalleFamiliaresEmp(leg){
       <div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:2">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">👨‍👩‍👧 ${emp.nom||'(sin nombre)'}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp.leg} · ${emp.cuil||''} · ${emp.emp||''}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${legD(emp.leg)} · ${emp.cuil||''} · ${emp.emp||''}</div>
         </div>
         <button onclick="document.getElementById('modal-familiares-emp').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>

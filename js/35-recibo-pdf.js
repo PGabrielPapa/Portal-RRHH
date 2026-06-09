@@ -203,11 +203,11 @@ async function publicarRecibosPDF(){
     const r = await generarPDFReciboYGuardar(item.leg, liq);
     if(r.ok){
       exitos++;
-      elDetail.textContent = `✓ ${item.leg} (${r.sizeKB} KB)`;
+      elDetail.textContent = `✓ ${legD(item.leg)} (${r.sizeKB} KB)`;
     } else {
       fallas++;
-      errores.push(`${item.leg} ${item.nom?.split(',')[0]||''}: ${r.error}`);
-      elDetail.textContent = `✕ ${item.leg}: ${r.error}`;
+      errores.push(`${legD(item.leg)} ${item.nom?.split(',')[0]||''}: ${r.error}`);
+      elDetail.textContent = `✕ ${legD(item.leg)}: ${r.error}`;
     }
 
     // Yield al loop para que la UI respire

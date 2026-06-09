@@ -44,7 +44,7 @@ function openApproval(id, role){
       </div>
       <div class="approval-emp">
         <div class="approval-row"><span class="key">Empleado</span><span class="val">${s.emp.nom}</span></div>
-        <div class="approval-row"><span class="key">Legajo</span><span class="val td-mono">${s.emp.leg}</span></div>
+        <div class="approval-row"><span class="key">Legajo</span><span class="val td-mono">${legD(s.emp.leg)}</span></div>
         <div class="approval-row"><span class="key">CUIL</span><span class="val td-mono">${s.emp.cuil}</span></div>
         <div class="approval-row"><span class="key">Empresa</span><span class="val">${s.emp.emp}</span></div>
         <div class="approval-row"><span class="key">Sueldo Bruto</span><span class="val td-mono">${fmt(s.emp.bruto)}</span></div>

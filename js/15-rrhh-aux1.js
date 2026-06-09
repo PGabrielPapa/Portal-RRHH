@@ -63,7 +63,7 @@ async function renderEvalHistorialGerente(){
         <div style="width:36px;height:36px;border-radius:50%;background:var(--accent-glow);border:1px solid rgba(61,127,255,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent2);flex-shrink:0">${iniciales}</div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:8px">${g.emp.nom}${esBaja?'<span style="font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:var(--red);font-family:var(--font-mono);font-weight:500">EX-EMPLEADO</span>':''}</div>
-          <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">Legajo ${g.emp.leg} · ${g.emp.emp||''} · ${g.emp.tarea||''}${esBaja && g.emp.egreso ? ' · Egreso '+(g.emp.egreso.includes('-')?fechaDDMMYYYY(g.emp.egreso):g.emp.egreso) : ''}</div>
+          <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">Legajo ${legD(g.emp.leg)} · ${g.emp.emp||''} · ${g.emp.tarea||''}${esBaja && g.emp.egreso ? ' · Egreso '+(g.emp.egreso.includes('-')?fechaDDMMYYYY(g.emp.egreso):g.emp.egreso) : ''}</div>
         </div>
         <span style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">${g.evals.length} evaluación${g.evals.length!==1?'es':''}</span>
       </div>

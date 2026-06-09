@@ -362,7 +362,7 @@ function _renderModalHysEmpleado(emp){
       <div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:2">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">🦺 ${emp.nom||'(sin nombre)'}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp.leg} · ${emp.cuil||''} · ${emp.emp||''}${emp.lugar?' · '+emp.lugar:''}${emp.tarea?' · '+emp.tarea:''}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${legD(emp.leg)} · ${emp.cuil||''} · ${emp.emp||''}${emp.lugar?' · '+emp.lugar:''}${emp.tarea?' · '+emp.tarea:''}</div>
         </div>
         <button onclick="cerrarModalHysEmp()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>
@@ -709,7 +709,7 @@ function hysAbrirFormEpp(leg, idEdit){
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">${editing?'✎ Editar entrega':'+ Registrar entrega de EPP'}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px">${emp.nom} · ${emp.leg}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${emp.nom} · ${legD(emp.leg)}</div>
         </div>
         <button onclick="document.getElementById('modal-hys-epp-form').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>
@@ -918,7 +918,7 @@ function hysAbrirFormCap(leg, idEdit){
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">${editing?'✎ Editar capacitación':'+ Registrar capacitación'}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px">${emp.nom} · ${emp.leg}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${emp.nom} · ${legD(emp.leg)}</div>
         </div>
         <button onclick="document.getElementById('modal-hys-cap-form').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>
@@ -2181,7 +2181,7 @@ function _hysMostrarPreview(tipo, validos, errores, onConfirm){
             <div style="margin-top:8px;max-height:300px;overflow-y:auto;background:var(--bg2);border-radius:var(--r);padding:10px">
               ${validos.slice(0,100).map(v => `
                 <div style="padding:6px 0;border-bottom:1px solid var(--border)">
-                  <div style="font-size:12px;color:var(--t1)">${v.emp.nom||v.leg} <span style="color:var(--t3);font-size:10px;font-family:var(--font-mono)">· ${v.leg}</span></div>
+                  <div style="font-size:12px;color:var(--t1)">${v.emp.nom||v.leg} <span style="color:var(--t3);font-size:10px;font-family:var(--font-mono)">· ${legD(v.leg)}</span></div>
                   ${renderPreviewItem(v)}
                 </div>
               `).join('')}

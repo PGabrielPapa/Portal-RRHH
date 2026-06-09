@@ -324,7 +324,7 @@ async function renderEvalAnualGerente(){
     const v = getValidador(emp);
     const area = v?.area || '—';
     return `<div style="display:grid;grid-template-columns:80px 1fr 140px 120px 110px 240px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);gap:6px">
-      <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3)">${emp.leg}</div>
+      <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3)">${legD(emp.leg)}</div>
       <div>
         <div style="font-size:13px;font-weight:500;color:var(--t1)">${emp.nom}</div>
         <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">${emp.emp||''}</div>
@@ -417,7 +417,7 @@ async function renderEvalPruebaGerente(){
             ? `<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.3);color:var(--yellow);font-family:var(--font-mono)">⚠️ En ${alerta.dias} día${alerta.dias!==1?'s':''}</span>`
             : `<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(115,115,115,.1);border:1px solid var(--border);color:var(--t3);font-family:var(--font-mono)">📅 En ${alerta?.dias||'—'} días</span>`;
     return `<div style="display:grid;grid-template-columns:80px 1fr 110px 100px 130px 160px 180px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);gap:6px;${alerta?.nivel==='vencida'?'background:rgba(239,68,68,.03)':''}${esNoAplica?'opacity:.7':''}">
-      <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3)">${emp.leg}</div>
+      <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3)">${legD(emp.leg)}</div>
       <div>
         <div style="font-size:13px;font-weight:500;color:var(--t1)">${emp.nom}</div>
         <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">${emp.emp||''}</div>
@@ -571,7 +571,7 @@ function _mostrarEvalForm(ev, modo){
           <div><div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;margin-bottom:3px">Puesto</div><div style="font-size:12px;color:var(--t1)">${emp.tarea||'—'}</div></div>
           <div><div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;margin-bottom:3px">Área</div><div style="font-size:12px;color:var(--t1)">${v?.area||'—'}</div></div>
           <div><div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;margin-bottom:3px">Fecha programada</div><div style="font-size:12px;color:var(--t1);font-family:var(--font-mono)">${fechaDDMMYYYY(ev.fechaProgramada)}</div></div>
-          <div><div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;margin-bottom:3px">Legajo</div><div style="font-size:12px;color:var(--t1);font-family:var(--font-mono)">${emp.leg}</div></div>
+          <div><div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;margin-bottom:3px">Legajo</div><div style="font-size:12px;color:var(--t1);font-family:var(--font-mono)">${legD(emp.leg)}</div></div>
           <div><div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;margin-bottom:3px">Ingreso</div><div style="font-size:12px;color:var(--t1);font-family:var(--font-mono)">${emp.ing||'—'}</div></div>
           <div><div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;margin-bottom:3px">Empresa</div><div style="font-size:12px;color:var(--t1)">${emp.emp||'—'}</div></div>
           <div><div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;margin-bottom:3px">Evaluador</div><div style="font-size:12px;color:var(--t1)">${currentUser?.emp?.nom||'—'}</div></div>

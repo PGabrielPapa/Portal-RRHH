@@ -435,7 +435,7 @@ async function renderLicEspecialGerente(){
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
               <span style="font-size:13px;font-weight:600;color:var(--t1)">${l.nom}</span>
               <span style="font-size:10px;font-family:var(--font-mono);background:rgba(168,85,247,.08);color:rgb(168,85,247);padding:1px 8px;border-radius:10px;border:1px solid rgba(168,85,247,.25)">${meta.label||l.tipoLicencia}</span>
-              <span style="font-size:10px;font-family:var(--font-mono);color:var(--t3)">Leg. ${l.leg} · ${l.emp}</span>
+              <span style="font-size:10px;font-family:var(--font-mono);color:var(--t3)">Leg. ${legD(l.leg)} · ${l.emp}</span>
             </div>
             <div style="font-size:12px;color:var(--t2)">
               📅 ${fmtD(l.desde)} → ${fmtD(l.hasta)} · <strong>${l.dias} día${l.dias!==1?'s':''}</strong> · Pres.: ${l.presentadoEl||''}
@@ -514,7 +514,7 @@ async function renderLicEspecialRRHH(){
               <span style="font-size:10px;font-family:var(--font-mono);background:rgba(168,85,247,.08);color:rgb(168,85,247);padding:1px 8px;border-radius:10px;border:1px solid rgba(168,85,247,.25)">${meta.label||l.tipoLicencia}</span>
             </div>
             <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono);margin-bottom:4px">
-              Leg. ${l.leg} · ${l.emp} · ${l.area||''} · ${l.lugar||''}
+              Leg. ${legD(l.leg)} · ${l.emp} · ${l.area||''} · ${l.lugar||''}
             </div>
             <div style="font-size:12px;color:var(--t2)">
               📅 ${fmtD(l.desde)} → ${fmtD(l.hasta)} · <strong>${l.dias} día${l.dias!==1?'s':''}</strong>

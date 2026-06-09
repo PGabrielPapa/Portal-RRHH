@@ -322,7 +322,7 @@ function abrirModalUOCRA(){
     const u = d.uocra;
     return `
       <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:6px 8px;font-family:var(--font-mono);font-size:10px;color:var(--t3)">${d.item.leg}</td>
+        <td style="padding:6px 8px;font-family:var(--font-mono);font-size:10px;color:var(--t3)">${legD(d.item.leg)}</td>
         <td style="padding:6px 8px;font-size:11px;color:var(--t1)">${d.item.nom?.split(',')[0] || ''}</td>
         <td style="padding:6px 8px;font-size:10px;color:var(--t3);font-family:var(--font-mono);text-align:center">${u.mesesAntig}m</td>
         <td style="padding:6px 8px;font-size:10px;color:var(--t3);font-family:var(--font-mono);text-align:right">${u.fclPctAplicado}%</td>

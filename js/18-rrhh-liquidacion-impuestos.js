@@ -400,7 +400,7 @@ async function planillaGananciasHTML(item, liq, params, nov){
     ${r('SALDO A PAGAR', saldoAPagar, {bold:true})}`;
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>F.1357 Ganancias ${item.leg} ${periodoMMYY}</title>
+  <title>F.1357 Ganancias ${legD(item.leg)} ${periodoMMYY}</title>
   <style>
     @page{size:letter portrait;margin:10mm}
     body{margin:0;padding:8px;font-family:Arial,Helvetica,sans-serif;font-size:7.5px;color:#000}
@@ -423,7 +423,7 @@ async function planillaGananciasHTML(item, liq, params, nov){
         </div>
         <div style="font-size:8px;margin-bottom:3px"><b>Fecha:</b> ${fechaGen}</div>
         <div style="font-size:8px;margin-bottom:3px"><b>Beneficiario:</b> ${item.cuil||'—'}, ${item.nom}</div>
-        <div style="font-size:8px;margin-bottom:3px"><b>Nro. de legajo:</b> ${item.leg}</div>
+        <div style="font-size:8px;margin-bottom:3px"><b>Nro. de legajo:</b> ${legD(item.leg)}</div>
         <div style="font-size:8px"><b>Agente de retención:</b> ${ed.cuit}, ${item.empresa}</div>
       </td>
       <td style="width:45%;vertical-align:top">
@@ -502,7 +502,7 @@ async function exportarGanancias(){
   <input id="search" class="search" placeholder="Buscar empleado..." oninput="filterEmps(this.value)">
   <button onclick="window.close()" style="padding:6px 12px;background:#555;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;margin-bottom:14px">✕ Cerrar</button>
   <div id="list">${conGan.map(i =>
-    `<button class="btn" data-leg="${i.leg}" data-nom="${i.nom.replace(/"/g,'&quot;')}" onclick="abrirPlanilla('${i.leg}')">${i.leg} — ${i.nom} — ${i.empresa}</button>`
+    `<button class="btn" data-leg="${i.leg}" data-nom="${i.nom.replace(/"/g,'&quot;')}" onclick="abrirPlanilla('${i.leg}')">${legD(i.leg)} — ${i.nom} — ${i.empresa}</button>`
   ).join('')}</div>
   <script>
   const liqData=${JSON.stringify(liq)};
@@ -1182,11 +1182,11 @@ async function publicarGananciasPDF(){
       });
 
       exitos++;
-      elDetail.textContent = `✓ ${item.leg} (${sizeKB} KB)`;
+      elDetail.textContent = `✓ ${legD(item.leg)} (${sizeKB} KB)`;
     } catch(err){
       fallas++;
-      errores.push(`${item.leg} ${item.nom?.split(',')[0]||''}: ${err.message||String(err)}`);
-      elDetail.textContent = `✕ ${item.leg}: ${err.message||String(err)}`;
+      errores.push(`${legD(item.leg)} ${item.nom?.split(',')[0]||''}: ${err.message||String(err)}`);
+      elDetail.textContent = `✕ ${legD(item.leg)}: ${err.message||String(err)}`;
     }
 
     if(i % 3 === 0) await new Promise(res => setTimeout(res, 30));

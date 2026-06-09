@@ -300,7 +300,7 @@ function renderTabla(lista){
   }
   tbody.innerHTML=lista.map(e=>`
     <tr onclick="selectEmp('${e.leg}','${e.emp.replace(/'/g,"\'")}')">
-      <td class="td-mono">${e.leg}</td>
+      <td class="td-mono">${legD(e.leg)}</td>
       <td class="td-name">${e.nom}</td>
       <td><span class="cat-badge">${e.cat||'-'}</span></td>
       <td style="color:var(--t2);font-size:12px">${e.lugar}</td>
@@ -336,7 +336,7 @@ function selectEmp(){
   const initials = empActual.nom.split(',')[0].trim().substring(0,2);
   document.getElementById('epb-avatar').textContent = initials;
   document.getElementById('epb-name').textContent = empActual.nom;
-  document.getElementById('epb-meta').textContent = `Legajo ${empActual.leg} · ${empActual.emp} · Ingreso: ${empActual.ing}`;
+  document.getElementById('epb-meta').textContent = `Legajo ${legD(empActual.leg)} · ${empActual.emp} · Ingreso: ${empActual.ing}`;
   document.getElementById('epb-stats').innerHTML = `
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:10px">
       <div style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sueldo Neto (80%)</div>
@@ -491,7 +491,7 @@ function renderPendientes(){
       <div class="sol-status pending"></div>
       <div class="sol-info">
         <div class="sol-name">${s.emp.nom}</div>
-        <div class="sol-meta">${s.emp.leg} · ${s.emp.emp} · ${s.created}</div>
+        <div class="sol-meta">${legD(s.emp.leg)} · ${s.emp.emp} · ${s.created}</div>
         <div class="sol-meta">Motivo: ${s.motivo}</div>
       </div>
       <div>
@@ -911,7 +911,7 @@ function renderDelList(){
       <div style="width:34px;height:34px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--t1);flex-shrink:0">${iniciales}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;color:var(--t1);font-weight:500">${e.nom}</div>
-        <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono);margin-top:2px">Leg. ${e.leg} · ${e.emp}</div>
+        <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono);margin-top:2px">Leg. ${legD(e.leg)} · ${e.emp}</div>
       </div>
       <span style="font-size:10px;font-family:var(--font-mono);color:${color};border:1px solid ${color};padding:2px 7px;border-radius:10px;opacity:.85;flex-shrink:0">${etiqueta}</span>
       <span style="font-size:13px;color:var(--accent2);font-family:var(--font-mono);flex-shrink:0">→</span>

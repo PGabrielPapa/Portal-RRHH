@@ -42,7 +42,7 @@ function _gerLicPoblarSelectEmpleado(selectId){
     const opt = document.createElement('option');
     opt.value = e.leg;
     const nombre = (e.nom || '').split(',')[0];  // solo apellido si está disponible
-    opt.textContent = `${nombre} (${e.leg})`;
+    opt.textContent = `${nombre} (${legD(e.leg)})`;
     sel.appendChild(opt);
   });
 }

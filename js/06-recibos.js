@@ -547,7 +547,7 @@ function buscarEmpPagina(input){
   res.innerHTML=lista.map(e=>`
     <div style="padding:7px 12px;cursor:pointer;font-size:12px;color:var(--t1);border-bottom:1px solid var(--border)"
       onmousedown="asignarEmpPagina(${i},'${e.leg}')">
-      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${e.leg} · CUIL: ${e.cuil}</span>
+      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${legD(e.leg)} · CUIL: ${e.cuil}</span>
     </div>`).join('');
 }
 
@@ -578,7 +578,7 @@ async function renderBulkSearch(){
   res.innerHTML=lista.map(e=>`
     <div style="padding:7px 14px;cursor:pointer;font-size:12px;color:var(--t1);border-bottom:1px solid var(--border)"
       onmousedown="asignarTodas('${e.leg}')">
-      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${e.leg}</span>
+      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${legD(e.leg)}</span>
     </div>`).join('');
 }
 
@@ -682,7 +682,7 @@ async function renderDelEmpSearch(tipo){
   res.innerHTML = lista.map(e=>`
     <div style="padding:7px 12px;cursor:pointer;font-size:12px;color:var(--t1);border-bottom:1px solid var(--border)"
       onmousedown="selDelEmp('${tipo}','${e.leg}')">
-      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${e.leg}</span>
+      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${legD(e.leg)}</span>
     </div>`).join('');
 }
 
@@ -762,7 +762,7 @@ async function renderReadLog(){
     lista.map(r=>`<div class="log-row">
       <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:${r.tipo==='ganancia'?'rgba(251,191,36,.12)':'rgba(61,127,255,.1)'};color:${r.tipo==='ganancia'?'rgb(251,191,36)':'var(--accent2)'};">${r.tipo==='ganancia'?'🧾 Gan.':'📄 Rec.'}</span>
       <span style="color:var(--accent2)">${r.periodoLabel||r.periodo}</span>
-      <span>${r.nom} <span style="color:var(--t3)">(${r.leg})</span></span>
+      <span>${r.nom} <span style="color:var(--t3)">(${legD(r.leg)})</span></span>
       <span style="color:var(--t3)">${r.emp||''}</span>
       <span>${r.fecha} ${r.hora}</span>
     </div>`).join('');
@@ -772,7 +772,7 @@ async function exportarLog(){
   const log = await getReadLog();
   if(!log.length){ toast('⚠ El log está vacío','var(--yellow)'); return; }
   const header = 'Tipo;Legajo;DNI;Nombre;Empresa;Período;Fecha;Hora\r\n';
-  const rows = log.map(r=>`${r.tipo||'recibo'};${r.leg};${r.dni||''};${r.nom};${r.emp||''};${r.periodoLabel||r.periodo};${r.fecha};${r.hora}`).join('\r\n');
+  const rows = log.map(r=>`${r.tipo||'recibo'};${legD(r.leg)};${r.dni||''};${r.nom};${r.emp||''};${r.periodoLabel||r.periodo};${r.fecha};${r.hora}`).join('\r\n');
   const blob = new Blob([header+rows],{type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href=url;
@@ -801,7 +801,7 @@ async function renderCumpleTable(){
       return `<div style="display:grid;grid-template-columns:1fr 140px 110px;padding:8px 18px;border-bottom:1px solid var(--border);align-items:center;font-size:12px">
         <div>
           <div style="font-weight:500;color:var(--t1)">${e.nom}</div>
-          <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">${e.leg}</div>
+          <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">${legD(e.leg)}</div>
         </div>
         <div style="font-size:11px;color:var(--t3)">${e.emp}</div>
         <div style="text-align:center">
@@ -1322,7 +1322,7 @@ function buscarGanPagina(input){
   res.innerHTML=lista.map(e=>`
     <div style="padding:7px 12px;cursor:pointer;font-size:12px;color:var(--t1);border-bottom:1px solid var(--border)"
       onmousedown="asignarGanPagina(${i},'${e.leg}')">
-      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${e.leg} · CUIL: ${e.cuil}</span>
+      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${legD(e.leg)} · CUIL: ${e.cuil}</span>
     </div>`).join('');
 }
 
@@ -1351,7 +1351,7 @@ async function renderGanBulkSearch(){
   res.innerHTML=lista.map(e=>`
     <div style="padding:7px 14px;cursor:pointer;font-size:12px;color:var(--t1);border-bottom:1px solid var(--border)"
       onmousedown="asignarGanTodas('${e.leg}')">
-      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${e.leg}</span>
+      <strong>${e.nom}</strong> <span style="color:var(--t3)">· ${legD(e.leg)}</span>
     </div>`).join('');
 }
 

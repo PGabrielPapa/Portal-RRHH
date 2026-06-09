@@ -74,7 +74,7 @@ function mostrarSolicitudEnviada(emp, yaExistia){
         Una vez que blanqueen tu contraseña, podrás crear una nueva al ingresar con tu DNI.
       </div>
       <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3);background:var(--bg2);padding:8px 12px;border-radius:var(--r);margin-bottom:20px">
-        ${emp.nom} · Legajo ${emp.leg}
+        ${emp.nom} · Legajo ${legD(emp.leg)}
       </div>
     </div>
     <button class="login-back" onclick="backToStep1()" style="margin-top:0">← Volver</button>`;
@@ -122,7 +122,7 @@ async function renderSolicitudesBlanqueo(){
       <div style="width:36px;height:36px;border-radius:50%;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--red);flex-shrink:0">${s.nom.split(',')[0].trim().substring(0,2)}</div>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:500;color:var(--t1)">${s.nom}</div>
-        <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">${s.leg} · ${s.emp} · Solicitado: ${s.fecha} ${s.hora}</div>
+        <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">${legD(s.leg)} · ${s.emp} · Solicitado: ${s.fecha} ${s.hora}</div>
       </div>
       <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px" onclick="blanquearDesdeSolicitud('${s.dni}','${s.nom.replace(/'/g,"\\'")}')">🔓 Blanquear y resolver</button>
     </div>`).join('');
@@ -191,7 +191,7 @@ function exportarTXT(){
       const mesAnio = `${String(m).padStart(2,'0')}/${y}`;
       // Monto en negativo (es un descuento) con 2 decimales
       const monto = (-Math.abs(montoPorCuota)).toFixed(2);
-      lineas.push(`${s.emp.leg};${mesAnio};${monto};40000;${s.emp.emp}`);
+      lineas.push(`${legD(s.emp.leg)};${mesAnio};${monto};40000;${s.emp.emp}`);
       totalCuotas++;
     }
   });
@@ -239,7 +239,7 @@ async function renderPwdTable(){
     return `<div class="pwd-row">
       <div class="pwd-info">
         <div class="pwd-name">${e.nom}</div>
-        <div class="pwd-meta">${e.leg} · ${e.emp} · DNI ${e.dni}</div>
+        <div class="pwd-meta">${legD(e.leg)} · ${e.emp} · DNI ${e.dni}</div>
       </div>
       <span class="pwd-status ${tiene?'set':'unset'}">${tiene?'● Con contraseña':'○ Sin contraseña'}</span>
       <button class="btn-blanquear" onclick="blanquearPasswordPorDni('${e.dni}','${e.nom.replace(/'/g,"\\'")}',this)"
@@ -267,7 +267,7 @@ function renderRRHH(){
       <div class="sol-status manager"></div>
       <div class="sol-info">
         <div class="sol-name">${s.emp.nom}</div>
-        <div class="sol-meta">${s.emp.leg} · ${s.emp.emp} · Validado por Gerente</div>
+        <div class="sol-meta">${legD(s.emp.leg)} · ${s.emp.emp} · Validado por Gerente</div>
         <div class="sol-meta" style="margin-top:2px">Motivo: ${s.motivo}</div>
       </div>
       <div>
@@ -294,7 +294,7 @@ function renderHistorial(){
       <div class="sol-status ${cls[s.status]}"></div>
       <div class="sol-info">
         <div class="sol-name">${s.emp.nom}</div>
-        <div class="sol-meta">${s.emp.leg} · ${s.emp.emp} · ${s.created}</div>
+        <div class="sol-meta">${legD(s.emp.leg)} · ${s.emp.emp} · ${s.created}</div>
         <div class="sol-meta">${s.id}</div>
       </div>
       <div>

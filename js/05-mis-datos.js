@@ -22,7 +22,7 @@ function renderMisDatos(){
         </div>
         <div>
           <div style="font-size:15px;font-weight:600;color:var(--t1)">${e.nom}</div>
-          <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono);margin-top:2px">Legajo ${e.leg}</div>
+          <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono);margin-top:2px">Legajo ${legD(e.leg)}</div>
         </div>
       </div>
       ${fila('Empresa', e.emp)}

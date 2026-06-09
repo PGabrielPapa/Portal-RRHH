@@ -250,7 +250,7 @@ function _sancRenderFila(s, contexto){
       <div style="min-width:0">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
           <span style="font-size:13px;font-weight:600;color:var(--t1)">${emp?.nom || s.leg}</span>
-          <span style="font-size:10px;font-family:var(--font-mono);padding:2px 7px;border-radius:10px;background:var(--bg3);color:var(--t3);border:1px solid var(--border)">${s.leg}</span>
+          <span style="font-size:10px;font-family:var(--font-mono);padding:2px 7px;border-radius:10px;background:var(--bg3);color:var(--t3);border:1px solid var(--border)">${legD(s.leg)}</span>
           <span style="font-size:10px;font-family:var(--font-mono);padding:2px 8px;border-radius:10px;background:${estado.bg};color:${estado.color};border:1px solid ${estado.color}40;text-transform:uppercase">${estado.label}</span>
           ${noVista?'<span style="font-size:10px;font-family:var(--font-mono);padding:2px 8px;border-radius:10px;background:rgba(34,197,94,.15);color:rgb(34,197,94);border:1px solid rgb(34,197,94);text-transform:uppercase">★ NOVEDAD</span>':''}
         </div>
@@ -323,7 +323,7 @@ function abrirFormSolicitudSancion(opts){
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
 
   const empOpts = empleadosDisp.map(e =>
-    `<option value="${e.leg}" ${legPreSel===e.leg?'selected':''}>${e.leg} · ${e.nom}${e.lugar?' · '+e.lugar:''}</option>`
+    `<option value="${e.leg}" ${legPreSel===e.leg?'selected':''}>${legD(e.leg)} · ${e.nom}${e.lugar?' · '+e.lugar:''}</option>`
   ).join('');
 
   const motivoOpts = SANC_MOTIVOS.map(m =>
@@ -559,7 +559,7 @@ function abrirResolverSancion(id){
       <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">⚖️ Resolver solicitud disciplinaria</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp?.nom || s.leg} · ${s.leg}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp?.nom || s.leg} · ${legD(s.leg)}</div>
         </div>
         <button onclick="document.getElementById('modal-sancion-resolver').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>
@@ -716,7 +716,7 @@ function abrirDetalleSancion(id){
       <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">⚖️ Detalle de la sanción</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp?.nom || s.leg} · ${s.leg}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp?.nom || s.leg} · ${legD(s.leg)}</div>
         </div>
         <button onclick="document.getElementById('modal-sancion-detalle').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>
@@ -730,7 +730,7 @@ function abrirDetalleSancion(id){
           <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:10px">Empleado</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
             <div><span style="color:var(--t3);font-family:var(--font-mono);font-size:10px">NOMBRE</span><br><span style="color:var(--t1)">${emp?.nom || '—'}</span></div>
-            <div><span style="color:var(--t3);font-family:var(--font-mono);font-size:10px">LEGAJO</span><br><span style="color:var(--t1);font-family:var(--font-mono)">${s.leg}</span></div>
+            <div><span style="color:var(--t3);font-family:var(--font-mono);font-size:10px">LEGAJO</span><br><span style="color:var(--t1);font-family:var(--font-mono)">${legD(s.leg)}</span></div>
             <div><span style="color:var(--t3);font-family:var(--font-mono);font-size:10px">EMPRESA</span><br><span style="color:var(--t2)">${emp?.emp || '—'}</span></div>
             <div><span style="color:var(--t3);font-family:var(--font-mono);font-size:10px">CENTRO</span><br><span style="color:var(--t2)">${emp?.lugar || '—'}</span></div>
           </div>
@@ -1013,7 +1013,7 @@ function _renderSancPorEmpleado(){
     const tipoUlt = ultima?.tipo_aplicado ? _sancTipoInfo(ultima.tipo_aplicado) : null;
     html += `
       <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:9px 12px;font-family:var(--font-mono);color:var(--t1);font-size:11px">${e.leg}</td>
+        <td style="padding:9px 12px;font-family:var(--font-mono);color:var(--t1);font-size:11px">${legD(e.leg)}</td>
         <td style="padding:9px 12px;color:var(--t1);font-size:12px">${e.nom}</td>
         <td style="padding:9px 12px;font-size:11px">${tipoUlt ? `<span style="color:${tipoUlt.color};font-weight:600">${tipoUlt.label}</span>` : '<span style="color:var(--t3);font-style:italic">sin sanciones aplicadas</span>'}</td>
         <td style="padding:9px 12px;font-family:var(--font-mono);color:var(--t2);font-size:11px">${ultima?.fecha_notificacion ? _sancFmt(ultima.fecha_notificacion) : '—'}</td>
@@ -1084,7 +1084,7 @@ function abrirHistoricoEmpSanciones(leg){
       <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">📜 Histórico de sanciones</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp.nom} · ${emp.leg} · ${emp.emp || ''}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp.nom} · ${legD(emp.leg)} · ${emp.emp || ''}</div>
         </div>
         <button onclick="document.getElementById('modal-sanc-historico-emp').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>

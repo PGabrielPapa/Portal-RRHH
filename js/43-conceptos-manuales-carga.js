@@ -93,7 +93,7 @@ async function abrirCargaManualConceptos(leg){
     <div class="card" style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:0;max-width:680px;width:100%;max-height:88vh;overflow-y:auto">
       <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg2)">
         <div style="font-size:14px;font-weight:600;color:var(--t1)">✍️ Cargar conceptos manuales</div>
-        <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp.leg} · ${emp.nom}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${legD(emp.leg)} · ${emp.nom}</div>
       </div>
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:8px">
         <div style="font-size:11px;color:var(--t2);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:8px 12px;line-height:1.5">
@@ -299,7 +299,7 @@ async function _ccProcesarImport(){
         <details style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:8px 12px;margin-bottom:8px">
           <summary style="cursor:pointer;font-size:11px;color:var(--green)">✓ Ver ${validos.length} válidas</summary>
           <div style="margin-top:8px;max-height:200px;overflow-y:auto;font-family:var(--font-mono);font-size:10px;line-height:1.5">
-            ${validos.slice(0,30).map(v => `<div>${v.leg} · ${v.cod} · ${fmtPesos(v.monto)} · ${v.nom?.split(',')[0]||''}</div>`).join('')}
+            ${validos.slice(0,30).map(v => `<div>${legD(v.leg)} · ${v.cod} · ${fmtPesos(v.monto)} · ${v.nom?.split(',')[0]||''}</div>`).join('')}
             ${validos.length>30 ? `<div style="font-style:italic;color:var(--t3)">... y ${validos.length-30} más</div>` : ''}
           </div>
         </details>

@@ -14,6 +14,10 @@ function saveAbmAltas(a){ localStorage.setItem('lsg_abm_altas',JSON.stringify(a)
 // queden únicas), y el número de legajo "a mostrar" queda en e.legNum.
 function empSlug(emp){ return String(emp||'').toUpperCase().replace(/[^A-Z0-9]/g,'') || 'SINEMP'; }
 function makeUid(emp, legNum){ return empSlug(emp) + '-' + String(legNum==null?'':legNum).trim(); }
+// legD: número de legajo "a mostrar". Si el valor es un uid compuesto
+// (SLUG-numero) devuelve solo el número; si ya es pelado lo deja igual.
+// Seguro de aplicar en cualquier visualización (no-op para legajos del seed).
+function legD(v){ v = String(v==null?'':v); const i = v.indexOf('-'); return (i>0 && /^[A-Z0-9]+-/.test(v)) ? v.slice(i+1) : v; }
 // Compatibilidad: si un valor ya viene compuesto (tiene guion y prefijo de
 // slug) se devuelve igual; si es un legajo "pelado" se intenta resolver con la
 // empresa provista.

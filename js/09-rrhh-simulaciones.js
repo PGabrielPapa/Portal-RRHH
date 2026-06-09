@@ -238,7 +238,7 @@ function pintarResultadoMensual(){
   // Top 30 detalle individual
   const filasInd = r.items.slice(0, 200).map(it => `
     <tr>
-      <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px">${it.leg}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px">${legD(it.leg)}</td>
       <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px">${(it.nom||'').toString().split(',')[0]}</td>
       <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:10px;color:var(--t3)">${it.emp||''}</td>
       <td style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--t3)">${_simFmt(it.brutoOriginal)}</td>
@@ -267,7 +267,7 @@ function pintarResultadoMensual(){
           <tbody>
             ${r.skipped.map(s => `
               <tr>
-                <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono)">${s.leg}</td>
+                <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono)">${legD(s.leg)}</td>
                 <td style="padding:6px 10px;border-bottom:1px solid var(--border)">${(s.nom||'').split(',')[0]}</td>
                 <td style="padding:6px 10px;border-bottom:1px solid var(--border);color:rgb(251,168,52)">${s.motivo}</td>
               </tr>
@@ -568,7 +568,7 @@ function pintarResultadoGrat(){
 
   const filas = r.items.slice(0, 200).map(it => `
     <tr>
-      <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px">${it.leg}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px">${legD(it.leg)}</td>
       <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:11px">${(it.nom||'').toString().split(',')[0]}</td>
       <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:10px;color:var(--t3)">${it.emp||''}</td>
       <td style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--font-mono);font-size:11px;color:var(--t3)">${_simFmt(it.bruto)}</td>
@@ -1017,7 +1017,7 @@ function pintarResultadoFinal(){
       <div>
         <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:2px">Empleado</div>
         <div style="font-size:14px;font-weight:600;color:var(--t1)">${r.emp.nom||r.emp.leg}</div>
-        <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">Leg ${r.emp.leg} · ${r.emp.emp||''}</div>
+        <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">Leg ${legD(r.emp.leg)} · ${r.emp.emp||''}</div>
       </div>
       <div>
         <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono);text-transform:uppercase;margin-bottom:2px">Tipo de baja</div>

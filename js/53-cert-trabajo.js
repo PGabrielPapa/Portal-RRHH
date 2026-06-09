@@ -402,7 +402,7 @@ function _certCardPedido(p, conAcciones){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px">
       <div>
         <div style="font-size:14px;font-weight:600;color:var(--t1)">${p.nom}</div>
-        <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3);margin-top:2px">Leg ${p.leg} &nbsp;·&nbsp; ${p.empresa}</div>
+        <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3);margin-top:2px">Leg ${legD(p.leg)} &nbsp;·&nbsp; ${p.empresa}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
         <span style="font-size:11px;font-weight:600;color:${badgeText};background:${badgeColor};border:1px solid ${badgeBorder};padding:3px 10px;border-radius:10px">${badgeLabel}</span>
@@ -476,7 +476,7 @@ function _certAbrirGenerarModal(id){
       <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">📄 Generar certificado de trabajo</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px">${pedido.nom} · Leg ${pedido.leg}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${pedido.nom} · Leg ${legD(pedido.leg)}</div>
         </div>
         <button onclick="document.getElementById('modal-cert-generar').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>

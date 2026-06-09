@@ -603,7 +603,7 @@ function previewImportCBU(){
     </div>`;
   const filaOk = v => `
     <div style="display:grid;grid-template-columns:80px 1fr 100px 220px 60px;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;align-items:center">
-      <div style="color:var(--t1);font-family:var(--font-mono)">${v.leg}</div>
+      <div style="color:var(--t1);font-family:var(--font-mono)">${legD(v.leg)}</div>
       <div style="color:var(--t1)">${v.nom}</div>
       <div style="color:var(--t3)">${v.banco}</div>
       <div style="color:var(--t2);font-family:var(--font-mono);font-size:10px">${formatCBUDisplay(v.cbu)}</div>
@@ -650,7 +650,7 @@ async function confirmarImportCBU(){
       if(typeof auditABM === 'function'){
         const emp = (typeof empByLeg === 'function') ? empByLeg(v.leg) : null;
         auditABM('cbu_actualizado',
-          { dni: emp?.dni || '', nom: emp?.nom || `legajo ${v.leg}`, extra: v.leg },
+          { dni: emp?.dni || '', nom: emp?.nom || `legajo ${legD(v.leg)}`, extra: v.leg },
           { after: v.cbu, detail: `Import bulk · Banco: ${v.banco} · Tipo: ${v.tipoCuenta === 'CC' ? 'Cuenta Corriente' : 'Caja de Ahorro'}` });
       }
     }

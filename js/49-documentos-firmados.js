@@ -201,7 +201,7 @@ function imprimirNotifSancion(idSancion, opts){
   if(opts.skipEdit){
     const modelo = _construirModeloNotifSancion(s, emp);
     const contenido = _renderNotifSancionHTML(modelo, { contenteditable: false });
-    _docAbrirImprimible(`Notificación sanción ${emp.leg}`, contenido);
+    _docAbrirImprimible(`Notificación sanción ${legD(emp.leg)}`, contenido);
     if(typeof logAuditX === 'function'){
       logAuditX('sanciones', 'imprimir_notif', { id: s.id, leg: s.leg, por: currentUser?.emp?.nom, modo: 'directo' });
     }
@@ -227,7 +227,7 @@ function _abrirEditorNotifSancion(s, emp){
       <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">📝 Editar notificación de sanción</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp.nom} · ${emp.leg} · Actuación N° ${s.id}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px;font-family:var(--font-mono)">${emp.nom} · ${legD(emp.leg)} · Actuación N° ${s.id}</div>
         </div>
         <button onclick="document.getElementById('modal-editor-notif').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>
@@ -477,7 +477,7 @@ function _imprimirNotifFinal(){
 
   // Generar HTML final SIN contenteditable
   const contenido = _renderNotifSancionHTML(modeloFinal, { contenteditable: false });
-  _docAbrirImprimible(`Notificación sanción ${emp.leg}`, contenido);
+  _docAbrirImprimible(`Notificación sanción ${legD(emp.leg)}`, contenido);
 
   // Persistir si fue marcado
   if(persistir){
@@ -551,11 +551,11 @@ async function imprimirComprobanteLicencia(idLic, origen){
     </div>
 
     <p>Se deja constancia de que el/la empleado/a <strong>${emp.nom}</strong> (DNI ${emp.dni || '—'},
-    Legajo ${emp.leg}) ha solicitado licencia conforme a lo establecido en ${articulo}.</p>
+    Legajo ${legD(emp.leg)}) ha solicitado licencia conforme a lo establecido en ${articulo}.</p>
 
     <table>
       <tr><th style="width:35%">Empleado</th><td>${emp.nom}</td></tr>
-      <tr><th>Legajo / DNI</th><td>${emp.leg} / ${emp.dni || '—'}</td></tr>
+      <tr><th>Legajo / DNI</th><td>${legD(emp.leg)} / ${emp.dni || '—'}</td></tr>
       <tr><th>Empresa</th><td>${emp.emp}</td></tr>
       <tr><th>Lugar de trabajo</th><td>${emp.lugar || '—'}</td></tr>
       <tr><th>Categoría / Cargo</th><td>${emp.cat || '—'} ${emp.tramo || ''} · ${emp.tarea || ''}</td></tr>
@@ -579,7 +579,7 @@ async function imprimirComprobanteLicencia(idLic, origen){
       Documento generado el ${new Date().toLocaleString('es-AR')} desde el Portal RR.HH. LEITEN S.A.
     </div>
   `;
-  _docAbrirImprimible(`Comprobante licencia ${emp.leg}`, contenido);
+  _docAbrirImprimible(`Comprobante licencia ${legD(emp.leg)}`, contenido);
 
   if(typeof logAuditX === 'function'){
     logAuditX('licencias', 'imprimir_comprobante', { id: lic.id, leg: lic.leg, origen, por: currentUser?.emp?.nom });
@@ -636,7 +636,7 @@ function imprimirCertificadoLaboral(leg, opts){
     <table>
       <tr><th style="width:35%">Apellido y Nombre</th><td>${emp.nom}</td></tr>
       <tr><th>DNI / CUIL</th><td>${emp.dni || '—'} / ${emp.cuil || '—'}</td></tr>
-      <tr><th>Legajo</th><td>${emp.leg}</td></tr>
+      <tr><th>Legajo</th><td>${legD(emp.leg)}</td></tr>
       <tr><th>Cargo / Tarea</th><td>${emp.tarea || '—'}</td></tr>
       <tr><th>Categoría</th><td>${emp.cat || '—'} ${emp.tramo || ''} · ${emp.desc_categoria || ''}</td></tr>
       <tr><th>Condición</th><td>${emp.condicion || 'Mensualizado'} · ${emp.cod_convenio ? 'CCT '+emp.cod_convenio : 'Fuera de convenio'}</td></tr>
@@ -657,7 +657,7 @@ function imprimirCertificadoLaboral(leg, opts){
       Para verificación contactar al Dpto. de RR.HH. de ${emp.emp}.
     </div>
   `;
-  _docAbrirImprimible(`Certificado laboral ${emp.leg}`, contenido);
+  _docAbrirImprimible(`Certificado laboral ${legD(emp.leg)}`, contenido);
 
   if(typeof logAuditX === 'function'){
     logAuditX('certificados', 'imprimir_laboral', { leg: emp.leg, por: currentUser?.emp?.nom, proposito });

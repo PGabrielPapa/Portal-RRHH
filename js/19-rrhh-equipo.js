@@ -94,7 +94,7 @@ function renderMiEquipo(){
             ${e.nom}
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-            <span style="font-size:10px;font-family:var(--font-mono);color:var(--t3)">Leg. ${e.leg}</span>
+            <span style="font-size:10px;font-family:var(--font-mono);color:var(--t3)">Leg. ${legD(e.leg)}</span>
             ${e.cuil?`<span style="font-size:10px;font-family:var(--font-mono);color:var(--t3)">CUIL: ${e.cuil}</span>`:''}
             ${e.cat?`<span style="font-size:10px;font-family:var(--font-mono);padding:1px 7px;border-radius:8px;background:var(--bg2);color:${catColor(e.cat)};border:1px solid ${catColor(e.cat)}33">${e.cat} ${e.tramo||''}</span>`:''}
           </div>
@@ -275,7 +275,7 @@ function renderNodoOrg(nodo, nivel, q, resaltados){
   const iniciales = (nodo.empleado?.nom || nodo.nombre).split(',')[0].trim().substring(0,2).toUpperCase();
   const empData   = nodo.empleado;
   const empInfo   = empData
-    ? `<span style="font-size:10px;color:var(--t3);font-family:var(--font-mono);margin-left:8px">Leg. ${empData.leg} · ${empData.emp} ${empData.cat?`· ${empData.cat} ${empData.tramo||''}`:''}</span>`
+    ? `<span style="font-size:10px;color:var(--t3);font-family:var(--font-mono);margin-left:8px">Leg. ${legD(empData.leg)} · ${empData.emp} ${empData.cat?`· ${empData.cat} ${empData.tramo||''}`:''}</span>`
     : `<span style="font-size:10px;color:var(--t3);font-style:italic;margin-left:8px">(Área / rol)</span>`;
 
   const areaLabel = nodo.area ? `<span style="font-size:11px;color:${color};font-family:var(--font-mono);margin-top:2px">${nodo.area}</span>` : '';
@@ -289,7 +289,7 @@ function renderNodoOrg(nodo, nivel, q, resaltados){
           const hit = resaltados && (d.emp.nom.toLowerCase().includes(q||'') || (d.emp.leg||'').includes(q||''));
           return `<div style="padding:5px 10px;background:var(--bg2);border:1px solid ${hit?'rgba(234,179,8,.5)':'var(--border)'};border-radius:4px;font-size:11px;color:var(--t2);line-height:1.4" title="${d.emp.emp} · ${d.emp.lugar||''}">
             <strong style="color:var(--t1)">${d.emp.nom.split(',')[0]}</strong>, ${d.emp.nom.split(',')[1]?.trim()||''}
-            <span style="color:var(--t3);font-family:var(--font-mono);font-size:10px">· Leg. ${d.emp.leg}</span>
+            <span style="color:var(--t3);font-family:var(--font-mono);font-size:10px">· Leg. ${legD(d.emp.leg)}</span>
             ${d.emp.cat?`<span style="color:var(--t3);font-family:var(--font-mono);font-size:10px;margin-left:4px">${d.emp.cat}${d.emp.tramo||''}</span>`:''}
           </div>`;
         }).join('')}

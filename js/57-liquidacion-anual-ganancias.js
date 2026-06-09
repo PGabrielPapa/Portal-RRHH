@@ -407,7 +407,7 @@ function _certAnualBody(r, empresaNombre){
   <div class="cert">
   <h1>LIQUIDACIÓN DE IMPUESTO A LAS GANANCIAS — 4ta. CATEGORÍA RELACIÓN DE DEPENDENCIA</h1>
   <div class="muted" style="text-align:center;margin-bottom:8px">F.1359 v2.0 — Art. 21 inc. a) RG ARCA 4003/2017 (mod. RG 5683/2025) — Período Fiscal ${r.anioFiscal}</div>
-  <div class="hdr"><div><strong>Beneficiario:</strong> ${r.nom}<br><span class="muted">CUIL ${r.cuil} · Legajo ${r.leg} · Meses trabajados: ${r.mesesTrabajados}</span></div>
+  <div class="hdr"><div><strong>Beneficiario:</strong> ${r.nom}<br><span class="muted">CUIL ${r.cuil} · Legajo ${legD(r.leg)} · Meses trabajados: ${r.mesesTrabajados}</span></div>
   <div style="text-align:right"><strong>Agente de Retención:</strong> ${empresaNombre}<br><span class="muted">CUIT ${datosEmp.cuit||'—'}</span></div></div>
 
   <h2>REMUNERACIONES GRAVADAS</h2><table>
@@ -524,8 +524,8 @@ async function publicarCertificadosAnuales(){
       await setGanancia(key, { key, leg: r.leg, nom: r.nom||'', emp: r.empresa||'',
         periodo: periodoLabelAnual, tipoDoc: 'anual', anioFiscal: anio, data: base64,
         uploadedAt: new Date().toLocaleString('es-AR'), uploadedBy: currentUser?.emp?.nom || 'RRHH' });
-      exitos++; elDetail.textContent = `✓ ${r.leg}`;
-    } catch(err){ fallas++; errores.push(`${r.leg}: ${err.message||err}`); elDetail.textContent = `✕ ${r.leg}: ${err.message||err}`; }
+      exitos++; elDetail.textContent = `✓ ${legD(r.leg)}`;
+    } catch(err){ fallas++; errores.push(`${legD(r.leg)}: ${err.message||err}`); elDetail.textContent = `✕ ${legD(r.leg)}: ${err.message||err}`; }
     finally { tempDiv.remove(); }
     if(i%3===0) await new Promise(rs=>setTimeout(rs,30));
   }

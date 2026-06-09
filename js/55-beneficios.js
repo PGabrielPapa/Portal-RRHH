@@ -300,7 +300,7 @@ function _benMostrarModal(emp, b){
       <div style="padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--t1)">${edicion?'Editar beneficio':'Agregar beneficio'}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px">${emp.nom} — Leg. ${emp.leg}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${emp.nom} — Leg. ${legD(emp.leg)}</div>
         </div>
         <button onclick="document.getElementById('modal-ben').remove()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
       </div>

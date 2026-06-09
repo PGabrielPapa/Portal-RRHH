@@ -38,7 +38,7 @@ function loginStep1(){
     setTimeout(()=>document.getElementById('ls-pwd').focus(),100);
   } else {
     // First time
-    document.getElementById('ls-empname2').textContent = `${found.nom} · ${found.leg} · ${found.emp}`;
+    document.getElementById('ls-empname2').textContent = `${found.nom} · ${legD(found.leg)} · ${found.emp}`;
     showLoginStep('ls-step3');
     setTimeout(()=>document.getElementById('ls-newpwd').focus(),100);
   }
@@ -130,7 +130,7 @@ function doLogin(emp){
       // Ya validó la pwd (es el DNI). Pedir cambio antes de entrar.
       loginEmp = emp;
       const lblEl = document.getElementById('ls-empname2');
-      if(lblEl) lblEl.textContent = `${emp.nom} · ${emp.leg} · ${emp.emp}`;
+      if(lblEl) lblEl.textContent = `${emp.nom} · ${legD(emp.leg)} · ${emp.emp}`;
       // Mostrar mensaje en step3 indicando que es obligatorio
       const step3 = document.getElementById('ls-step3');
       if(step3){

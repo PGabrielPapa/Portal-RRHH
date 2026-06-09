@@ -1812,7 +1812,7 @@ function buscarEmpLiq(){
     `<div onclick="seleccionarEmpLiq('${e.leg}','${e.nom.replace(/'/g,"\\'")}')"
       style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center"
       onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='transparent'">
-      <span style="font-family:var(--font-mono);color:var(--t3);font-size:10px;min-width:52px">${e.leg}</span>
+      <span style="font-family:var(--font-mono);color:var(--t3);font-size:10px;min-width:52px">${legD(e.leg)}</span>
       <span style="color:var(--t1);flex:1">${e.nom}</span>
       <span style="font-size:10px;color:var(--t3)">${e.emp||''}</span>
     </div>`).join('') +
@@ -2161,7 +2161,7 @@ async function renderNovedades(){
       return `<tr>
         <td style="${tdStyle}">
           <div style="font-size:12px;font-weight:500;color:var(--t1)">${e.nom.split(',')[0]}${_badgeAlta}${_btnLiqFinal}${_badgePlus}${_badgeManual}</div>
-          <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">${e.leg} · ${e.emp}</div>
+          <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">${legD(e.leg)} · ${e.emp}</div>
         </td>
         <td style="${tdStyle}">${inp('diasTrabajados',nov.diasTrabajados??Math.max(0,habiles-diasLic-diasSusp),55)}</td>
         <td style="${tdStyle};background:rgba(239,68,68,.03)">
@@ -3365,12 +3365,12 @@ function _cumpObjPreview(){
     </div>
     ${validos.slice(0, 100).map(v => `
       <div style="padding:2px 0;color:var(--t2)">
-        <span style="color:var(--green)">✓</span> ${v.leg} · ${v.nom.split(',')[0]} → <strong style="color:var(--t1)">$ ${v.monto.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
+        <span style="color:var(--green)">✓</span> ${legD(v.leg)} · ${v.nom.split(',')[0]} → <strong style="color:var(--t1)">$ ${v.monto.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
       </div>
     `).join('')}
     ${validos.length > 100 ? `<div style="color:var(--t3);font-style:italic;padding:4px 0">… y ${validos.length-100} más</div>` : ''}
     ${noEncontrados.length ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">
-      ${noEncontrados.slice(0, 50).map(v => `<div style="color:var(--red);padding:2px 0">✕ Legajo ${v.leg} no encontrado en la nómina</div>`).join('')}
+      ${noEncontrados.slice(0, 50).map(v => `<div style="color:var(--red);padding:2px 0">✕ Legajo ${legD(v.leg)} no encontrado en la nómina</div>`).join('')}
     </div>` : ''}
     ${r.errores.length ? `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)">
       ${r.errores.slice(0, 30).map(e => `<div style="color:var(--yellow);padding:2px 0">⚠ Línea ${e.linea}: ${e.motivo} — <code style="opacity:.7">${(e.raw||'').slice(0,50)}</code></div>`).join('')}
@@ -3879,7 +3879,7 @@ function renderSiradigPreview(empleados){
       <td style="${tdS}">
         <div style="font-family:var(--font-mono);color:${emp?'var(--t1)':'var(--yellow)'};font-size:11px">${e.cuil}</div>
         <div style="font-size:11px;color:var(--t2);margin-top:2px">${e.nom || (emp?emp.nom:'—')}</div>
-        ${emp ? `<div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">Leg. ${emp.leg}</div>` : `<div style="font-size:10px;color:var(--yellow)">⚠ No encontrado en nómina</div>`}
+        ${emp ? `<div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">Leg. ${legD(emp.leg)}</div>` : `<div style="font-size:10px;color:var(--yellow)">⚠ No encontrado en nómina</div>`}
       </td>
       <td style="${tdS};text-align:center">
         ${e.tieneConyuge ? '✓' : '—'}<br>
@@ -4014,7 +4014,7 @@ async function calcularYRenderPreview(){
     } catch(_eItem){
       // No abortar toda la liquidación por el error de un empleado: registrarlo
       // y seguir, para que el resto se calcule y el problema sea VISIBLE.
-      console.error(`Liquidación: error al calcular legajo ${emp.leg} (${emp.nom||''}):`, _eItem);
+      console.error(`Liquidación: error al calcular legajo ${legD(emp.leg)} (${emp.nom||''}):`, _eItem);
       _erroresCalc.push(`${emp.nom||emp.leg}: ${(_eItem && _eItem.message) || _eItem}`);
     }
   }
@@ -4061,7 +4061,7 @@ function renderPreviewTabla(items){
     <thead><tr>${cols.map(([h,a])=>`<th style="${thS(a)}">${h}</th>`).join('')}</tr></thead>
     <tbody>
     ${items.map(i=>`<tr>
-      <td style="${tdS('left',false)}">${i.nom.split(',')[0]}<br><span style="font-size:9px;color:var(--t3)">${i.leg}</span></td>
+      <td style="${tdS('left',false)}">${i.nom.split(',')[0]}<br><span style="font-size:9px;color:var(--t3)">${legD(i.leg)}</span></td>
       <td style="${tdS('left',false)}">${i.empresa}</td>
       <td style="${tdS('right',false,'var(--t2)')}">${(()=>{
         const total = i.sueldoBasico + $m(i.mCompFuncion);
@@ -4182,7 +4182,7 @@ function validarLiquidacionPreAprobar(liq){
     ? Math.ceil(habiles / 2) : habiles;
 
   liq.items.forEach(i => {
-    const ident = `${i.leg} ${i.nom?.split(',')[0] || ''}`;
+    const ident = `${legD(i.leg)} ${i.nom?.split(',')[0] || ''}`;
 
     // 1. Netos negativos (ERROR)
     if($m(i.netoAPagar) < 0){
@@ -4576,7 +4576,7 @@ async function rechazarEmpleadoLiq(){
 
   // Construir lista de empleados para elegir
   const opts = liq.items.map((i,idx)=>
-    `${String(idx+1).padStart(2,'0')} — ${i.leg} — ${i.nom}`
+    `${String(idx+1).padStart(2,'0')} — ${legD(i.leg)} — ${i.nom}`
   ).join('\n');
   const resp = await showPrompt({titulo:'Confirmar recálculo',mensaje:'¿Querés recalcular los items de esta liquidación?',labelOk:'Recalcular',labelCancel:'Cancelar'});
   if(resp===null) return;
@@ -4638,7 +4638,7 @@ function renderListaRecibos(items){
     <div style="display:flex;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);gap:14px">
       <div style="flex:1">
         <div style="font-size:13px;font-weight:500;color:var(--t1)">${i.nom}</div>
-        <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">${i.leg} · ${i.empresa}</div>
+        <div style="font-size:11px;color:var(--t3);font-family:var(--font-mono)">${legD(i.leg)} · ${i.empresa}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:13px;font-weight:700;color:var(--green)">${fmtPesos(i.netoAPagar)}</div>
@@ -5050,7 +5050,7 @@ function reciboUnaCopiaPag(item, liq, pageRows, params, empDB, tipo, pagActual, 
       <td style="border:1px solid #999;padding:3px 5px;font-size:8px;width:22%;font-weight:bold;text-align:center">C.U.I.L.</td>
     </tr>
     <tr>
-      <td style="border:1px solid #999;padding:3px 5px;font-size:8.5px;font-family:Courier New,monospace">${item.leg}</td>
+      <td style="border:1px solid #999;padding:3px 5px;font-size:8.5px;font-family:Courier New,monospace">${legD(item.leg)}</td>
       <td style="border:1px solid #999;padding:3px 5px;font-size:9px;font-weight:bold">${item.nom}</td>
       <td style="border:1px solid #999;padding:3px 5px;font-size:8.5px;font-family:Courier New,monospace;text-align:center">${item.cuil||''}</td>
     </tr>

@@ -396,7 +396,7 @@ function _renderEscalaPaneActiva(escala, conteo, nominaActiva){
               <div id="sinmap-row-${e.leg}" style="padding:10px 12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 120px 160px 90px;gap:10px;align-items:center;font-size:12px">
                 <div style="min-width:0;overflow:hidden">
                   <div style="color:var(--t1);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.nom||'(sin nombre)'}</div>
-                  <div style="color:var(--t3);font-family:var(--font-mono);font-size:10px;margin-top:2px">${e.leg} · ${(e.emp||'').split(' ')[0]}${e.lugar?' · '+e.lugar:''}${e.tarea?' · '+e.tarea:''}</div>
+                  <div style="color:var(--t3);font-family:var(--font-mono);font-size:10px;margin-top:2px">${legD(e.leg)} · ${(e.emp||'').split(' ')[0]}${e.lugar?' · '+e.lugar:''}${e.tarea?' · '+e.tarea:''}</div>
                 </div>
                 <select id="sinmap-cat-${e.leg}" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:5px 8px;color:var(--t1);font-size:11px;outline:none;font-family:var(--font-mono)">
                   <option value="">—</option>
@@ -1492,7 +1492,7 @@ async function renderEvalPendientesRRHH(){
     <span>Legajo</span><span>Empleado</span><span>Empresa</span><span>Tipo</span><span>Finalizada</span><span>Evaluador</span><span style="text-align:right">Acciones</span>
   </div>`+filas.map(({ev, emp})=>`
     <div style="display:grid;grid-template-columns:80px 1fr 160px 140px 140px 140px 200px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);gap:6px">
-      <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3)">${emp.leg}</div>
+      <div style="font-size:11px;font-family:var(--font-mono);color:var(--t3)">${legD(emp.leg)}</div>
       <div>
         <div style="font-size:13px;font-weight:500;color:var(--t1)">${emp.nom}</div>
         <div style="font-size:10px;color:var(--t3);font-family:var(--font-mono)">${emp.tarea||''}</div>
