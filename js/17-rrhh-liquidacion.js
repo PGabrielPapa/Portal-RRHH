@@ -74,6 +74,13 @@ function getDefaultLiqParams(){
     pctSindicatoEmp:2, nombreSindicato:'UOYEP',
     pctJubPatronal:10.17, pctOsPatronal:6, pctPamiPatronal:1.5,
     pctDesempleo:0.89, pctArt:1.5, pctSindicatoPatronal:1.5,
+    // SCVO — Seguro Colectivo de Vida Obligatorio (Dto. 1567/74): cargo
+    // patronal fijo per cápita mensual (valor fijado por la SSN). 0 = no
+    // parametrizado. RR.HH. carga el per cápita vigente en Parámetros.
+    scvoPercapita:0,
+    // Tope de retención mensual de Ganancias (RG 4003/17): la retención
+    // del mes no puede superar este % del neto. Remanente = saldo a pagar.
+    gan_topeRetencionPct:35,
     pctPresentismo:5, pctAntiguedadPorAnio:1,
     bancoEmpresa:'', cbuEmpresa:'',
 
@@ -581,7 +588,7 @@ function calcularAniosAntiguedad(fechaIngreso, anio, mes){
   let partes;
   if(fechaIngreso.includes('-')) partes=fechaIngreso.split('-');
   else partes=fechaIngreso.split('/').reverse();
-  const ingreso=new Date(parseInt(partes[0]),parseInt(partes[1])-1,parseInt(partes[2]||1));
+  const ingreso=new Date(parseInt(partes[0], 10),parseInt(partes[1], 10)-1,parseInt(partes[2]||1, 10));
   // Usar último día del mes liquidado como referencia (más justo:
   // al terminar el mes ya cumplió el aniversario)
   const ref=new Date(anio,mes,0);
@@ -1032,7 +1039,7 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
   let _feriadosEnQuincena = cantFeriadosNoTrab;
   if(_esQuincenal && _feriadosAplicables.length){
     _feriadosEnQuincena = _feriadosAplicables.filter(fIso => {
-      const d = parseInt(fIso.substring(8, 10));
+      const d = parseInt(fIso.substring(8, 10), 10);
       return _esQuinc1 ? (d <= 15) : (d > 15);
     }).length - Math.min(_feriadosTrabajados, _feriadosAplicables.length);
     _feriadosEnQuincena = Math.max(0, _feriadosEnQuincena);
@@ -1382,6 +1389,21 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
     }
   }
 
+  // ─── TOPE DE RETENCIÓN MENSUAL — RG ARCA 4003/2017 ──────────────────────
+  // La retención de Ganancias del mes no puede superar el 35% (params.
+  // gan_topeRetencionPct) de la remuneración neta del período (haberes −
+  // aportes obligatorios). El excedente NO se retiene: se expone como
+  // SALDO A PAGAR en el F.1357. Por el diseño de acumulados
+  // (impMesAuto = impDetAcum − retenidoAcum), el remanente no retenido se
+  // traslada automáticamente a los meses siguientes del ejercicio.
+  // No aplica a devoluciones (ganancias < 0).
+  const _topeRetPct = (params.gan_topeRetencionPct != null ? params.gan_topeRetencionPct : 35);
+  if(ganancias > 0 && _topeRetPct > 0){
+    const _netoAntesGan = totalHaberes - (jubilacion + obraSocial + anssal + pamiEmp + sindicato);
+    const _topeRet = Math.max(0, _netoAntesGan) * _topeRetPct / 100;
+    if(ganancias > _topeRet) ganancias = _topeRet;
+  }
+
   // ═══════════════════════════════════════════════════════════════
   //   EMBARGOS — modelo de array (múltiples coexistentes)
   // ───────────────────────────────────────────────────────────────
@@ -1513,6 +1535,9 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
     }
   }
   const art=totalHaberesRem*_pctArtVigente/100;
+  // SCVO (Dto. 1567/74): cargo patronal fijo per cápita, NO porcentual
+  // sobre haberes. Solo se aplica si RR.HH. cargó el per cápita vigente.
+  const scvo = $m(params.scvoPercapita) || 0;
   const pctSindPatronal = getPctSindicatoPatronal(emp);
   const sindPatronal=totalHaberesRem*pctSindPatronal/100;
 
@@ -1545,7 +1570,7 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
   const totalContribUOCRA = mFCL + mIeric + mFondoSanidad + mCAR + mCeslu;
 
   // El total de contribuciones patronales incluye las del régimen UOCRA si aplica
-  const totalContrib=jubPatronal+osPatronal+pamiPatronal+desempleo+art+sindPatronal+totalContribUOCRA+_ccTotalContribPat;
+  const totalContrib=jubPatronal+osPatronal+pamiPatronal+desempleo+art+sindPatronal+scvo+totalContribUOCRA+_ccTotalContribPat;
 
   return {
     leg:emp.leg, nom:emp.nom, empresa:emp.emp, lugar:emp.lugar||'', cuil:emp.cuil||'',
@@ -1637,7 +1662,7 @@ async function calcularItemLiquidacion(emp, params, nov, anio, mes, anticipos, f
     // Referencia compacta a las novedades (para módulos que consultan flags ad-hoc)
     nov: { _importadoSiradig: !!nov._importadoSiradig, hsExtra50: nov.hsExtra50, hsExtra100: nov.hsExtra100 },
     totalDescuentos, netoAPagar, redondeo,
-    jubPatronal, osPatronal, pamiPatronal, desempleo, art, sindPatronal, totalContrib,
+    jubPatronal, osPatronal, pamiPatronal, desempleo, art, sindPatronal, scvo, totalContrib,
     // Régimen UOCRA Ley 22.250 — contribuciones patronales adicionales
     // (todas en cero si el empleado no es de UOCRA)
     esRegimenUOCRA: !!_aportesUOCRA,
@@ -2042,7 +2067,7 @@ async function renderNovedades(){
     // Fecha solicitud vs período
     const fechaSol=(s.fecha||s.created||'').substring(0,7).replace('/','').replace('-','');
     const periodoComp=periodoYM.replace('-','');
-    if(Math.abs(parseInt(fechaSol)-parseInt(periodoComp))<=1){
+    if(Math.abs(parseInt(fechaSol, 10)-parseInt(periodoComp, 10))<=1){
       const l=s.emp?.leg||s.leg;
       if(l) anticiposPorLeg[l]=(anticiposPorLeg[l]||0)+$m(s.monto);
     }
@@ -2815,7 +2840,7 @@ function _renderLiqFinalContenido(leg, emp){
           <div>
             <label style="font-size:9px;color:var(--t3)">Meses retenidos</label>
             <input type="number" min="0" step="1" value="${lf.sancionArt132bisMeses||0}" id="lf-132bis-meses"
-              onchange="(() => { const m=parseInt(document.getElementById('lf-132bis-meses')?.value||'0')||0; document.getElementById('lf-132bis-monto').value=(${mejorRem}*m).toFixed(2); })()"
+              onchange="(() => { const m=parseInt(document.getElementById('lf-132bis-meses')?.value||'0', 10)||0; document.getElementById('lf-132bis-monto').value=(${mejorRem}*m).toFixed(2); })()"
               style="width:100%;background:var(--bg1);border:1px solid var(--border);border-radius:4px;padding:6px 8px;color:var(--t1);font-size:12px;outline:none;font-family:var(--font-mono);text-align:right;box-sizing:border-box">
           </div>
           <div>
@@ -2854,7 +2879,7 @@ function _actualizarLiqFinal(leg){
   const motivo = document.getElementById('lf-motivo')?.value || '';
   const mejorRem = parseFloat(document.getElementById('lf-mejorrem')?.value || '0');
   const topeCCT = parseFloat(document.getElementById('lf-topecct')?.value || '0');
-  const diasGozados = parseInt(document.getElementById('lf-vac-gozados')?.value) || 0;
+  const diasGozados = parseInt(document.getElementById('lf-vac-gozados')?.value, 10) || 0;
   const nov = _novedadesActuales[leg];
   if(!nov.liqFinalDatos) nov.liqFinalDatos = {};
   nov.liqFinalDatos.motivoBaja = motivo;
@@ -2897,7 +2922,7 @@ function guardarLiqFinal(leg){
     mejorRem:          _v('lf-mejorrem'),
     topeCCT:           _v('lf-topecct'),
     diasVacNoGozadas:  _v('lf-vac-dias'),
-    diasGozadosEnAnio: parseInt(document.getElementById('lf-vac-gozados')?.value) || 0,
+    diasGozadosEnAnio: parseInt(document.getElementById('lf-vac-gozados')?.value, 10) || 0,
     vacNoGozadasMonto: _v('lf-vac-monto'),
     sacProporcional:   _v('lf-sac'),
     // Arts. 232 / 233 / 245 — régimen LCT
@@ -2914,7 +2939,7 @@ function guardarLiqFinal(leg){
     multaCertificados:       _v('lf-multa-cert'),        // Art. 80 LCT
     dobleIndemLey25323:      _v('lf-doble-indem'),       // Ley 25323 Art. 1
     incrementoMora25323:     _v('lf-mora-25323'),        // Ley 25323 Art. 2
-    sancionArt132bisMeses:   parseInt(document.getElementById('lf-132bis-meses')?.value) || 0,
+    sancionArt132bisMeses:   parseInt(document.getElementById('lf-132bis-meses')?.value, 10) || 0,
     sancionArt132bis:        _v('lf-132bis-monto'),      // Art. 132 bis
     notas: (document.getElementById('lf-notas')?.value || '').trim(),
     calculadoEl: new Date().toISOString(),
@@ -4555,7 +4580,7 @@ async function rechazarEmpleadoLiq(){
   ).join('\n');
   const resp = await showPrompt({titulo:'Confirmar recálculo',mensaje:'¿Querés recalcular los items de esta liquidación?',labelOk:'Recalcular',labelCancel:'Cancelar'});
   if(resp===null) return;
-  const idx = parseInt(resp.trim()) - 1;
+  const idx = parseInt(resp.trim(), 10) - 1;
   if(isNaN(idx) || idx<0 || idx>=liq.items.length){
     toast('⚠ Número inválido','var(--yellow)'); return;
   }

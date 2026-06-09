@@ -1327,7 +1327,7 @@ function _guardarEditorSMVMPeriodo(mesKeyAnterior){
   const data = getSMVMData();
   const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const [y,m] = mes.split('-');
-  const label = `${meses[parseInt(m)-1]} ${y}`;
+  const label = `${meses[parseInt(m, 10)-1]} ${y}`;
 
   // Eliminar el período original si el mes cambió
   data.cronograma = data.cronograma.filter(r=>r.mes!==mesKeyAnterior);
@@ -2320,7 +2320,7 @@ function confirmarNuevoPeriodoSMVM(){
   const data=getSMVMData();
   const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const [anio,m]=mes.split('-');
-  const label=`${meses[parseInt(m)-1]} ${anio}`;
+  const label=`${meses[parseInt(m, 10)-1]} ${anio}`;
   const idx=data.cronograma.findIndex(r=>r.mes===mes);
   if(idx>=0) data.cronograma[idx]={ mes, label, mensual, horario: horario||data.cronograma[idx].horario };
   else data.cronograma.push({ mes, label, mensual, horario: horario||0 });
@@ -2490,7 +2490,7 @@ async function confirmarActualizacionSindicato(sind){
   const round2=v=>Math.round(v*100)/100;
   const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const p=vigencia.split('-');
-  const mesLabel=`${meses[parseInt(p[1])-1]} ${p[0]}`;
+  const mesLabel=`${meses[parseInt(p[1], 10)-1]} ${p[0]}`;
 
   const nuevoId=sind+'_'+ Date.now()+'_'+Math.random().toString(36).slice(2,7);
 
@@ -3025,7 +3025,7 @@ function confirmarActualizacionSindGenerico(id){
   if(!desc){ if(typeof showAlert==='function') showAlert('Ingresá una descripción.','warning'); return; }
   const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const p=vigencia.split('-');
-  const mesLabel=`${meses[parseInt(p[1])-1]} ${p[0]}`;
+  const mesLabel=`${meses[parseInt(p[1], 10)-1]} ${p[0]}`;
   // Actualizar la versión en el sind (para user-created) o solo en historial (builtin)
   const sind=getSindById(id);
   if(!sind) return;
@@ -3156,7 +3156,7 @@ function confirmarNuevoSindicato(){
   // Parsear categorías
   const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const p=vigencia.split('-');
-  const mesLabel=`${meses[parseInt(p[1])-1]} ${p[0]}`;
+  const mesLabel=`${meses[parseInt(p[1], 10)-1]} ${p[0]}`;
 
   const horaLines=[], mensualLines=[];
   catsRaw.split('\n').forEach(l=>{

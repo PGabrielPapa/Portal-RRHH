@@ -20,7 +20,7 @@ const _MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','
 function _certMesLetras(m){ return _MESES_LARGO[m-1] || ''; }
 
 function _certAnioLetras(y){
-  const n = parseInt(y);
+  const n = parseInt(y, 10);
   if(n <= 0) return String(y);
   const unidades = ['','un','dos','tres','cuatro','cinco','seis','siete','ocho','nueve',
                     'diez','once','doce','trece','catorce','quince','dieciséis','diecisiete',
@@ -592,9 +592,9 @@ function _certAbrirPrevistaEditable(p, fechaIsoOverride){
   const campos = p.campos || {};
   const fechaIso = fechaIsoOverride || p.fecha_resolucion || _certFechaHoy().iso;
   const [fy, fm, fd] = String(fechaIso).split('-');
-  const dia   = parseInt(fd);
-  const mes   = parseInt(fm);
-  const anio  = parseInt(fy);
+  const dia   = parseInt(fd, 10);
+  const mes   = parseInt(fm, 10);
+  const anio  = parseInt(fy, 10);
 
   // Datos de empresa
   const edatos = (typeof getEmpresaDatos === 'function') ? getEmpresaDatos(p.empresa) : null;

@@ -104,8 +104,8 @@ function approveAction(){
     }
   } else {
     // HR approval — siempre lee los campos de cuotas/plazo/monto
-    const cuotas = parseInt(document.getElementById('mod-cuotas')?.value)||null;
-    const plazo  = parseInt(document.getElementById('mod-plazo')?.value)||null;
+    const cuotas = parseInt(document.getElementById('mod-cuotas')?.value, 10)||null;
+    const plazo  = parseInt(document.getElementById('mod-plazo')?.value, 10)||null;
     const monto  = parseFloat(document.getElementById('mod-monto')?.value)||s.monto;
     s.cuotas = cuotas; s.plazo = plazo; s.montoAprobado = monto;
     s.status='approved';

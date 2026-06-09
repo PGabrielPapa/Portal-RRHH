@@ -151,7 +151,7 @@ async function generarEvalPrueba(leg){
 // Si lo ejecuta RR.HH. → toda la nómina activa.
 async function inicializarEvalAnual(){
   const anioSel = document.getElementById('eval-anual-anio')?.value;
-  const anio = anioSel ? parseInt(anioSel) : new Date().getFullYear();
+  const anio = anioSel ? parseInt(anioSel, 10) : new Date().getFullYear();
   if(isNaN(anio) || anio < 2000 || anio > 2100){ toast('⚠ Año inválido','var(--red)'); return; }
 
   const esRRHH = currentUser?.role === 'rrhh';
@@ -279,7 +279,7 @@ async function renderEvalAnualGerente(){
       selAnio.appendChild(opt);
     }
   }
-  const anio = parseInt(selAnio?.value) || new Date().getFullYear();
+  const anio = parseInt(selAnio?.value, 10) || new Date().getFullYear();
   const q = (document.getElementById('eval-anual-search')?.value||'').toLowerCase();
   const filtroEstado = document.getElementById('eval-anual-estado')?.value || '';
 
@@ -632,7 +632,7 @@ async function _recolectarDatosEval(){
     datos[sec][`item_${idx}`][f] = el.value;
   });
   document.querySelectorAll('[data-eval-lista]').forEach(el=>{
-    const sec = el.dataset.evalLista, idx = parseInt(el.dataset.evalIdx);
+    const sec = el.dataset.evalLista, idx = parseInt(el.dataset.evalIdx, 10);
     if(!datos[sec]) datos[sec] = [];
     datos[sec][idx] = el.value;
   });

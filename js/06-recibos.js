@@ -186,7 +186,7 @@ function periodoLabel(ym){ // "2025-04" → "Abril 2025"
   const parts = String(ym).split('-');
   if(parts.length < 2) return String(ym);            // período no estándar (p.ej. anual) → tal cual
   const [y,m] = parts;
-  const mi = parseInt(m);
+  const mi = parseInt(m, 10);
   if(isNaN(mi) || mi < 1 || mi > 12) return String(ym);
   const meses = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   return `${meses[mi]} ${y}`;
@@ -535,7 +535,7 @@ function renderAsignacionLista(){
 }
 
 function buscarEmpPagina(input){
-  const i = parseInt(input.dataset.page);
+  const i = parseInt(input.dataset.page, 10);
   const q = input.value.toLowerCase().trim();
   const res = document.getElementById(`pag-results-${i}`);
   _asignaciones[i].emp = null;
@@ -859,7 +859,7 @@ function mostrarBannerCumpleanos(){
       const iniciales = apellido.substring(0,2).toUpperCase();
       // Días hasta el próximo cumpleaños
       const proximoCumple = new Date(hoy.getFullYear(), cmm-1, cdd);
-      if(proximoCumple < hoy && !(cdd===parseInt(dd) && cmm===parseInt(mm)))
+      if(proximoCumple < hoy && !(cdd===parseInt(dd, 10) && cmm===parseInt(mm, 10)))
         proximoCumple.setFullYear(hoy.getFullYear()+1);
       const diasHasta = Math.round((proximoCumple - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 86400000);
       const area = getValidador(emp)?.area || '';
@@ -1311,7 +1311,7 @@ function renderGanLista(){
 }
 
 function buscarGanPagina(input){
-  const i=parseInt(input.dataset.idx);
+  const i=parseInt(input.dataset.idx, 10);
   const q=input.value.toLowerCase().trim();
   const res=document.getElementById(`gan-pag-results-${i}`);
   _ganAsignaciones[i].emp=null; input.style.borderColor='var(--border)';

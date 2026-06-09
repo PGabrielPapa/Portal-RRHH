@@ -72,7 +72,7 @@ function renderMiEquipo(){
     let partes;
     if(ing.includes('/')) partes = ing.split('/').reverse();
     else partes = ing.split('-');
-    const ingDate = new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]||1));
+    const ingDate = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10)-1, parseInt(partes[2]||1, 10));
     const años = Math.floor((new Date()-ingDate)/(1000*60*60*24*365.25));
     return `${años} año${años!==1?'s':''}`;
   };

@@ -256,15 +256,15 @@ function _parsearLiquidacion(raw){
 
   // Formato MM-YYYY o MM/YYYY
   let m = txt.match(/^(\d{1,2})[\/\-](\d{4})$/);
-  if(m) return { anio: parseInt(m[2]), mes: parseInt(m[1]) };
+  if(m) return { anio: parseInt(m[2], 10), mes: parseInt(m[1], 10) };
 
   // Formato YYYY-MM o YYYY/MM
   m = txt.match(/^(\d{4})[\/\-](\d{1,2})$/);
-  if(m) return { anio: parseInt(m[1]), mes: parseInt(m[2]) };
+  if(m) return { anio: parseInt(m[1], 10), mes: parseInt(m[2], 10) };
 
   // Formato YYYYMM
   m = txt.match(/^(\d{4})(\d{2})$/);
-  if(m) return { anio: parseInt(m[1]), mes: parseInt(m[2]) };
+  if(m) return { anio: parseInt(m[1], 10), mes: parseInt(m[2], 10) };
 
   // Mes en texto + año
   const MES_TXT = { enero:1, febrero:2, marzo:3, abril:4, mayo:5, junio:6, julio:7, agosto:8, septiembre:9, octubre:10, noviembre:11, diciembre:12 };
@@ -272,7 +272,7 @@ function _parsearLiquidacion(raw){
   let mesNum = null, anioNum = null;
   for(const p of palabras){
     if(MES_TXT[p]) mesNum = MES_TXT[p];
-    if(/^\d{4}$/.test(p)) anioNum = parseInt(p);
+    if(/^\d{4}$/.test(p)) anioNum = parseInt(p, 10);
   }
   if(mesNum && anioNum) return { anio: anioNum, mes: mesNum };
 

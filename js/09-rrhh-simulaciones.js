@@ -113,8 +113,8 @@ function renderSimMensual(){
 }
 
 async function ejecutarSimMensual(){
-  const mes = parseInt(document.getElementById('sim-mes')?.value || '1');
-  const anio = parseInt(document.getElementById('sim-anio')?.value || new Date().getFullYear());
+  const mes = parseInt(document.getElementById('sim-mes')?.value || '1', 10);
+  const anio = parseInt(document.getElementById('sim-anio')?.value || new Date().getFullYear(), 10);
   const empFiltro = document.getElementById('sim-emp').value;
   const pctInc = parseFloat(document.getElementById('sim-pct-inc')?.value || '0') || 0;
   const montoInc = parseFloat(document.getElementById('sim-monto-inc')?.value || '0') || 0;
@@ -855,7 +855,7 @@ async function ejecutarSimFinal(){
   const leg = document.getElementById('fin-emp').value;
   const tipo = document.getElementById('fin-tipo').value;
   const fechaCeseStr = document.getElementById('fin-fecha').value;
-  const vacGozadas = parseInt(document.getElementById('fin-vac-gozadas')?.value || '0') || 0;
+  const vacGozadas = parseInt(document.getElementById('fin-vac-gozadas')?.value || '0', 10) || 0;
   const preavisoOtorgado = document.getElementById('fin-preaviso').value === 'si';
 
   if(!leg){ toast('⚠ Seleccioná un empleado', 'var(--yellow)'); return; }

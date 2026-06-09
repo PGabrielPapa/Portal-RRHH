@@ -202,8 +202,8 @@ async function calcGananciasMes(item, liq, params, nov){
   // Cargas de familia y deducciones voluntarias: SOLO con F.572 SIRADIG importado
   const tieneSiradig = !!(nov && nov._importadoSiradig);
   const tieneConyuge = tieneSiradig && !!nov.tieneConyuge;
-  const nroHijos     = tieneSiradig ? (parseInt(nov.nroHijosMenores) || 0) : 0;
-  const nroHijosInc  = tieneSiradig ? (parseInt(nov.nroHijosIncapacitados) || 0) : 0;
+  const nroHijos     = tieneSiradig ? (parseInt(nov.nroHijosMenores, 10) || 0) : 0;
+  const nroHijosInc  = tieneSiradig ? (parseInt(nov.nroHijosIncapacitados, 10) || 0) : 0;
   const cargaConyuge  = tieneConyuge ? params.gan_cargaConyugeAnual * propMes : 0;
   const cargaHijos    = nroHijos    * params.gan_cargaHijoAnual    * propMes;
   const cargaHijosInc = nroHijosInc * params.gan_cargaHijoIncAnual * propMes;
@@ -270,6 +270,9 @@ async function planillaGananciasHTML(item, liq, params, nov){
 
   // Retención del período (lo que impacta el recibo del mes; con signo)
   const impPeriodo  = $m(item.ganancias);   // = impMesAuto salvo override manual
+  // SALDO A PAGAR (RG 4003/17): remanente del impuesto del mes que NO se
+  // retuvo por el tope del 35% (impMesAuto determinado − retención aplicada).
+  const saldoAPagar = Math.max(0, $m(impMesAuto) - impPeriodo);
   const dv = dedVolTopadas || {};
 
   // Fechas / cabecera
@@ -394,7 +397,7 @@ async function planillaGananciasHTML(item, liq, params, nov){
     ${r('Período 2024 - Diferencia Art. 83 de la Ley 27.743 - "Deducción Especial" según Art. 8° del Decreto 652/2024', 0)}
     ${r('Pagos a cuenta', 0)}
     ${r('IMPUESTO A RETENER DE LA LIQUIDACIÓN', impPeriodo, {bold:true, bg:'#f0f0f0'})}
-    ${r('SALDO A PAGAR', 0, {bold:true})}`;
+    ${r('SALDO A PAGAR', saldoAPagar, {bold:true})}`;
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>F.1357 Ganancias ${item.leg} ${periodoMMYY}</title>
@@ -540,6 +543,7 @@ function cargarParamsForm(){
   set('par-pami-emp',p.pctPamiEmp); set('par-sind-emp',p.pctSindicatoEmp); set('par-sind-nom',p.nombreSindicato);
   set('par-jub-p',p.pctJubPatronal); set('par-os-p',p.pctOsPatronal); set('par-pami-p',p.pctPamiPatronal);
   set('par-des',p.pctDesempleo); set('par-art',p.pctArt); set('par-sind-p',p.pctSindicatoPatronal);
+  set('par-scvo',p.scvoPercapita); set('par-gan-tope-ret', p.gan_topeRetencionPct);
   set('par-pres',p.pctPresentismo); set('par-antig',p.pctAntiguedadPorAnio);
   set('par-smvm',p.smvmMensual||0);
   set('par-f931topejub', p.f931TopeJub||0);
@@ -987,6 +991,8 @@ function guardarLiqParams(){
     pctPamiEmp:gv('par-pami-emp'), pctSindicatoEmp:gv('par-sind-emp'), nombreSindicato:gs('par-sind-nom'),
     pctJubPatronal:gv('par-jub-p'), pctOsPatronal:gv('par-os-p'), pctPamiPatronal:gv('par-pami-p'),
     pctDesempleo:gv('par-des'), pctArt:gv('par-art'), pctSindicatoPatronal:gv('par-sind-p'),
+    scvoPercapita:gv('par-scvo'),
+    gan_topeRetencionPct:(()=>{ const _e=document.getElementById('par-gan-tope-ret'); const _n=_e?parseFloat(_e.value):NaN; return isNaN(_n)?35:_n; })(),
     pctPresentismo:gv('par-pres'), pctAntiguedadPorAnio:gv('par-antig'),
     smvmMensual: gv('par-smvm') || actual.smvmMensual,
     f931TopeJub: gv('par-f931topejub') || actual.f931TopeJub || 0,

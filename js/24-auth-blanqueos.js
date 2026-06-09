@@ -178,13 +178,13 @@ function exportarTXT(){
     // BUGFIX 2: respetar la cantidad de cuotas definida por RR.HH. Antes se
     // generaba siempre UNA fila ignorando s.cuotas, lo que mandaba el descuento
     // completo en un solo mes en vez de distribuirlo.
-    const nCuotas = (s.cuotas && s.cuotas > 1) ? Math.min(24, parseInt(s.cuotas)) : 1;
+    const nCuotas = (s.cuotas && s.cuotas > 1) ? Math.min(24, parseInt(s.cuotas, 10)) : 1;
     const montoPorCuota = montoTotal / nCuotas;
 
     // Mes base: el mes/año de la creación de la solicitud (formato dd/mm/yyyy)
     const partes = (s.created || '').split('/');
-    const mesBase  = partes[1] ? parseInt(partes[1]) : (new Date().getMonth() + 1);
-    const anioBase = partes[2] ? parseInt(partes[2]) : (new Date().getFullYear());
+    const mesBase  = partes[1] ? parseInt(partes[1], 10) : (new Date().getMonth() + 1);
+    const anioBase = partes[2] ? parseInt(partes[2], 10) : (new Date().getFullYear());
 
     for(let i = 0; i < nCuotas; i++){
       const [m, y] = avanzarMes(mesBase, anioBase, i);

@@ -31,7 +31,7 @@ async function calcularDiasVacaciones(fechaIngreso, anio){
   let partes;
   if(fechaIngreso.includes('-')){ partes = fechaIngreso.split('-'); }
   else { partes = fechaIngreso.split('/').reverse(); }
-  const ingreso = new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]));
+  const ingreso = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10)-1, parseInt(partes[2], 10));
   const al31dic = new Date(anio, 11, 31);
   const años = (al31dic - ingreso) / (1000 * 60 * 60 * 24 * 365.25);
   for(const t of REGLAMENTO_VACACIONES.diasPorAntigüedad){
@@ -273,7 +273,7 @@ async function renderHistorialLicenciasUI(contenedorId, leg, opciones){
   const filtroAnio = opciones.mostrarFiltroAnio !== false ? `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <label style="font-size:10px;font-family:var(--font-mono);color:var(--t3);text-transform:uppercase">Año:</label>
-      <select onchange="renderHistorialLicenciasUI('${contenedorId}','${leg}',{anio:parseInt(this.value)||null,todosLosAnios:!this.value,mostrarFiltroAnio:${opciones.mostrarFiltroAnio!==false},titulo:${JSON.stringify(opciones.titulo||'')}})" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 10px;color:var(--t1);font-size:11px;outline:none;font-family:var(--font-mono)">
+      <select onchange="renderHistorialLicenciasUI('${contenedorId}','${leg}',{anio:parseInt(this.value, 10)||null,todosLosAnios:!this.value,mostrarFiltroAnio:${opciones.mostrarFiltroAnio!==false},titulo:${JSON.stringify(opciones.titulo||'')}})" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:4px 10px;color:var(--t1);font-size:11px;outline:none;font-family:var(--font-mono)">
         ${[anioActual, anioActual-1, anioActual-2, anioActual-3].map(y => `<option value="${y}"${y===anioActual?' selected':''}>${y}</option>`).join('')}
         <option value="">Todos los años</option>
       </select>

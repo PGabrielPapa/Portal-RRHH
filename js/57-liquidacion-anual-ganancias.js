@@ -106,8 +106,8 @@ async function calcLiquidacionAnualGan(emp, anioFiscal, liquidaciones, novFinal)
   const dedEsp2  = $m(params.gan_dedEsp2Anual);   // 12ava parte (2º párrafo Art. 30)
   const dedEspec = $m(params.gan_dedEspecifica);  // jubilados/pensionados
   const tieneConyuge = tieneSiradig && !!novFinal.tieneConyuge;
-  const nroHijos     = tieneSiradig ? (parseInt(novFinal.nroHijosMenores)||0) : 0;
-  const nroHijosInc  = tieneSiradig ? (parseInt(novFinal.nroHijosIncapacitados)||0) : 0;
+  const nroHijos     = tieneSiradig ? (parseInt(novFinal.nroHijosMenores, 10)||0) : 0;
+  const nroHijosInc  = tieneSiradig ? (parseInt(novFinal.nroHijosIncapacitados, 10)||0) : 0;
   const cargaConyuge  = tieneConyuge ? $m(params.gan_cargaConyugeAnual) : 0;
   const cargaHijos    = nroHijos    * $m(params.gan_cargaHijoAnual);
   const cargaHijosInc = nroHijosInc * $m(params.gan_cargaHijoIncAnual);
@@ -567,7 +567,7 @@ async function renderLiqAnualGan(){
 }
 
 async function ejecutarLiqAnualGan(){
-  const anio = parseInt(document.getElementById('lag-anio').value);
+  const anio = parseInt(document.getElementById('lag-anio').value, 10);
   const emp  = document.getElementById('lag-emp').value || null;
   const cont = document.getElementById('lag-resultado');
   cont.innerHTML = `<div style="padding:20px;color:var(--t3)">Calculando…</div>`;

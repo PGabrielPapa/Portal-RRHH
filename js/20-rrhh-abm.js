@@ -1103,7 +1103,7 @@ async function abmEmpresaGuardar(){
     actualizadaEl: new Date().toISOString(),
     actualizadaPor: currentUser?.emp?.nom || null
   };
-  if(idStr){ rec.id = parseInt(idStr); }
+  if(idStr){ rec.id = parseInt(idStr, 10); }
   else     { rec.creadaEl = new Date().toISOString(); }
 
   try {
