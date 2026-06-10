@@ -160,18 +160,74 @@ Si no, avisale a Pablo cuando tus cambios estén en `main` y él deployea.
 
 ---
 
-## 10. Resumen del flujo de trabajo
+## 10. Flujo de trabajo diario (paso a paso)
 
+Cada vez que quieras trabajar en el proyecto, seguí estos pasos en orden:
+
+**1 — Abrir la terminal y entrar a la carpeta**
+```bash
+cd Desktop/Portal-RRHH
 ```
-git pull origin main          ← traer lo último
-git checkout -b feature/xxx   ← crear tu rama
-# ... modificaciones con Claude ...
-node --check js/archivo.js    ← verificar sintaxis
-# ... subir versión de caché en index.html ...
+
+**2 — Traer los últimos cambios** (por si Pablo modificó algo)
+```bash
+git pull origin main
+```
+
+**3 — Abrir Claude** (Cowork o Claude Code) apuntando a la carpeta `Portal-RRHH`
+y pedirle los cambios que querés hacer.
+
+**4 — Verificar sintaxis** antes de subir
+```bash
+node --check js/archivo-que-modifiqué.js
+```
+
+**5 — Subir la versión de caché** en `index.html`
+Obligatorio si tocaste algún `.js` o `.css`. Pedíselo a Claude:
+> *"Subí la versión de caché a la siguiente letra"*
+
+**6 — Commitear y pushear a GitHub**
+```bash
 git add -A
 git commit -m "descripción clara del cambio"
-git push origin feature/xxx   ← subir tu rama
-# → avisar a Pablo para mergear y deployar
+git push origin main
+```
+
+**7 — Deployar a Vercel**
+```bash
+npx -y vercel deploy --prod --yes --token=$VERCEL_TOKEN
+```
+
+---
+
+## 11. Delegar todo el flujo a Claude
+
+Con la carpeta abierta en Cowork o Claude Code, podés pedirle a Claude que
+ejecute todo el proceso solo. Por ejemplo:
+
+> *"Agregá el campo teléfono al formulario de empleados, verificá sintaxis,
+> subí la versión de caché, commiteá con un mensaje descriptivo y deployá
+> a Vercel."*
+
+Claude va a hacer cada paso en orden y avisarte si algo falla.
+
+Para que Claude tenga el contexto completo del proyecto al iniciar una sesión
+nueva, pegá este mensaje al principio:
+
+```
+Proyecto Portal-RRHH (Grupo LEITEN).
+Repo `PGabrielPapa/Portal-RRHH` (GitHub), deploy Vercel proyecto `leiten-portal`
+(team `leiten-team`), prod: https://leiten-portal-leiten-team.vercel.app.
+SPA vanilla JS, 58 módulos en js/*.js versionados con cache-busting en index.html.
+El contexto completo está en ESTADO_PROYECTO.md (en la raíz del repo).
+```
+
+---
+
+## 12. Resumen en una línea
+
+```
+pull → modificar con Claude → node --check → bump caché → commit → push → deploy
 ```
 
 ---
