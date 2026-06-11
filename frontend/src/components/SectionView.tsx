@@ -1,12 +1,20 @@
 import { useParams, Navigate } from 'react-router-dom';
+import { ComponentType } from 'react';
 import { findSection } from '../lib/sections';
 import Placeholder from './Placeholder';
 import Empleados from '../pages/Empleados';
+import MisDatos from '../pages/MisDatos';
+
+// Módulos ya migrados (clave de sección → componente).
+const COMPONENTS: Record<string, ComponentType> = {
+  'empleados': Empleados,
+  'mis-datos': MisDatos,
+};
 
 export default function SectionView() {
   const { key } = useParams();
   const section = key ? findSection(key) : undefined;
   if (!section) return <Navigate to="/" replace />;
-  if (section.key === 'empleados') return <Empleados />;
-  return <Placeholder label={section.label} />;
+  const Comp = COMPONENTS[section.key];
+  return Comp ? <Comp /> : <Placeholder label={section.label} />;
 }

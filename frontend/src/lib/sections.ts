@@ -11,7 +11,7 @@ export const GROUPS: Group[] = [
     items: [
       { key: 'mis-recibos', label: 'Mis recibos' },
       { key: 'mis-ganancias', label: 'Ganancias (F.1357)' },
-      { key: 'mis-datos', label: 'Mis datos' },
+      { key: 'mis-datos', label: 'Mis datos', ready: true },
       { key: 'anticipos', label: 'Adelantos' },
       { key: 'mis-licencias', label: 'Mis licencias' },
       { key: 'mensajes', label: 'Mensajes' },
