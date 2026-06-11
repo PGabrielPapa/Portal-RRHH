@@ -5,12 +5,16 @@ import Placeholder from './Placeholder';
 import Empleados from '../pages/Empleados';
 import MisDatos from '../pages/MisDatos';
 import Mensajes from '../pages/Mensajes';
+import MisCbus from '../pages/MisCbus';
+import Adelantos from '../pages/Adelantos';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
   'empleados': Empleados,
   'mis-datos': MisDatos,
   'mensajes': Mensajes,
+  'mis-cbus': MisCbus,
+  'anticipos': Adelantos,
 };
 
 export default function SectionView() {
