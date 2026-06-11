@@ -1,0 +1,34 @@
+// Cliente HTTP mínimo para la API. Adjunta el JWT y centraliza errores.
+const BASE = (import.meta as any).env?.VITE_API_URL || '/api';
+
+export function getToken(): string | null {
+  return localStorage.getItem('prh_token');
+}
+export function setToken(t: string | null) {
+  if (t) localStorage.setItem('prh_token', t);
+  else localStorage.removeItem('prh_token');
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 401) setToken(null);
+    throw new Error((data as any).error || `Error ${res.status}`);
+  }
+  return data as T;
+}
+
+export const api = {
+  get: <T>(p: string) => request<T>('GET', p),
+  post: <T>(p: string, b?: unknown) => request<T>('POST', p, b),
+  put: <T>(p: string, b?: unknown) => request<T>('PUT', p, b),
+  patch: <T>(p: string, b?: unknown) => request<T>('PATCH', p, b),
+};

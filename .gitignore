@@ -30,3 +30,12 @@ tmp/
 
 # Reportes locales con datos sensibles (no publicar)
 reportes/
+
+# --- Backend / Frontend (monorepo v2) ---
+backend/node_modules/
+backend/.env
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+**/.vite/
+frontend/*.tsbuildinfo
