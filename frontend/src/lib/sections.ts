@@ -31,7 +31,7 @@ export const GROUPS: Group[] = [
     panel: 'RR.HH.', roles: ['rrhh', 'admin'],
     items: [
       { key: 'empleados', label: 'ABM Empleados', ready: true },
-      { key: 'liquidacion', label: 'Liquidación' },
+      { key: 'liquidacion', label: 'Liquidación', ready: true },
       { key: 'recibos-gestion', label: 'Recibos (gestión)' },
       { key: 'ganancias-rrhh', label: 'Ganancias / F.1357' },
       { key: 'liquidacion-anual', label: 'Liquidación anual ganancias' },
