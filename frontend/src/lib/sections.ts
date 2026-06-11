@@ -32,7 +32,7 @@ export const GROUPS: Group[] = [
     items: [
       { key: 'empleados', label: 'ABM Empleados', ready: true },
       { key: 'liquidacion', label: 'Liquidación', ready: true },
-      { key: 'recibos-gestion', label: 'Recibos (gestión)' },
+      { key: 'recibos-gestion', label: 'Recibos (gestión)', ready: true },
       { key: 'ganancias-rrhh', label: 'Ganancias / F.1357' },
       { key: 'liquidacion-anual', label: 'Liquidación anual ganancias' },
       { key: 'escalas', label: 'Escalas / convenios' },

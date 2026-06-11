@@ -11,6 +11,7 @@ import Parametros from '../pages/Parametros';
 import Conceptos from '../pages/Conceptos';
 import Liquidacion from '../pages/Liquidacion';
 import MisRecibos from '../pages/MisRecibos';
+import RecibosGestion from '../pages/RecibosGestion';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
@@ -23,6 +24,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'conceptos': Conceptos,
   'liquidacion': Liquidacion,
   'mis-recibos': MisRecibos,
+  'recibos-gestion': RecibosGestion,
 };
 
 export default function SectionView() {
