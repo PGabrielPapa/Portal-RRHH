@@ -14,7 +14,7 @@ export const GROUPS: Group[] = [
       { key: 'mis-datos', label: 'Mis datos', ready: true },
       { key: 'anticipos', label: 'Adelantos' },
       { key: 'mis-licencias', label: 'Mis licencias' },
-      { key: 'mensajes', label: 'Mensajes' },
+      { key: 'mensajes', label: 'Mensajes', ready: true },
       { key: 'mis-cbus', label: 'Mis CBUs' },
       { key: 'cert-trabajo', label: 'Certificado de trabajo' },
     ],

@@ -4,11 +4,13 @@ import { findSection } from '../lib/sections';
 import Placeholder from './Placeholder';
 import Empleados from '../pages/Empleados';
 import MisDatos from '../pages/MisDatos';
+import Mensajes from '../pages/Mensajes';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
   'empleados': Empleados,
   'mis-datos': MisDatos,
+  'mensajes': Mensajes,
 };
 
 export default function SectionView() {
