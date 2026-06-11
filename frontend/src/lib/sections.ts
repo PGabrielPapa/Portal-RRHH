@@ -36,7 +36,7 @@ export const GROUPS: Group[] = [
       { key: 'ganancias-rrhh', label: 'Ganancias / F.1357' },
       { key: 'liquidacion-anual', label: 'Liquidación anual ganancias' },
       { key: 'escalas', label: 'Escalas / convenios' },
-      { key: 'conceptos', label: 'Conceptos' },
+      { key: 'conceptos', label: 'Conceptos', ready: true },
       { key: 'sanciones', label: 'Sanciones' },
       { key: 'evaluaciones', label: 'Evaluaciones de desempeño' },
       { key: 'simulaciones', label: 'Simulaciones' },
