@@ -9,7 +9,7 @@ export const GROUPS: Group[] = [
   {
     panel: 'Mi espacio', roles: ['employee', 'manager', 'rrhh', 'admin'],
     items: [
-      { key: 'mis-recibos', label: 'Mis recibos' },
+      { key: 'mis-recibos', label: 'Mis recibos', ready: true },
       { key: 'mis-ganancias', label: 'Ganancias (F.1357)' },
       { key: 'mis-datos', label: 'Mis datos', ready: true },
       { key: 'anticipos', label: 'Adelantos', ready: true },

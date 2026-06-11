@@ -1,18 +1,9 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
 import type { Empleado } from '../lib/types';
+import ReciboView, { Recibo } from '../components/ReciboView';
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
-
-interface Recibo {
-  empleado: { legNum: string; nom: string; empresa: string; cuil?: string; cat?: string };
-  periodo: { anio: number; mes: number };
-  haberes: { concepto: string; tipo: string; monto: number }[];
-  descuentos: { concepto: string; monto: number }[];
-  totales: { totalRemun: number; totalNoRem: number; totalHaberes: number; totalDescuentos: number; neto: number };
-  nota?: string;
-}
 
 export default function Liquidacion() {
   const [q, setQ] = useState('');
@@ -23,18 +14,25 @@ export default function Liquidacion() {
   const [recibo, setRecibo] = useState<Recibo | null>(null);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
 
   async function buscar(v: string) {
     setQ(v); setSel(null);
     if (v.trim().length < 2) { setMatches([]); return; }
     try { setMatches((await api.get<Empleado[]>(`/empleados?q=${encodeURIComponent(v)}`)).slice(0, 8)); } catch { /* noop */ }
   }
-  function elegir(e: Empleado) { setSel(e); setQ(`${e.nom} (${e.legNum})`); setMatches([]); setRecibo(null); }
+  function elegir(e: Empleado) { setSel(e); setQ(`${e.nom} (${e.legNum})`); setMatches([]); setRecibo(null); setSaveMsg(''); }
 
   async function calcular() {
     if (!sel) return;
-    setErr(''); setBusy(true); setRecibo(null);
+    setErr(''); setSaveMsg(''); setBusy(true); setRecibo(null);
     try { setRecibo(await api.post<Recibo>('/liquidacion/calcular', { empleadoId: sel.id, anio, mes })); }
+    catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  }
+  async function guardar() {
+    if (!sel) return;
+    setErr(''); setBusy(true);
+    try { await api.post('/liquidacion/guardar', { empleadoId: sel.id, anio, mes }); setSaveMsg('Recibo guardado ✓ (visible para el empleado en “Mis recibos”)'); }
     catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
 
@@ -63,53 +61,14 @@ export default function Liquidacion() {
             </select>
           </div>
           <div className="field"><label>Año</label><input className="input" type="number" value={anio} onChange={(e) => setAnio(Number(e.target.value))} style={{ width: 110 }} /></div>
-          <button className="btn" onClick={calcular} disabled={!sel || busy}>{busy ? 'Calculando…' : 'Calcular recibo'}</button>
+          <button className="btn" onClick={calcular} disabled={!sel || busy}>{busy ? 'Procesando…' : 'Calcular recibo'}</button>
+          {recibo && <button className="btn ghost" onClick={guardar} disabled={busy}>Guardar recibo</button>}
         </div>
         {err && <div className="err" style={{ marginTop: 10 }}>⚠ {err}</div>}
+        {saveMsg && <div className="ok" style={{ marginTop: 10 }}>✓ {saveMsg}</div>}
       </div>
 
-      {recibo && (
-        <div className="card">
-          <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <div>
-              <strong>{recibo.empleado.nom}</strong>
-              <div className="muted">Legajo {recibo.empleado.legNum} · {recibo.empleado.empresa} · {recibo.empleado.cat || ''}</div>
-            </div>
-            <div className="muted">{MESES[recibo.periodo.mes - 1]} {recibo.periodo.anio}</div>
-          </div>
-
-          <div className="grid2" style={{ marginTop: 14, alignItems: 'start' }}>
-            <div>
-              <h4 style={{ margin: '0 0 6px' }}>Haberes</h4>
-              <table>
-                <tbody>
-                  {recibo.haberes.map((h, i) => (
-                    <tr key={i}><td>{h.concepto} {h.tipo === 'norem' && <span className="badge">No rem.</span>}</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(h.monto)}</td></tr>
-                  ))}
-                  <tr><td style={{ fontWeight: 600 }}>Total haberes</td><td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{money(recibo.totales.totalHaberes)}</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div>
-              <h4 style={{ margin: '0 0 6px' }}>Descuentos</h4>
-              <table>
-                <tbody>
-                  {recibo.descuentos.map((h, i) => (
-                    <tr key={i}><td>{h.concepto}</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(h.monto)}</td></tr>
-                  ))}
-                  <tr><td style={{ fontWeight: 600 }}>Total descuentos</td><td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{money(recibo.totales.totalDescuentos)}</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--bg3)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <strong>Neto a cobrar</strong>
-            <strong style={{ fontSize: 20, fontFamily: 'monospace', color: 'var(--green)' }}>{money(recibo.totales.neto)}</strong>
-          </div>
-          {recibo.nota && <p className="muted" style={{ marginTop: 10 }}>⚠ {recibo.nota}</p>}
-        </div>
-      )}
+      {recibo && <div className="card"><ReciboView recibo={recibo} /></div>}
     </>
   );
 }
