@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -10,8 +9,7 @@ const PLANTILLA = ['Legajo*','DNI*','CUIL*','Apellido y Nombre*','Empresa*','Fec
   'Domicilio Calle','Localidad','Provincia','Código Postal'];
 
 export default function Empleados() {
-  const { user, logout } = useAuth();
-  const nav = useNavigate();
+  const { user } = useAuth();
   const canEdit = user?.role === 'rrhh' || user?.role === 'admin';
   const [items, setItems] = useState<Empleado[]>([]);
   const [empresas, setEmpresas] = useState<string[]>([]);
@@ -67,16 +65,7 @@ export default function Empleados() {
   }
 
   return (
-    <div>
-      <div className="topbar">
-        <strong>Portal RR.HH. — Empleados</strong>
-        <div className="row">
-          <span className="muted">{user?.nom} · {user?.role}</span>
-          <button className="btn ghost" onClick={() => { logout(); nav('/login'); }}>Salir</button>
-        </div>
-      </div>
-
-      <div className="container">
+    <>
         <div className="row" style={{ flexWrap: 'wrap', marginBottom: 16 }}>
           <input className="input" style={{ maxWidth: 260 }} placeholder="Buscar nombre, legajo o DNI…" value={q} onChange={(e) => setQ(e.target.value)} />
           <select className="input" style={{ maxWidth: 220 }} value={empresa} onChange={(e) => setEmpresa(e.target.value)}>
@@ -121,10 +110,9 @@ export default function Empleados() {
           </table>
         </div>
         <p className="muted" style={{ marginTop: 10 }}>{items.length} empleado(s)</p>
-      </div>
 
       {showAlta && <AltaModal empresas={empresas} onClose={() => setShowAlta(false)} onSaved={() => { setShowAlta(false); setMsg({ t: 'Empleado dado de alta', ok: true }); load(); }} onError={(t) => setMsg({ t, ok: false })} />}
-    </div>
+    </>
   );
 }
 

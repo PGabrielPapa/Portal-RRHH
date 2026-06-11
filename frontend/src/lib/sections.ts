@@ -1,0 +1,82 @@
+// Registro de secciones (módulos) agrupadas por panel, con los roles que las ven.
+// ready=true → ya migrada (tiene componente). ready=false → placeholder.
+export type Role = 'employee' | 'manager' | 'rrhh' | 'admin';
+
+export interface Section { key: string; label: string; ready?: boolean; }
+export interface Group { panel: string; roles: Role[]; items: Section[]; }
+
+export const GROUPS: Group[] = [
+  {
+    panel: 'Mi espacio', roles: ['employee', 'manager', 'rrhh', 'admin'],
+    items: [
+      { key: 'mis-recibos', label: 'Mis recibos' },
+      { key: 'mis-ganancias', label: 'Ganancias (F.1357)' },
+      { key: 'mis-datos', label: 'Mis datos' },
+      { key: 'anticipos', label: 'Adelantos' },
+      { key: 'mis-licencias', label: 'Mis licencias' },
+      { key: 'mensajes', label: 'Mensajes' },
+      { key: 'mis-cbus', label: 'Mis CBUs' },
+      { key: 'cert-trabajo', label: 'Certificado de trabajo' },
+    ],
+  },
+  {
+    panel: 'Gerencia', roles: ['manager', 'admin'],
+    items: [
+      { key: 'aprobaciones', label: 'Aprobaciones' },
+      { key: 'licencias-equipo', label: 'Licencias del equipo' },
+      { key: 'organigrama', label: 'Organigrama / equipo' },
+    ],
+  },
+  {
+    panel: 'RR.HH.', roles: ['rrhh', 'admin'],
+    items: [
+      { key: 'empleados', label: 'ABM Empleados', ready: true },
+      { key: 'liquidacion', label: 'Liquidación' },
+      { key: 'recibos-gestion', label: 'Recibos (gestión)' },
+      { key: 'ganancias-rrhh', label: 'Ganancias / F.1357' },
+      { key: 'liquidacion-anual', label: 'Liquidación anual ganancias' },
+      { key: 'escalas', label: 'Escalas / convenios' },
+      { key: 'conceptos', label: 'Conceptos' },
+      { key: 'sanciones', label: 'Sanciones' },
+      { key: 'evaluaciones', label: 'Evaluaciones de desempeño' },
+      { key: 'simulaciones', label: 'Simulaciones' },
+      { key: 'licencias-rrhh', label: 'Licencias (gestión)' },
+      { key: 'hys', label: 'Higiene y Seguridad' },
+      { key: 'beneficios', label: 'Beneficios' },
+      { key: 'elementos-trabajo', label: 'Elementos de trabajo' },
+      { key: 'reportes', label: 'Generador de reportes' },
+      { key: 'f931', label: 'F.931' },
+      { key: 'libro-sueldos', label: 'Libro de sueldos' },
+      { key: 'asiento', label: 'Asiento contable' },
+      { key: 'bancos', label: 'Archivos de banco' },
+      { key: 'cbu-novedades', label: 'CBU — novedades' },
+      { key: 'ddjj-sindical', label: 'DDJJ sindical' },
+      { key: 'documentos', label: 'Documentos firmados' },
+      { key: 'art-empresas', label: 'ART por empresa' },
+      { key: 'sindicatos', label: 'Sindicatos' },
+      { key: 'reglamento', label: 'Reglamento / licencias esp.' },
+      { key: 'cierre-periodos', label: 'Cierre de períodos' },
+    ],
+  },
+  {
+    panel: 'Administración', roles: ['admin'],
+    items: [
+      { key: 'admin-empresas', label: 'Empresas' },
+      { key: 'admin-usuarios', label: 'Usuarios' },
+      { key: 'user-levels', label: 'Niveles de usuario' },
+      { key: 'auditoria', label: 'Auditoría' },
+      { key: 'parametros', label: 'Parámetros de liquidación' },
+    ],
+  },
+];
+
+export function groupsForRole(role: string): Group[] {
+  return GROUPS
+    .filter((g) => g.roles.includes(role as Role))
+    .map((g) => ({ ...g }));
+}
+
+export function findSection(key: string): Section | undefined {
+  for (const g of GROUPS) { const s = g.items.find((i) => i.key === key); if (s) return s; }
+  return undefined;
+}
