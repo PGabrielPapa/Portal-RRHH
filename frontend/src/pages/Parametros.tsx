@@ -27,6 +27,7 @@ export default function Parametros() {
   const [data, setData] = useState<Data | null>(null);
   const [edits, setEdits] = useState<Data>({});
   const [info, setInfo] = useState('');
+  const [loadErr, setLoadErr] = useState('');
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -35,7 +36,7 @@ export default function Parametros() {
       const r = await api.get<{ data: Data; updated_by?: string; updated_at?: string }>('/parametros');
       setData(r.data || {});
       if (r.updated_at) setInfo(`Última actualización: ${new Date(r.updated_at).toLocaleString('es-AR')}${r.updated_by ? ` por ${r.updated_by}` : ''}`);
-    } catch (e: any) { setMsg({ t: e.message, ok: false }); }
+    } catch (e: any) { setLoadErr(e.message); }
   }
   useEffect(() => { load(); }, []);
 
@@ -51,7 +52,7 @@ export default function Parametros() {
     } catch (e: any) { setMsg({ t: e.message, ok: false }); } finally { setBusy(false); }
   }
 
-  if (!data) return <div className="muted">Cargando…</div>;
+  if (!data) return loadErr ? <div className="err">⚠ {loadErr}</div> : <div className="muted">Cargando…</div>;
   const val = (k: string) => (k in edits ? edits[k] : data[k]);
   const usados = new Set(GROUPS.flatMap((g) => g.keys));
   const otros = Object.keys(data).filter((k) => !usados.has(k) && ['number', 'string'].includes(typeof data[k]));
