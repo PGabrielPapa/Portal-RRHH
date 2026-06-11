@@ -7,6 +7,7 @@ export interface Recibo {
   haberes: { concepto: string; tipo: string; monto: number }[];
   descuentos: { concepto: string; monto: number }[];
   totales: { totalRemun: number; totalNoRem: number; totalHaberes: number; totalDescuentos: number; neto: number };
+  costoEmpleador?: { contribuciones: { concepto: string; monto: number }[]; totalContrib: number; costoTotal: number };
   nota?: string;
 }
 
@@ -46,6 +47,19 @@ export default function ReciboView({ recibo }: { recibo: Recibo }) {
         <strong>Neto a cobrar</strong>
         <strong style={{ fontSize: 20, fontFamily: 'monospace', color: 'var(--green)' }}>{money(recibo.totales.neto)}</strong>
       </div>
+      {recibo.costoEmpleador && (
+        <div style={{ marginTop: 16 }}>
+          <h4 style={{ margin: '0 0 6px' }}>Costo del empleador <span className="muted" style={{ fontWeight: 400 }}>(no afecta el neto)</span></h4>
+          <table><tbody>
+            {recibo.costoEmpleador.contribuciones.map((c, i) => (
+              <tr key={i}><td>{c.concepto}</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(c.monto)}</td></tr>
+            ))}
+            <tr><td style={{ fontWeight: 600 }}>Total contribuciones</td><td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{money(recibo.costoEmpleador.totalContrib)}</td></tr>
+            <tr><td style={{ fontWeight: 600 }}>Costo laboral total</td><td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{money(recibo.costoEmpleador.costoTotal)}</td></tr>
+          </tbody></table>
+        </div>
+      )}
+
       {recibo.nota && <p className="muted" style={{ marginTop: 10 }}>⚠ {recibo.nota}</p>}
     </div>
   );
