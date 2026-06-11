@@ -7,6 +7,7 @@ import MisDatos from '../pages/MisDatos';
 import Mensajes from '../pages/Mensajes';
 import MisCbus from '../pages/MisCbus';
 import Adelantos from '../pages/Adelantos';
+import Parametros from '../pages/Parametros';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
@@ -15,6 +16,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'mensajes': Mensajes,
   'mis-cbus': MisCbus,
   'anticipos': Adelantos,
+  'parametros': Parametros,
 };
 
 export default function SectionView() {

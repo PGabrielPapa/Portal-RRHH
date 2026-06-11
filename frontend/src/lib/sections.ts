@@ -65,7 +65,7 @@ export const GROUPS: Group[] = [
       { key: 'admin-usuarios', label: 'Usuarios' },
       { key: 'user-levels', label: 'Niveles de usuario' },
       { key: 'auditoria', label: 'Auditoría' },
-      { key: 'parametros', label: 'Parámetros de liquidación' },
+      { key: 'parametros', label: 'Parámetros de liquidación', ready: true },
     ],
   },
 ];
