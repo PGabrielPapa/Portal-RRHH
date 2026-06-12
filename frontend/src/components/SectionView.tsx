@@ -33,7 +33,11 @@ const COMPONENTS: Record<string, ComponentType> = {
   'licencias-equipo': Licencias,
   'licencias-rrhh': Licencias,
   'sanciones': Sanciones,
+  'mis-sanciones': Sanciones,
+  'sanciones-equipo': Sanciones,
   'evaluaciones': Evaluaciones,
+  'mis-evaluaciones': Evaluaciones,
+  'evaluaciones-equipo': Evaluaciones,
 };
 
 export default function SectionView() {

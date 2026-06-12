@@ -17,6 +17,8 @@ export const GROUPS: Group[] = [
       { key: 'mensajes', label: 'Mensajes', ready: true },
       { key: 'mis-cbus', label: 'Mis CBUs', ready: true },
       { key: 'cert-trabajo', label: 'Certificado de trabajo' },
+      { key: 'mis-sanciones', label: 'Mis sanciones', ready: true },
+      { key: 'mis-evaluaciones', label: 'Mis evaluaciones', ready: true },
     ],
   },
   {
@@ -25,6 +27,8 @@ export const GROUPS: Group[] = [
       { key: 'aprobaciones', label: 'Aprobaciones (adelantos)', ready: true },
       { key: 'licencias-equipo', ready: true, label: 'Licencias del equipo' },
       { key: 'organigrama', label: 'Organigrama / equipo' },
+      { key: 'sanciones-equipo', label: 'Sanciones del equipo', ready: true },
+      { key: 'evaluaciones-equipo', label: 'Evaluaciones del equipo', ready: true },
     ],
   },
   {
