@@ -24,6 +24,7 @@ import Elementos from '../pages/Elementos';
 import Beneficios from '../pages/Beneficios';
 import CambiosDomicilio from '../pages/CambiosDomicilio';
 import MisFamiliares from '../pages/MisFamiliares';
+import Justificaciones from '../pages/Justificaciones';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
@@ -56,6 +57,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'beneficios': Beneficios,
   'cambios-domicilio': CambiosDomicilio,
   'mis-familiares': MisFamiliares,
+  'justificar-licencia': Justificaciones,
 };
 
 export default function SectionView() {

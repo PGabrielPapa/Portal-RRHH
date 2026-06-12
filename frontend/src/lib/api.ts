@@ -26,6 +26,19 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return data as T;
 }
 
+// Descarga binaria autenticada (p.ej. comprobante de licencia) -> Blob.
+export async function fetchBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${BASE}${path}`, { headers });
+  if (!res.ok) {
+    if (res.status === 401) setToken(null);
+    throw new Error(`Error ${res.status}`);
+  }
+  return res.blob();
+}
+
 export const api = {
   get: <T>(p: string) => request<T>('GET', p),
   post: <T>(p: string, b?: unknown) => request<T>('POST', p, b),

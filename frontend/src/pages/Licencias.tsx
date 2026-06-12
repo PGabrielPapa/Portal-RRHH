@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, fetchBlob } from '../lib/api';
 import type { Empleado } from '../lib/types';
 
-interface Lic { id: number; tipo: string; desde: string; hasta: string; dias: number; motivo?: string; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
+interface Lic { id: number; tipo: string; desde: string; hasta: string; dias: number; motivo?: string; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; justificacion?: boolean; tiene_comprobante?: boolean; }
 
 const TIPOS = ['Vacaciones', 'Enfermedad', 'Examen', 'Matrimonio', 'Fallecimiento familiar', 'Nacimiento', 'Mudanza', 'Donación de sangre', 'Otra'];
 // Enfermedad, fallecimiento y nacimiento son imprevisibles: no se solicitan con anticipación (RR.HH. las registra).
@@ -56,6 +56,10 @@ export default function Licencias() {
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
   const diasSol = (f.desde && f.hasta && f.hasta >= f.desde) ? Math.round((new Date(f.hasta + 'T12:00:00').getTime() - new Date(f.desde + 'T12:00:00').getTime()) / 86400000) + 1 : 0;
   const esVac = String(f.tipo || '').toLowerCase() === 'vacaciones';
+  async function verComprobante(id: number) {
+    try { const b = await fetchBlob(`/licencias/${id}/comprobante`); const u = URL.createObjectURL(b); window.open(u, '_blank'); setTimeout(() => URL.revokeObjectURL(u), 60000); }
+    catch (e: any) { setErr(e.message); }
+  }
   const excedeSaldo = modoMias && esVac && vac && diasSol > vac.disponible;
   const setR = (k: string) => (e: any) => setReg({ ...reg, [k]: e.target.value });
 
@@ -157,7 +161,7 @@ export default function Licencias() {
           <thead><tr>
             {!modoMias && <th>Empleado</th>}
             {esRRHH && <th>Empresa</th>}
-            <th>Tipo</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th>{!modoMias && <th></th>}
+            <th>Tipo</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th>{!modoMias && <th>Comprobante</th>}{!modoMias && <th></th>}
           </tr></thead>
           <tbody>
             {items.map((l) => (
@@ -166,6 +170,7 @@ export default function Licencias() {
                 {esRRHH && <td>{l.empresa}</td>}
                 <td>{l.tipo}</td><td>{fmt(l.desde)}</td><td>{fmt(l.hasta)}</td><td>{l.dias}</td>
                 <td><span className="badge" style={{ color: colorEstado(l.estado) }}>{l.estado}</span></td>
+                {!modoMias && <td>{l.tiene_comprobante ? <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => verComprobante(l.id)}>📄 Ver</button> : <span className="muted">—</span>}</td>}
                 {!modoMias && <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   {l.estado === 'pendiente' ? <>
                     <button className="btn" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => resolver(l, 'aprobada')}>Aprobar</button>
@@ -174,7 +179,7 @@ export default function Licencias() {
                 </td>}
               </tr>
             ))}
-            {!items.length && <tr><td colSpan={modoMias ? 5 : (esRRHH ? 8 : 7)} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin licencias.</td></tr>}
+            {!items.length && <tr><td colSpan={modoMias ? 5 : (esRRHH ? 9 : 8)} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin licencias.</td></tr>}
           </tbody>
         </table>
       </div>
