@@ -47,11 +47,14 @@ export default function Licencias() {
 
   async function solicitar(e: React.FormEvent) {
     e.preventDefault(); setErr(''); setBusy(true);
-    try { await api.post('/licencias', { tipo: f.tipo, desde: f.desde, hasta: f.hasta, motivo: f.motivo }); setF({ tipo: 'Vacaciones' }); load(); }
+    try { await api.post('/licencias', { tipo: f.tipo, desde: f.desde, hasta: f.hasta, motivo: f.motivo }); setF({ tipo: 'Vacaciones' }); load(); api.get('/licencias/vacaciones-info').then(setVac).catch(() => {}); }
     catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
   async function resolver(l: Lic, est: string) { try { await api.patch(`/licencias/${l.id}`, { estado: est }); load(); } catch (e: any) { setErr(e.message); } }
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
+  const diasSol = (f.desde && f.hasta && f.hasta >= f.desde) ? Math.round((new Date(f.hasta + 'T12:00:00').getTime() - new Date(f.desde + 'T12:00:00').getTime()) / 86400000) + 1 : 0;
+  const esVac = String(f.tipo || '').toLowerCase() === 'vacaciones';
+  const excedeSaldo = modoMias && esVac && vac && diasSol > vac.disponible;
   const setR = (k: string) => (e: any) => setReg({ ...reg, [k]: e.target.value });
 
   async function buscarEmp(v: string) {
@@ -79,6 +82,7 @@ export default function Licencias() {
             Según tu antigüedad de {vac.antiguedad} año(s) al 31/12/{vac.anio} (Art. 150, Ley 20.744).
             {' '}Tomados este año: <strong>{vac.tomadosEsteAnio}</strong> · Saldo {vac.anio}: <strong style={{ color: vac.saldoEsteAnio < 0 ? 'var(--red)' : 'var(--green)' }}>{vac.saldoEsteAnio}</strong>
             {vac.saldoAnteriores > 0 ? <> · Saldo años anteriores: <strong>{vac.saldoAnteriores}</strong></> : null}
+            {' '}· <strong>Disponible para solicitar: {vac.disponible} día(s)</strong>
           </div>
         </div>
       )}
@@ -92,8 +96,10 @@ export default function Licencias() {
             <div className="field"><label>Hasta *</label><input className="input" type="date" value={f.hasta || ''} onChange={set('hasta')} /></div>
           </div>
           <div className="field" style={{ marginBottom: 12 }}><label>Motivo</label><textarea className="input" rows={2} value={f.motivo || ''} onChange={set('motivo')} /></div>
+          {diasSol > 0 && <div className="muted" style={{ marginBottom: 8 }}>Días solicitados: <strong>{diasSol}</strong>{esVac && vac ? ` · disponible: ${vac.disponible}` : ''}</div>}
+          {excedeSaldo && <div className="err" style={{ marginBottom: 8 }}>⚠ Excede tu saldo de vacaciones ({vac.disponible} día(s) disponibles).</div>}
           {err && <div className="err" style={{ marginBottom: 8 }}>⚠ {err}</div>}
-          <button className="btn" disabled={busy || !f.desde || !f.hasta}>{busy ? 'Enviando…' : 'Solicitar'}</button>
+          <button className="btn" disabled={busy || !f.desde || !f.hasta || excedeSaldo}>{busy ? 'Enviando…' : 'Solicitar'}</button>
         </form>
       )}
 
