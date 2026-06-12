@@ -5,6 +5,8 @@ import EmpleadoPicker from '../components/EmpleadoPicker';
 
 interface B { id: number; tipo: string; modalidad?: string; monto: number; proveedor?: string; vigencia_desde?: string; vigencia_hasta?: string; detalle?: string; activo: boolean; nom?: string; leg_num?: string; empresa?: string; }
 const TIPOS = [['combustible', 'Combustible'], ['gastos_vehiculo', 'Gastos de vehículo'], ['prepaga', 'Medicina prepaga'], ['adicional_recibo', 'Adicional fuera de recibo'], ['tarjeta_corp', 'Tarjeta corporativa'], ['estacionamiento', 'Estacionamiento'], ['vivienda', 'Vivienda / alojamiento'], ['educacion', 'Educación / capacitación'], ['seguro_vida', 'Seguro de vida adicional'], ['club_gimnasio', 'Club / Gimnasio'], ['otro', 'Otro beneficio']];
+const MODALIDADES = [['fijo', 'Monto fijo mensual'], ['reintegro', 'Reintegro contra comprobante'], ['cuenta_corporativa', 'Cuenta corporativa'], ['pago_empresa', 'Pago directo de la empresa'], ['otro', 'Otro']];
+const modalLabel = (m?: string) => MODALIDADES.find((x) => x[0] === m)?.[1] || m || '—';
 const tipoLabel = (t: string) => TIPOS.find((x) => x[0] === t)?.[1] || t;
 const money = (n: number) => n ? Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' }) : '—';
 const fmt = (s?: string) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR') : '';
@@ -36,7 +38,7 @@ export default function Beneficios() {
         <div className="field" style={{ marginBottom: 10 }}><label>Empleado *</label><EmpleadoPicker onSelect={setEmp} /></div>
         <div className="grid2" style={{ marginBottom: 10 }}>
           <div className="field"><label>Tipo</label><select className="input" value={f.tipo} onChange={set('tipo')}>{TIPOS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
-          <div className="field"><label>Modalidad</label><select className="input" value={f.modalidad} onChange={set('modalidad')}><option value="fijo">Monto fijo</option><option value="reintegro">Reintegro</option></select></div>
+          <div className="field"><label>Modalidad</label><select className="input" value={f.modalidad} onChange={set('modalidad')}>{MODALIDADES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
           <div className="field"><label>Monto ($)</label><input className="input" type="number" value={f.monto || ''} onChange={set('monto')} /></div>
           <div className="field"><label>Proveedor</label><input className="input" value={f.proveedor || ''} onChange={set('proveedor')} placeholder="Ej: OSDE, YPF…" /></div>
           <div className="field"><label>Vigencia desde</label><input className="input" type="date" value={f.vigenciaDesde || ''} onChange={set('vigenciaDesde')} /></div>
@@ -56,7 +58,7 @@ export default function Beneficios() {
           <tbody>
             {items.map((b) => (
               <tr key={b.id}>
-                <td>{b.nom} <span className="muted">({b.leg_num})</span></td><td>{tipoLabel(b.tipo)}</td><td>{b.modalidad || '—'}</td><td>{money(b.monto)}</td><td>{b.proveedor || '—'}</td>
+                <td>{b.nom} <span className="muted">({b.leg_num})</span></td><td>{tipoLabel(b.tipo)}</td><td>{modalLabel(b.modalidad)}</td><td>{money(b.monto)}</td><td>{b.proveedor || '—'}</td>
                 <td className="muted">{fmt(b.vigencia_desde)}{b.vigencia_hasta ? ` → ${fmt(b.vigencia_hasta)}` : ''}</td>
                 <td><span className="badge" style={{ color: b.activo ? 'var(--green)' : 'var(--t3)' }}>{b.activo ? 'Activo' : 'Baja'}</span></td>
                 <td style={{ textAlign: 'right' }}><button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => baja(b)}>{b.activo ? 'Dar de baja' : 'Reactivar'}</button></td>
