@@ -6,6 +6,7 @@ import Empleados from '../pages/Empleados';
 import MisDatos from '../pages/MisDatos';
 import Mensajes from '../pages/Mensajes';
 import MensajesRRHH from '../pages/MensajesRRHH';
+import Organigrama from '../pages/Organigrama';
 import MisCbus from '../pages/MisCbus';
 import Adelantos from '../pages/Adelantos';
 import Parametros from '../pages/Parametros';
@@ -33,6 +34,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'mis-datos': MisDatos,
   'mensajes': Mensajes,
   'mensajes-rrhh': MensajesRRHH,
+  'organigrama': Organigrama,
   'mis-cbus': MisCbus,
   'anticipos': Adelantos,
   'aprobaciones': Adelantos,
