@@ -67,9 +67,9 @@ export const GROUPS: Group[] = [
     panel: 'Administración', roles: ['admin'],
     items: [
       { key: 'admin-empresas', label: 'Empresas' },
-      { key: 'admin-usuarios', label: 'Usuarios' },
+      { key: 'admin-usuarios', label: 'Usuarios', ready: true },
       { key: 'user-levels', label: 'Niveles de usuario' },
-      { key: 'auditoria', label: 'Auditoría' },
+      { key: 'auditoria', label: 'Auditoría', ready: true },
       { key: 'parametros', label: 'Parámetros de liquidación', ready: true },
     ],
   },
