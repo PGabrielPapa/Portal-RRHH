@@ -6,7 +6,7 @@ function aniosAntig(ingreso?: string) { if (!ingreso) return 0; const i = new Da
 export interface CertData {
   destinatario?: string;
   campos: Record<string, boolean>;
-  empleado: { nom: string; dni: string; cuil?: string; legNum: string; empresa: string; cuit?: string; ingreso?: string; cat?: string; bruto?: number; condicion?: string; lugar?: string };
+  empleado: { nom: string; dni: string; cuil?: string; legNum: string; empresa: string; cuit?: string; logo?: string; ingreso?: string; cat?: string; bruto?: number; condicion?: string; lugar?: string };
 }
 
 export function imprimirCertificado(d: CertData) {
@@ -29,6 +29,7 @@ export function imprimirCertificado(d: CertData) {
   h1{font-size:20px;text-align:center;letter-spacing:2px;margin-bottom:40px}p{text-align:justify;margin:16px 0}
   .empresa{text-align:center;font-weight:bold;margin-bottom:30px}.firma{margin-top:90px;text-align:center}
   .firma .l{width:280px;border-top:1px solid #000;margin:0 auto;padding-top:6px}</style></head><body>
+  ${e.logo ? `<div style="text-align:center;margin-bottom:10px"><img src="${e.logo}" style="max-height:70px;max-width:240px"></div>` : ''}
   <div class="empresa">${e.empresa}${e.cuit ? ` — CUIT ${e.cuit}` : ''}</div>
   <h1>CERTIFICADO DE TRABAJO</h1>
   <p>${cuerpo}</p>
