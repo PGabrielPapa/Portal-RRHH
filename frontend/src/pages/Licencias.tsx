@@ -5,7 +5,9 @@ import type { Empleado } from '../lib/types';
 
 interface Lic { id: number; tipo: string; desde: string; hasta: string; dias: number; motivo?: string; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; justificacion?: boolean; tiene_comprobante?: boolean; }
 
-const TIPOS = ['Vacaciones', 'Enfermedad', 'Examen', 'Matrimonio', 'Fallecimiento familiar', 'Nacimiento', 'Mudanza', 'Donación de sangre', 'Otra'];
+const TIPOS = ['Vacaciones', 'Enfermedad', 'Examen', 'Matrimonio', 'Matrimonio de hijo', 'Fallecimiento familiar', 'Nacimiento', 'Mudanza', 'Donación de sangre', 'Otra'];
+// Estas licencias programables se solicitan por adelantado pero requieren adjuntar comprobante.
+const TIPOS_CON_COMPROBANTE = ['Examen', 'Matrimonio', 'Matrimonio de hijo', 'Mudanza', 'Donación de sangre'];
 // Enfermedad, fallecimiento y nacimiento son imprevisibles: no se solicitan con anticipación (RR.HH. las registra).
 const TIPOS_SOLICITABLES = TIPOS.filter((t) => !['Enfermedad', 'Fallecimiento familiar', 'Nacimiento'].includes(t));
 const colorEstado = (e: string) => e === 'aprobada' ? 'var(--green)' : e === 'rechazada' ? 'var(--red)' : 'var(--yellow)';
@@ -26,6 +28,7 @@ export default function Licencias() {
   const [q, setQ] = useState('');
   const [empresas, setEmpresas] = useState<string[]>([]);
   const [vac, setVac] = useState<any>(null);
+  const [file, setFile] = useState<File | null>(null);
   // registrar (RR.HH.)
   const [regQ, setRegQ] = useState('');
   const [regMatches, setRegMatches] = useState<Empleado[]>([]);
@@ -47,10 +50,28 @@ export default function Licencias() {
   useEffect(() => { if (!modoMias) api.get<Empleado[]>('/empleados').then((es) => setEmpresas([...new Set(es.map((e) => e.empresa))].sort())).catch(() => {}); }, [modoMias]);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key, estado, empresa, q]);
 
+  const requiereComp = TIPOS_CON_COMPROBANTE.includes(f.tipo);
+  function readFile(fl: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(',')[1] || '');
+      r.onerror = () => reject(new Error('No se pudo leer el archivo'));
+      r.readAsDataURL(fl);
+    });
+  }
   async function solicitar(e: React.FormEvent) {
-    e.preventDefault(); setErr(''); setBusy(true);
-    try { await api.post('/licencias', { tipo: f.tipo, desde: f.desde, hasta: f.hasta, motivo: f.motivo }); setF({ tipo: 'Vacaciones' }); load(); api.get('/licencias/vacaciones-info').then(setVac).catch(() => {}); }
-    catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    e.preventDefault(); setErr('');
+    if (requiereComp && !file) { setErr('Esta licencia requiere adjuntar comprobante.'); return; }
+    if (file && file.size > 5 * 1024 * 1024) { setErr('El comprobante no puede superar 5 MB.'); return; }
+    setBusy(true);
+    try {
+      const body: any = { tipo: f.tipo, desde: f.desde, hasta: f.hasta, motivo: f.motivo };
+      if (file) { body.comprobanteData = await readFile(file); body.comprobanteNombre = file.name; body.comprobanteMime = file.type; }
+      await api.post('/licencias', body);
+      setF({ tipo: 'Vacaciones' }); setFile(null);
+      const inp = document.getElementById('sol-comprobante') as HTMLInputElement | null; if (inp) inp.value = '';
+      load(); api.get('/licencias/vacaciones-info').then(setVac).catch(() => {});
+    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
   async function resolver(l: Lic, est: string) { try { await api.patch(`/licencias/${l.id}`, { estado: est }); load(); } catch (e: any) { setErr(e.message); } }
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
@@ -102,10 +123,17 @@ export default function Licencias() {
             <div className="field"><label>Hasta *</label><input className="input" type="date" value={f.hasta || ''} onChange={set('hasta')} /></div>
           </div>
           <div className="field" style={{ marginBottom: 12 }}><label>Motivo</label><textarea className="input" rows={2} value={f.motivo || ''} onChange={set('motivo')} /></div>
+          {requiereComp && (
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>Comprobante * (PDF o imagen, máx. 5 MB)</label>
+              <input id="sol-comprobante" type="file" className="input" accept=".pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              {file && <div className="muted" style={{ marginTop: 4, fontSize: 12 }}>📎 {file.name} ({Math.round(file.size / 1024)} KB)</div>}
+            </div>
+          )}
           {diasSol > 0 && <div className="muted" style={{ marginBottom: 8 }}>Días solicitados: <strong>{diasSol}</strong>{esVac && vac ? ` · disponible: ${vac.disponible}` : ''}</div>}
           {excedeSaldo && <div className="err" style={{ marginBottom: 8 }}>⚠ Excede tu saldo de vacaciones ({vac.disponible} día(s) disponibles).</div>}
           {err && <div className="err" style={{ marginBottom: 8 }}>⚠ {err}</div>}
-          <button className="btn" disabled={busy || !f.desde || !f.hasta || excedeSaldo}>{busy ? 'Enviando…' : 'Solicitar'}</button>
+          <button className="btn" disabled={busy || !f.desde || !f.hasta || excedeSaldo || (requiereComp && !file)}>{busy ? 'Enviando…' : 'Solicitar'}</button>
         </form>
       )}
 
@@ -161,7 +189,7 @@ export default function Licencias() {
           <thead><tr>
             {!modoMias && <th>Empleado</th>}
             {esRRHH && <th>Empresa</th>}
-            <th>Tipo</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th>{!modoMias && <th>Comprobante</th>}{!modoMias && <th></th>}
+            <th>Tipo</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th><th>Comprobante</th>{!modoMias && <th></th>}
           </tr></thead>
           <tbody>
             {items.map((l) => (
@@ -170,7 +198,7 @@ export default function Licencias() {
                 {esRRHH && <td>{l.empresa}</td>}
                 <td>{l.tipo}</td><td>{fmt(l.desde)}</td><td>{fmt(l.hasta)}</td><td>{l.dias}</td>
                 <td><span className="badge" style={{ color: colorEstado(l.estado) }}>{l.estado}</span></td>
-                {!modoMias && <td>{l.tiene_comprobante ? <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => verComprobante(l.id)}>📄 Ver</button> : <span className="muted">—</span>}</td>}
+                <td>{l.tiene_comprobante ? <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => verComprobante(l.id)}>📄 Ver</button> : <span className="muted">—</span>}</td>
                 {!modoMias && <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                   {l.estado === 'pendiente' ? <>
                     <button className="btn" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => resolver(l, 'aprobada')}>Aprobar</button>
@@ -179,7 +207,7 @@ export default function Licencias() {
                 </td>}
               </tr>
             ))}
-            {!items.length && <tr><td colSpan={modoMias ? 5 : (esRRHH ? 9 : 8)} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin licencias.</td></tr>}
+            {!items.length && <tr><td colSpan={modoMias ? 6 : (esRRHH ? 9 : 8)} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin licencias.</td></tr>}
           </tbody>
         </table>
       </div>
