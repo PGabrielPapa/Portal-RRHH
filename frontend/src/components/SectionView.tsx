@@ -15,6 +15,8 @@ import RecibosGestion from '../pages/RecibosGestion';
 import Licencias from '../pages/Licencias';
 import Sanciones from '../pages/Sanciones';
 import Evaluaciones from '../pages/Evaluaciones';
+import CertTrabajo from '../pages/CertTrabajo';
+import CertTrabajoRRHH from '../pages/CertTrabajoRRHH';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
@@ -38,6 +40,8 @@ const COMPONENTS: Record<string, ComponentType> = {
   'evaluaciones': Evaluaciones,
   'mis-evaluaciones': Evaluaciones,
   'evaluaciones-equipo': Evaluaciones,
+  'cert-trabajo': CertTrabajo,
+  'cert-trabajo-rrhh': CertTrabajoRRHH,
 };
 
 export default function SectionView() {
