@@ -19,6 +19,7 @@ import CertTrabajo from '../pages/CertTrabajo';
 import CertTrabajoRRHH from '../pages/CertTrabajoRRHH';
 import AdminUsuarios from '../pages/AdminUsuarios';
 import AdminAuditoria from '../pages/AdminAuditoria';
+import AdminEmpresas from '../pages/AdminEmpresas';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
@@ -46,6 +47,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'cert-trabajo-rrhh': CertTrabajoRRHH,
   'admin-usuarios': AdminUsuarios,
   'auditoria': AdminAuditoria,
+  'admin-empresas': AdminEmpresas,
 };
 
 export default function SectionView() {
