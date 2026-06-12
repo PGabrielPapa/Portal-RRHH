@@ -10,7 +10,7 @@ export const GROUPS: Group[] = [
     panel: 'Mi espacio', roles: ['employee', 'manager', 'rrhh', 'admin'],
     items: [
       { key: 'mis-recibos', label: 'Mis recibos', ready: true },
-      { key: 'mis-ganancias', label: 'Ganancias (F.1357)' },
+      { key: 'mis-ganancias', label: 'Ganancias (F.1357)', ready: true },
       { key: 'mis-datos', label: 'Mis datos', ready: true },
       { key: 'anticipos', label: 'Adelantos', ready: true },
       { key: 'mis-licencias', ready: true, label: 'Mis licencias' },
@@ -39,7 +39,7 @@ export const GROUPS: Group[] = [
       { key: 'empleados', label: 'ABM Empleados', ready: true },
       { key: 'liquidacion', label: 'Liquidación', ready: true },
       { key: 'recibos-gestion', label: 'Recibos (gestión)', ready: true },
-      { key: 'ganancias-rrhh', label: 'Ganancias / F.1357' },
+      { key: 'ganancias-rrhh', label: 'Ganancias / F.1357', ready: true },
       { key: 'liquidacion-anual', label: 'Liquidación anual ganancias' },
       { key: 'escalas', label: 'Escalas / convenios' },
       { key: 'conceptos', label: 'Conceptos', ready: true },
