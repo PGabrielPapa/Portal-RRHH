@@ -23,6 +23,7 @@ export default function Licencias() {
   const [empresa, setEmpresa] = useState('');
   const [q, setQ] = useState('');
   const [empresas, setEmpresas] = useState<string[]>([]);
+  const [vac, setVac] = useState<any>(null);
   // registrar (RR.HH.)
   const [regQ, setRegQ] = useState('');
   const [regMatches, setRegMatches] = useState<Empleado[]>([]);
@@ -40,6 +41,7 @@ export default function Licencias() {
       setItems(await api.get<Lic[]>(`/licencias?${p.toString()}`));
     } catch (e: any) { setErr(e.message); }
   }
+  useEffect(() => { if (modoMias) api.get('/licencias/vacaciones-info').then(setVac).catch(() => {}); }, [modoMias]);
   useEffect(() => { if (!modoMias) api.get<Empleado[]>('/empleados').then((es) => setEmpresas([...new Set(es.map((e) => e.empresa))].sort())).catch(() => {}); }, [modoMias]);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key, estado, empresa, q]);
 
@@ -70,6 +72,16 @@ export default function Licencias() {
     <>
       <h2 style={{ marginTop: 0 }}>{titulo}</h2>
 
+      {modoMias && vac && (
+        <div className="card" style={{ marginBottom: 14, borderLeft: '3px solid var(--accent)' }}>
+          <strong>🏖 Te corresponden {vac.corresponden} días corridos de licencia anual</strong>
+          <div className="muted" style={{ marginTop: 4 }}>
+            Según tu antigüedad de {vac.antiguedad} año(s) al 31/12/{vac.anio} (Art. 150, Ley 20.744).
+            {' '}Tomados este año: <strong>{vac.tomadosEsteAnio}</strong> · Saldo {vac.anio}: <strong style={{ color: vac.saldoEsteAnio < 0 ? 'var(--red)' : 'var(--green)' }}>{vac.saldoEsteAnio}</strong>
+            {vac.saldoAnteriores > 0 ? <> · Saldo años anteriores: <strong>{vac.saldoAnteriores}</strong></> : null}
+          </div>
+        </div>
+      )}
       {modoMias && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={solicitar}>
           <h3 style={{ marginTop: 0 }}>Solicitar licencia</h3>
