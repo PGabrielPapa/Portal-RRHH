@@ -12,15 +12,23 @@ const fmt = (s: string) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-
 export default function Licencias() {
   const { key } = useParams();
   const modoMias = key === 'mis-licencias';
+  const esRRHH = key === 'licencias-rrhh';
+  const titulo = modoMias ? 'Mis licencias' : esRRHH ? 'Licencias — gestión RR.HH.' : 'Licencias del equipo';
+
   const [items, setItems] = useState<Lic[]>([]);
   const [f, setF] = useState<Record<string, string>>({ tipo: 'Vacaciones' });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  // filtros (gestión)
   const [estado, setEstado] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [q, setQ] = useState('');
   const [empresas, setEmpresas] = useState<string[]>([]);
+  // registrar (RR.HH.)
+  const [regQ, setRegQ] = useState('');
+  const [regMatches, setRegMatches] = useState<Empleado[]>([]);
+  const [regEmp, setRegEmp] = useState<Empleado | null>(null);
+  const [reg, setReg] = useState<Record<string, string>>({ tipo: 'Vacaciones' });
+  const [regMsg, setRegMsg] = useState('');
 
   async function load() {
     try {
@@ -42,10 +50,25 @@ export default function Licencias() {
   }
   async function resolver(l: Lic, est: string) { try { await api.patch(`/licencias/${l.id}`, { estado: est }); load(); } catch (e: any) { setErr(e.message); } }
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
+  const setR = (k: string) => (e: any) => setReg({ ...reg, [k]: e.target.value });
+
+  async function buscarEmp(v: string) {
+    setRegQ(v); setRegEmp(null);
+    if (v.trim().length < 2) { setRegMatches([]); return; }
+    try { setRegMatches((await api.get<Empleado[]>(`/empleados?q=${encodeURIComponent(v)}`)).slice(0, 8)); } catch { /* noop */ }
+  }
+  async function registrar(e: React.FormEvent) {
+    e.preventDefault(); setRegMsg(''); setErr('');
+    if (!regEmp) return;
+    try {
+      await api.post('/licencias/registrar', { empleadoId: regEmp.id, tipo: reg.tipo, desde: reg.desde, hasta: reg.hasta, motivo: reg.motivo });
+      setRegMsg(`Licencia registrada para ${regEmp.nom}`); setReg({ tipo: 'Vacaciones' }); setRegEmp(null); setRegQ(''); load();
+    } catch (e: any) { setErr(e.message); }
+  }
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>{modoMias ? 'Mis licencias' : 'Licencias — gestión'}</h2>
+      <h2 style={{ marginTop: 0 }}>{titulo}</h2>
 
       {modoMias && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={solicitar}>
@@ -62,13 +85,43 @@ export default function Licencias() {
         </form>
       )}
 
+      {esRRHH && (
+        <form className="card" style={{ marginBottom: 18 }} onSubmit={registrar}>
+          <h3 style={{ marginTop: 0 }}>Registrar licencia (para un empleado)</h3>
+          <div className="field" style={{ position: 'relative', marginBottom: 10 }}>
+            <label>Empleado *</label>
+            <input className="input" placeholder="Buscar nombre/legajo…" value={regQ} onChange={(e) => buscarEmp(e.target.value)} />
+            {regMatches.length > 0 && (
+              <div style={{ position: 'absolute', zIndex: 5, left: 0, right: 0, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, marginTop: 4, maxHeight: 220, overflow: 'auto' }}>
+                {regMatches.map((e) => (
+                  <div key={e.id} onClick={() => { setRegEmp(e); setRegQ(`${e.nom} (${e.legNum})`); setRegMatches([]); }} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13, borderBottom: '1px solid var(--border)' }}>
+                    {e.nom} <span className="muted">· {e.legNum} · {e.empresa}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="grid2" style={{ marginBottom: 10 }}>
+            <div className="field"><label>Tipo</label><select className="input" value={reg.tipo} onChange={setR('tipo')}>{TIPOS.map((t) => <option key={t}>{t}</option>)}</select></div>
+            <div className="field"></div>
+            <div className="field"><label>Desde *</label><input className="input" type="date" value={reg.desde || ''} onChange={setR('desde')} /></div>
+            <div className="field"><label>Hasta *</label><input className="input" type="date" value={reg.hasta || ''} onChange={setR('hasta')} /></div>
+          </div>
+          <div className="field" style={{ marginBottom: 12 }}><label>Motivo</label><input className="input" value={reg.motivo || ''} onChange={setR('motivo')} /></div>
+          {regMsg && <div className="ok" style={{ marginBottom: 8 }}>✓ {regMsg}</div>}
+          <button className="btn" disabled={!regEmp || !reg.desde || !reg.hasta}>Registrar (queda aprobada)</button>
+        </form>
+      )}
+
       {!modoMias && (
         <div className="row" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
           <input className="input" style={{ maxWidth: 240 }} placeholder="Buscar empleado o legajo…" value={q} onChange={(e) => setQ(e.target.value)} />
-          <select className="input" style={{ maxWidth: 200 }} value={empresa} onChange={(e) => setEmpresa(e.target.value)}>
-            <option value="">Todas las empresas</option>
-            {empresas.map((em) => <option key={em} value={em}>{em}</option>)}
-          </select>
+          {esRRHH && (
+            <select className="input" style={{ maxWidth: 200 }} value={empresa} onChange={(e) => setEmpresa(e.target.value)}>
+              <option value="">Todas las empresas</option>
+              {empresas.map((em) => <option key={em} value={em}>{em}</option>)}
+            </select>
+          )}
           <select className="input" style={{ maxWidth: 180 }} value={estado} onChange={(e) => setEstado(e.target.value)}>
             <option value="">Todos los estados</option>
             <option value="pendiente">Pendientes</option>
@@ -83,14 +136,14 @@ export default function Licencias() {
         <table>
           <thead><tr>
             {!modoMias && <th>Empleado</th>}
-            {!modoMias && <th>Empresa</th>}
+            {esRRHH && <th>Empresa</th>}
             <th>Tipo</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th>{!modoMias && <th></th>}
           </tr></thead>
           <tbody>
             {items.map((l) => (
               <tr key={l.id}>
                 {!modoMias && <td>{l.nom} <span className="muted">({l.leg_num})</span></td>}
-                {!modoMias && <td>{l.empresa}</td>}
+                {esRRHH && <td>{l.empresa}</td>}
                 <td>{l.tipo}</td><td>{fmt(l.desde)}</td><td>{fmt(l.hasta)}</td><td>{l.dias}</td>
                 <td><span className="badge" style={{ color: colorEstado(l.estado) }}>{l.estado}</span></td>
                 {!modoMias && <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -101,7 +154,7 @@ export default function Licencias() {
                 </td>}
               </tr>
             ))}
-            {!items.length && <tr><td colSpan={modoMias ? 5 : 8} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin licencias{!modoMias ? ' (todavía nadie solicitó, o no hay con esos filtros)' : ''}.</td></tr>}
+            {!items.length && <tr><td colSpan={modoMias ? 5 : (esRRHH ? 8 : 7)} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin licencias.</td></tr>}
           </tbody>
         </table>
       </div>
