@@ -22,6 +22,7 @@ import AdminAuditoria from '../pages/AdminAuditoria';
 import AdminEmpresas from '../pages/AdminEmpresas';
 import Elementos from '../pages/Elementos';
 import Beneficios from '../pages/Beneficios';
+import CambiosDomicilio from '../pages/CambiosDomicilio';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
@@ -52,6 +53,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'admin-empresas': AdminEmpresas,
   'elementos-trabajo': Elementos,
   'beneficios': Beneficios,
+  'cambios-domicilio': CambiosDomicilio,
 };
 
 export default function SectionView() {
