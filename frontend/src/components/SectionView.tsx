@@ -21,6 +21,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'mensajes': Mensajes,
   'mis-cbus': MisCbus,
   'anticipos': Adelantos,
+  'aprobaciones': Adelantos,
   'parametros': Parametros,
   'conceptos': Conceptos,
   'liquidacion': Liquidacion,

@@ -22,7 +22,7 @@ export const GROUPS: Group[] = [
   {
     panel: 'Gerencia', roles: ['manager', 'admin'],
     items: [
-      { key: 'aprobaciones', label: 'Aprobaciones' },
+      { key: 'aprobaciones', label: 'Aprobaciones (adelantos)', ready: true },
       { key: 'licencias-equipo', ready: true, label: 'Licencias del equipo' },
       { key: 'organigrama', label: 'Organigrama / equipo' },
     ],

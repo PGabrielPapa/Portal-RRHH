@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
@@ -8,15 +9,16 @@ const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currenc
 const colorEstado = (e: string) => e === 'aprobado' ? 'var(--green)' : e === 'rechazado' ? 'var(--red)' : 'var(--yellow)';
 
 export default function Adelantos() {
-  const { user } = useAuth();
-  const puedeAprobar = ['manager', 'rrhh', 'admin'].includes(user?.role || '');
+  const { key } = useParams();
+  const modoMios = key === 'anticipos';   // personal vs aprobaciones
+  const puedeAprobar = !modoMios;
   const [items, setItems] = useState<Anticipo[]>([]);
   const [f, setF] = useState<Record<string, string>>({ cuotas: '1' });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function load() { try { setItems(await api.get<Anticipo[]>('/anticipos')); } catch (e: any) { setErr(e.message); } }
-  useEffect(() => { load(); }, []);
+  async function load() { try { setItems(await api.get<Anticipo[]>(modoMios ? '/anticipos/mias' : '/anticipos')); } catch (e: any) { setErr(e.message); } }
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [key]);
 
   async function solicitar(e: React.FormEvent) {
     e.preventDefault(); setErr(''); setBusy(true);
@@ -30,7 +32,7 @@ export default function Adelantos() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Adelantos</h2>
+      <h2 style={{ marginTop: 0 }}>{modoMios ? 'Adelantos' : 'Aprobaciones — adelantos'}</h2>
 
       {!puedeAprobar && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={solicitar}>
