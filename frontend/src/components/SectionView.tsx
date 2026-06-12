@@ -13,6 +13,8 @@ import Liquidacion from '../pages/Liquidacion';
 import MisRecibos from '../pages/MisRecibos';
 import RecibosGestion from '../pages/RecibosGestion';
 import Licencias from '../pages/Licencias';
+import Sanciones from '../pages/Sanciones';
+import Evaluaciones from '../pages/Evaluaciones';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
@@ -30,6 +32,8 @@ const COMPONENTS: Record<string, ComponentType> = {
   'mis-licencias': Licencias,
   'licencias-equipo': Licencias,
   'licencias-rrhh': Licencias,
+  'sanciones': Sanciones,
+  'evaluaciones': Evaluaciones,
 };
 
 export default function SectionView() {
