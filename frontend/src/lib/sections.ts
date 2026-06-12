@@ -19,6 +19,7 @@ export const GROUPS: Group[] = [
       { key: 'cert-trabajo', label: 'Certificado de trabajo', ready: true },
       { key: 'mis-sanciones', label: 'Mis sanciones', ready: true },
       { key: 'mis-evaluaciones', label: 'Mis evaluaciones', ready: true },
+      { key: 'mis-familiares', label: 'Mis familiares', ready: true },
     ],
   },
   {
