@@ -18,8 +18,10 @@ export default function MisDatos() {
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
 
   async function load() {
-    try { setP(await api.get<Empleado>('/empleados/mi-perfil')); setCambios(await api.get<Cambio[]>('/cambios-domicilio/mias')); }
-    catch (e: any) { setErr(e.message); }
+    try { setP(await api.get<Empleado>('/empleados/mi-perfil')); }
+    catch (e: any) { setErr(e.message); return; }
+    // Secundario: si falla (p.ej. backend sin actualizar), no rompe la página.
+    try { setCambios(await api.get<Cambio[]>('/cambios-domicilio/mias')); } catch { /* opcional */ }
   }
   useEffect(() => { load(); }, []);
 
