@@ -59,6 +59,7 @@ export const GROUPS: Group[] = [
       { key: 'ddjj-sindical', label: 'DDJJ sindical' },
       { key: 'documentos', label: 'Documentos firmados' },
       { key: 'cert-trabajo-rrhh', label: 'Certificados de trabajo', ready: true },
+      { key: 'mensajes-rrhh', label: 'Mensajes de empleados', ready: true },
       { key: 'cambios-domicilio', label: 'Cambios de domicilio', ready: true },
       { key: 'art-empresas', label: 'ART por empresa' },
       { key: 'sindicatos', label: 'Sindicatos' },
