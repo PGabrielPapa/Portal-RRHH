@@ -65,7 +65,7 @@ export const GROUPS: Group[] = [
       { key: 'art-empresas', label: 'ART por empresa', ready: true },
       { key: 'sindicatos', label: 'Sindicatos', ready: true },
       { key: 'reglamento', label: 'Reglamento / licencias esp.', ready: true },
-      { key: 'cierre-periodos', label: 'Cierre de períodos' },
+      { key: 'cierre-periodos', label: 'Cierre de períodos', ready: true },
     ],
   },
   {
