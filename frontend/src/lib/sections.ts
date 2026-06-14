@@ -63,7 +63,7 @@ export const GROUPS: Group[] = [
       { key: 'mensajes-rrhh', label: 'Mensajes de empleados', ready: true },
       { key: 'cambios-domicilio', label: 'Cambios de domicilio', ready: true },
       { key: 'art-empresas', label: 'ART por empresa', ready: true },
-      { key: 'sindicatos', label: 'Sindicatos' },
+      { key: 'sindicatos', label: 'Sindicatos', ready: true },
       { key: 'reglamento', label: 'Reglamento / licencias esp.' },
       { key: 'cierre-periodos', label: 'Cierre de períodos' },
     ],
