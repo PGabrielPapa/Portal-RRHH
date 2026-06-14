@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import type { Empleado } from '../lib/types';
+import EmpleadoPicker from '../components/EmpleadoPicker';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const $ = (n: any) => (Number(n) || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -138,6 +139,59 @@ function SimGratificacion() {
   );
 }
 
+function SimFinal() {
+  const [emp, setEmp] = useState<Empleado | null>(null);
+  const [fechaEgreso, setFechaEgreso] = useState('');
+  const [diasVac, setDiasVac] = useState('');
+  const [data, setData] = useState<any>(null);
+  const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
+
+  async function calcular() {
+    if (!emp) return; setErr(''); setBusy(true); setData(null);
+    try { setData(await api.post('/liquidacion/simular-final', { empleadoId: emp.id, fechaEgreso, diasVacNoGozadas: diasVac ? Number(diasVac) : 0 })); }
+    catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  }
+
+  return (
+    <>
+      <p className="muted" style={{ marginTop: 0, marginBottom: 14 }}>Simulá la liquidación final de un empleado y compará los 7 supuestos legales de baja.</p>
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="grid2" style={{ marginBottom: 10 }}>
+          <div className="field"><label>Empleado</label><EmpleadoPicker onSelect={setEmp} /></div>
+          <div className="field"><label>Fecha de egreso *</label><input className="input" type="date" value={fechaEgreso} onChange={(e) => setFechaEgreso(e.target.value)} /></div>
+          <div className="field"><label>Días de vacaciones no gozadas</label><input className="input" type="number" value={diasVac} onChange={(e) => setDiasVac(e.target.value)} /></div>
+        </div>
+        <button className="btn" onClick={calcular} disabled={busy || !emp || !fechaEgreso}>{busy ? 'Calculando…' : '⚖️ Comparar supuestos'}</button>
+        {err && <div className="err" style={{ marginTop: 10 }}>⚠ {err}</div>}
+      </div>
+
+      {data && (
+        <>
+          <div className="muted" style={{ marginBottom: 8 }}>{data.empleado.nom} · Leg. {data.empleado.legNum} · {data.empleado.empresa} · Ingreso {String(data.empleado.ingreso || '').slice(0, 10)}</div>
+          <div className="card" style={{ padding: 0, overflow: 'auto', marginBottom: 14 }}>
+            <table>
+              <thead><tr><th>Supuesto legal</th><th style={{ textAlign: 'right' }}>Total a pagar (neto)</th></tr></thead>
+              <tbody>
+                {data.escenarios.map((es: any) => (
+                  <tr key={es.supuesto}><td>{es.label}</td><td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>$ {$(es.neto)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {data.escenarios.map((es: any) => (
+            <details key={es.supuesto} className="card" style={{ marginBottom: 8 }}>
+              <summary style={{ cursor: 'pointer' }}><strong>{es.label}</strong> — neto $ {$(es.neto)}</summary>
+              <table style={{ width: '100%', fontSize: 13, marginTop: 8 }}><tbody>
+                {es.haberes.map((h: any, i: number) => <tr key={i}><td>{h.concepto}{h.tipo === 'norem' ? ' (no rem.)' : h.tipo === 'exento' ? ' (exento)' : ''}</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>$ {$(h.monto)}</td></tr>)}
+              </tbody></table>
+            </details>
+          ))}
+        </>
+      )}
+    </>
+  );
+}
+
 export default function Simulaciones() {
   const [tab, setTab] = useState('incremento');
   return (
@@ -146,8 +200,9 @@ export default function Simulaciones() {
       <div className="row" style={{ gap: 6, marginBottom: 14 }}>
         <button className={`btn ${tab === 'incremento' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('incremento')}>Incremento salarial</button>
         <button className={`btn ${tab === 'gratificacion' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('gratificacion')}>Gratificaciones</button>
+        <button className={`btn ${tab === 'final' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('final')}>Liquidación final</button>
       </div>
-      {tab === 'incremento' ? <SimIncremento /> : <SimGratificacion />}
+      {tab === 'incremento' ? <SimIncremento /> : tab === 'gratificacion' ? <SimGratificacion /> : <SimFinal />}
     </>
   );
 }
