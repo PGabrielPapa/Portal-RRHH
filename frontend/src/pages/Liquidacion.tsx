@@ -20,7 +20,20 @@ function Individual() {
 
   async function buscar(v: string) { setQ(v); setSel(null); if (v.trim().length < 2) { setMatches([]); return; } try { const qs = `/empleados?q=${encodeURIComponent(v)}${empresa ? `&empresa=${encodeURIComponent(empresa)}` : ''}`; setMatches((await api.get<Empleado[]>(qs)).slice(0, 8)); } catch { /* */ } }
   function elegir(e: Empleado) { setSel(e); setQ(`${e.nom} (${e.legNum})`); setMatches([]); setRecibo(null); setMsg(''); }
-  function body() { const b: any = { empleadoId: sel!.id, anio, mes, tipo }; if (tipo === 'final') Object.assign(b, { fechaEgreso: fin.fechaEgreso, motivoBaja: fin.motivoBaja, diasVacNoGozadas: fin.diasVacNoGozadas ? Number(fin.diasVacNoGozadas) : 0, mejorRem: fin.mejorRem ? Number(fin.mejorRem) : undefined }); if (tipo === 'vacaciones' && fin.diasVac) b.diasVac = Number(fin.diasVac); if (tipo === 'anticipo') b.montoAnticipo = Number(fin.montoAnticipo || 0); if (tipo === 'complementaria') { b.montoAjuste = Number(fin.montoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } if (tipo === 'anticipo_ajuste') { b.montoAnticipoAjuste = Number(fin.montoAnticipoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } if (tipo === 'mensual' || tipo === 'quincenal_1' || tipo === 'quincenal_2') { if (fin.ajusteSueldoBruto) b.ajusteSueldoBruto = Number(fin.ajusteSueldoBruto); if (fin.anticipoAjusteDesc) b.anticipoAjusteDesc = Number(fin.anticipoAjusteDesc); } return b; }
+  const esPeriodo = (t: string) => t === 'mensual' || t === 'quincenal_1' || t === 'quincenal_2';
+  function body() { const b: any = { empleadoId: sel!.id, anio, mes, tipo }; if (fin.fechaPago) b.fechaPago = fin.fechaPago;
+    if (esPeriodo(tipo)) {
+      const nv: any = {};
+      if (fin.diasTrabajados) nv.diasTrabajados = Number(fin.diasTrabajados);
+      if (fin.horasExtra50) nv.horasExtra50 = Number(fin.horasExtra50);
+      if (fin.horasExtra100) nv.horasExtra100 = Number(fin.horasExtra100);
+      if (fin.otrosRemun) { nv.otrosRemun = Number(fin.otrosRemun); nv.otrosRemunLabel = fin.otrosRemunLabel; }
+      if (fin.otrosNoRem) { nv.otrosNoRem = Number(fin.otrosNoRem); nv.otrosNoRemLabel = fin.otrosNoRemLabel; }
+      if (fin.otrosDesc) { nv.otrosDesc = Number(fin.otrosDesc); nv.otrosDescLabel = fin.otrosDescLabel; }
+      if (fin.embargo) nv.embargo = Number(fin.embargo);
+      if (fin.cuotaAlimentaria) nv.cuotaAlimentaria = Number(fin.cuotaAlimentaria);
+      Object.assign(b, nv);
+    } if (tipo === 'final') Object.assign(b, { fechaEgreso: fin.fechaEgreso, motivoBaja: fin.motivoBaja, diasVacNoGozadas: fin.diasVacNoGozadas ? Number(fin.diasVacNoGozadas) : 0, mejorRem: fin.mejorRem ? Number(fin.mejorRem) : undefined }); if (tipo === 'vacaciones' && fin.diasVac) b.diasVac = Number(fin.diasVac); if (tipo === 'anticipo') b.montoAnticipo = Number(fin.montoAnticipo || 0); if (tipo === 'complementaria') { b.montoAjuste = Number(fin.montoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } if (tipo === 'anticipo_ajuste') { b.montoAnticipoAjuste = Number(fin.montoAnticipoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } if (tipo === 'mensual' || tipo === 'quincenal_1' || tipo === 'quincenal_2') { if (fin.ajusteSueldoBruto) b.ajusteSueldoBruto = Number(fin.ajusteSueldoBruto); if (fin.anticipoAjusteDesc) b.anticipoAjusteDesc = Number(fin.anticipoAjusteDesc); } return b; }
   async function calcular() { if (!sel) return; setErr(''); setMsg(''); setBusy(true); setRecibo(null); try { setRecibo(await api.post<Recibo>('/liquidacion/calcular', body())); } catch (e: any) { setErr(e.message); } finally { setBusy(false); } }
   async function guardar() { if (!sel) return; setErr(''); setBusy(true); try { await api.post('/liquidacion/guardar', body()); setMsg('Recibo guardado y publicado ✓ (visible en “Mis recibos”)'); } catch (e: any) { setErr(e.message); } finally { setBusy(false); } }
 
@@ -47,7 +60,9 @@ function Individual() {
           <div className="field"><label>Tipo</label><select className="input" value={tipo} onChange={(e) => { setTipo(e.target.value); setRecibo(null); }}>{TIPOS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
           <div className="field"><label>Mes</label><select className="input" value={mes} onChange={(e) => setMes(Number(e.target.value))}>{MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}</select></div>
           <div className="field"><label>Año</label><input className="input" type="number" value={anio} onChange={(e) => setAnio(Number(e.target.value))} style={{ width: 100 }} /></div>
+          <div className="field"><label>Fecha de pago</label><input className="input" type="date" value={fin.fechaPago || ''} onChange={(e) => setFin({ ...fin, fechaPago: e.target.value })} /></div>
         </div>
+        <div className="muted" style={{ fontSize: 11, marginTop: -4, marginBottom: 4 }}>La fecha de pago define la tabla de Ganancias aplicable.</div>
         {tipo === 'vacaciones' && <div className="field" style={{ marginTop: 10, maxWidth: 200 }}><label>Días de vacaciones</label><input className="input" type="number" value={fin.diasVac || ''} onChange={(e) => setFin({ ...fin, diasVac: e.target.value })} placeholder="por antigüedad" /></div>}
         {tipo === 'anticipo' && <div className="field" style={{ marginTop: 10, maxWidth: 240 }}><label>Monto del anticipo *</label><input className="input" type="number" value={fin.montoAnticipo || ''} onChange={(e) => setFin({ ...fin, montoAnticipo: e.target.value })} /></div>}
         {tipo === 'complementaria' && (
@@ -61,6 +76,25 @@ function Individual() {
             <div className="field"><label>Concepto</label><input className="input" value={fin.conceptoAjuste || ''} onChange={(e) => setFin({ ...fin, conceptoAjuste: e.target.value })} placeholder="Ej: Anticipo ajuste paritaria" /></div>
             <div className="field"><label>Monto no remunerativo *</label><input className="input" type="number" value={fin.montoAnticipoAjuste || ''} onChange={(e) => setFin({ ...fin, montoAnticipoAjuste: e.target.value })} /></div>
           </div>
+        )}
+        {(tipo === 'mensual' || tipo === 'quincenal_1' || tipo === 'quincenal_2') && (
+          <details style={{ marginTop: 10 }}>
+            <summary style={{ cursor: 'pointer', fontSize: 13, color: 'var(--accent2)' }}>Novedades del período (días, horas extra, otros haberes/descuentos)</summary>
+            <div className="grid2" style={{ marginTop: 10 }}>
+              <div className="field"><label>Días trabajados (30 = mes completo)</label><input className="input" type="number" value={fin.diasTrabajados || ''} onChange={(e) => setFin({ ...fin, diasTrabajados: e.target.value })} placeholder="30" /></div>
+              <div className="field"></div>
+              <div className="field"><label>Horas extra 50%</label><input className="input" type="number" value={fin.horasExtra50 || ''} onChange={(e) => setFin({ ...fin, horasExtra50: e.target.value })} /></div>
+              <div className="field"><label>Horas extra 100%</label><input className="input" type="number" value={fin.horasExtra100 || ''} onChange={(e) => setFin({ ...fin, horasExtra100: e.target.value })} /></div>
+              <div className="field"><label>Otros haberes remunerativos — concepto</label><input className="input" value={fin.otrosRemunLabel || ''} onChange={(e) => setFin({ ...fin, otrosRemunLabel: e.target.value })} placeholder="Premio, comisión…" /></div>
+              <div className="field"><label>Monto</label><input className="input" type="number" value={fin.otrosRemun || ''} onChange={(e) => setFin({ ...fin, otrosRemun: e.target.value })} /></div>
+              <div className="field"><label>Otros haberes no remunerativos — concepto</label><input className="input" value={fin.otrosNoRemLabel || ''} onChange={(e) => setFin({ ...fin, otrosNoRemLabel: e.target.value })} placeholder="Viáticos…" /></div>
+              <div className="field"><label>Monto</label><input className="input" type="number" value={fin.otrosNoRem || ''} onChange={(e) => setFin({ ...fin, otrosNoRem: e.target.value })} /></div>
+              <div className="field"><label>Otros descuentos — concepto</label><input className="input" value={fin.otrosDescLabel || ''} onChange={(e) => setFin({ ...fin, otrosDescLabel: e.target.value })} /></div>
+              <div className="field"><label>Monto</label><input className="input" type="number" value={fin.otrosDesc || ''} onChange={(e) => setFin({ ...fin, otrosDesc: e.target.value })} /></div>
+              <div className="field"><label>Embargo judicial</label><input className="input" type="number" value={fin.embargo || ''} onChange={(e) => setFin({ ...fin, embargo: e.target.value })} /></div>
+              <div className="field"><label>Cuota alimentaria</label><input className="input" type="number" value={fin.cuotaAlimentaria || ''} onChange={(e) => setFin({ ...fin, cuotaAlimentaria: e.target.value })} /></div>
+            </div>
+          </details>
         )}
         {(tipo === 'mensual' || tipo === 'quincenal_1' || tipo === 'quincenal_2') && (
           <div className="grid2" style={{ marginTop: 10 }}>
@@ -92,7 +126,7 @@ function Individual() {
 // ───────────── Corrida (planilla) ─────────────
 function Corrida() {
   const [mes, setMes] = useState(new Date().getMonth() + 1); const [anio, setAnio] = useState(new Date().getFullYear());
-  const [tipo, setTipo] = useState('mensual'); const [empresa, setEmpresa] = useState('');
+  const [tipo, setTipo] = useState('mensual'); const [empresa, setEmpresa] = useState(''); const [fechaPago, setFechaPago] = useState('');
   const [empresas, setEmpresas] = useState<string[]>([]);
   const [corridas, setCorridas] = useState<any[]>([]);
   const [sel, setSel] = useState<any>(null); const [reporte, setReporte] = useState<any>(null);
@@ -101,7 +135,7 @@ function Corrida() {
   async function loadCorridas() { try { setCorridas(await api.get('/liquidacion/corridas')); } catch (e: any) { setErr(e.message); } }
   useEffect(() => { loadCorridas(); api.get<Empleado[]>('/empleados').then((es) => setEmpresas([...new Set(es.map((e) => e.empresa))].sort())).catch(() => {}); }, []);
 
-  async function crear() { setErr(''); setBusy(true); try { const r = await api.post<any>('/liquidacion/corrida', { anio, mes, tipo, empresa: empresa || undefined }); await loadCorridas(); abrir(r.id); } catch (e: any) { setErr(e.message); } finally { setBusy(false); } }
+  async function crear() { setErr(''); setBusy(true); try { const r = await api.post<any>('/liquidacion/corrida', { anio, mes, tipo, empresa: empresa || undefined, fechaPago: fechaPago || undefined }); await loadCorridas(); abrir(r.id); } catch (e: any) { setErr(e.message); } finally { setBusy(false); } }
   async function abrir(id: number) { setErr(''); setReporte(null); try { setSel(await api.get(`/liquidacion/corrida/${id}`)); } catch (e: any) { setErr(e.message); } }
   async function aprobar() { try { await api.post(`/liquidacion/corrida/${sel.corrida.id}/aprobar`, {}); await loadCorridas(); abrir(sel.corrida.id); } catch (e: any) { setErr(e.message); } }
   async function publicar() { try { await api.post(`/liquidacion/corrida/${sel.corrida.id}/publicar`, {}); await loadCorridas(); abrir(sel.corrida.id); } catch (e: any) { setErr(e.message); } }
@@ -120,6 +154,7 @@ function Corrida() {
           <div className="field"><label>Tipo</label><select className="input" value={tipo} onChange={(e) => setTipo(e.target.value)}>{TIPOS.filter(([v]) => v !== 'final').map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
           <div className="field"><label>Mes</label><select className="input" value={mes} onChange={(e) => setMes(Number(e.target.value))}>{MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}</select></div>
           <div className="field"><label>Año</label><input className="input" type="number" value={anio} onChange={(e) => setAnio(Number(e.target.value))} style={{ width: 100 }} /></div>
+          <div className="field"><label>Fecha de pago</label><input className="input" type="date" value={fechaPago} onChange={(e) => setFechaPago(e.target.value)} /></div>
           <div className="field"><label>Empresa</label><select className="input" value={empresa} onChange={(e) => setEmpresa(e.target.value)}><option value="">Todas</option>{empresas.map((em) => <option key={em} value={em}>{em}</option>)}</select></div>
           <button className="btn" onClick={crear} disabled={busy}>{busy ? 'Liquidando…' : 'Generar corrida'}</button>
         </div>

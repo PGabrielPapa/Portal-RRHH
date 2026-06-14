@@ -3,7 +3,7 @@ const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currenc
 
 export interface Recibo {
   empleado: { legNum: string; nom: string; empresa: string; cuil?: string; cat?: string };
-  periodo: { anio: number; mes: number; tipoLabel?: string };
+  periodo: { anio: number; mes: number; tipoLabel?: string; fechaPago?: string; ganPeriodo?: string };
   haberes: { concepto: string; tipo: string; monto: number }[];
   descuentos: { concepto: string; monto: number }[];
   totales: { totalRemun: number; totalNoRem: number; totalExento?: number; totalHaberes: number; totalDescuentos: number; neto: number };
@@ -23,7 +23,7 @@ export default function ReciboView({ recibo }: { recibo: Recibo }) {
           <strong>{recibo.empleado.nom}</strong>
           <div className="muted">Legajo {recibo.empleado.legNum} · {recibo.empleado.empresa} · {recibo.empleado.cat || ''}</div>
         </div>
-        <div className="muted">{MESES[recibo.periodo.mes - 1]} {recibo.periodo.anio}{recibo.periodo.tipoLabel ? ` · ${recibo.periodo.tipoLabel}` : ''}</div>
+        <div className="muted" style={{ textAlign: 'right' }}>{MESES[recibo.periodo.mes - 1]} {recibo.periodo.anio}{recibo.periodo.tipoLabel ? ` · ${recibo.periodo.tipoLabel}` : ''}{recibo.periodo.fechaPago ? <><br/>Pago: {recibo.periodo.fechaPago}{recibo.periodo.ganPeriodo ? ` · Ganancias ${recibo.periodo.ganPeriodo}` : ''}</> : ''}</div>
       </div>
 
       <div className="grid2" style={{ marginTop: 14, alignItems: 'start' }}>
