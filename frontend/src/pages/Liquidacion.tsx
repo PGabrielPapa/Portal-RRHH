@@ -157,7 +157,7 @@ function Corrida() {
   const [tipo, setTipo] = useState('mensual'); const [empresa, setEmpresa] = useState(''); const [fechaPago, setFechaPago] = useState('');
   const [empresas, setEmpresas] = useState<string[]>([]);
   const [corridas, setCorridas] = useState<any[]>([]);
-  const [sel, setSel] = useState<any>(null); const [reporte, setReporte] = useState<any>(null);
+  const [sel, setSel] = useState<any>(null); const [reporte, setReporte] = useState<any>(null); const [exp, setExp] = useState<Record<number, boolean>>({});
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
 
   async function loadCorridas() { try { setCorridas(await api.get('/liquidacion/corridas')); } catch (e: any) { setErr(e.message); } }
@@ -221,19 +221,46 @@ function Corrida() {
                 <button className="btn ghost" onClick={verReporte}>📊 Reporte</button>
                 <button className="btn ghost" onClick={bajarBanco}>🏦 Archivo de banco (CSV)</button>
               </div>
-              <div style={{ overflow: 'auto', maxHeight: 360 }}>
-                <table style={{ width: '100%', fontSize: 13 }}>
-                  <thead><tr><th style={{ textAlign: 'left' }}>Empleado</th><th style={{ textAlign: 'right' }}>Remun.</th><th style={{ textAlign: 'right' }}>Desc.</th><th style={{ textAlign: 'right' }}>Neto</th></tr></thead>
-                  <tbody>
-                    {sel.items.map((it: any) => (
-                      <tr key={it.id}><td>{it.nom} <span className="muted">({it.legNum})</span></td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>${$(it.totalRemun)}</td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>${$(it.totalDescuentos)}</td>
-                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>${$(it.neto)}</td></tr>
-                    ))}
-                  </tbody>
-                  <tfoot><tr style={{ borderTop: '2px solid var(--border)' }}><td style={{ fontWeight: 700 }}>Total ({sel.corrida.cant})</td><td></td><td></td><td style={{ textAlign: 'right', fontWeight: 700, fontFamily: 'monospace', color: 'var(--green)' }}>${$(sel.corrida.total_neto)}</td></tr></tfoot>
-                </table>
+              <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Conceptos liquidados — agrupados por empresa, ordenados por legajo. Clic en un empleado para ver/ocultar el detalle.</div>
+              <div style={{ overflow: 'auto', maxHeight: 460 }}>
+                {Object.entries(sel.items.reduce((acc: any, it: any) => { (acc[it.empresa] = acc[it.empresa] || []).push(it); return acc; }, {})).map(([empresa, lista]: any) => (
+                  <div key={empresa} style={{ marginBottom: 12 }}>
+                    <div style={{ fontWeight: 700, padding: '4px 0', borderBottom: '1px solid var(--border)', color: 'var(--accent2)' }}>{empresa} <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>({lista.length})</span></div>
+                    <table style={{ width: '100%', fontSize: 13 }}>
+                      <thead><tr><th style={{ textAlign: 'left' }}>Legajo</th><th style={{ textAlign: 'left' }}>Empleado</th><th style={{ textAlign: 'right' }}>Remun.</th><th style={{ textAlign: 'right' }}>Desc.</th><th style={{ textAlign: 'right' }}>Neto</th></tr></thead>
+                      <tbody>
+                        {[...lista].sort((a: any, b: any) => String(a.legNum).localeCompare(String(b.legNum))).map((it: any) => [
+                          <tr key={it.id} style={{ cursor: 'pointer' }} onClick={() => setExp((p) => ({ ...p, [it.id]: !p[it.id] }))}>
+                            <td style={{ fontFamily: 'monospace' }}>{exp[it.id] ? '▾ ' : '▸ '}{it.legNum}</td>
+                            <td>{it.nom}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>${$(it.totalRemun)}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>${$(it.totalDescuentos)}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>${$(it.neto)}</td>
+                          </tr>,
+                          exp[it.id] && (
+                            <tr key={`d${it.id}`}><td colSpan={5} style={{ background: 'var(--bg2)', padding: '6px 14px' }}>
+                              <div className="grid2" style={{ gap: 18 }}>
+                                <div>
+                                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Haberes</div>
+                                  {(it.haberes || []).map((h: any, k: number) => <div key={k} className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}><span>{h.concepto}{h.tipo === 'norem' ? ' (no rem.)' : h.tipo === 'exento' ? ' (exento)' : ''}</span><span style={{ fontFamily: 'monospace' }}>${$(h.monto)}</span></div>)}
+                                </div>
+                                <div>
+                                  <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Descuentos</div>
+                                  {(it.descuentos || []).map((d: any, k: number) => <div key={k} className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}><span>{d.concepto}</span><span style={{ fontFamily: 'monospace' }}>${$(d.monto)}</span></div>)}
+                                  {!(it.descuentos || []).length && <div className="muted" style={{ fontSize: 12 }}>—</div>}
+                                </div>
+                              </div>
+                            </td></tr>
+                          ),
+                        ]).flat().filter(Boolean)}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+                <div className="row" style={{ justifyContent: 'space-between', borderTop: '2px solid var(--border)', paddingTop: 6, fontWeight: 700 }}>
+                  <span>Total neto ({sel.corrida.cant})</span>
+                  <span style={{ fontFamily: 'monospace', color: 'var(--green)' }}>${$(sel.corrida.total_neto)}</span>
+                </div>
               </div>
 
               {reporte && (
