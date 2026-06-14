@@ -19,6 +19,7 @@ import DdjjSindical from '../pages/DdjjSindical';
 import Sindicatos from '../pages/Sindicatos';
 import DocumentosFirmados from '../pages/DocumentosFirmados';
 import Hys from '../pages/Hys';
+import Reglamento from '../pages/Reglamento';
 import Escalas from '../pages/Escalas';
 import ArtEmpresas from '../pages/ArtEmpresas';
 import MisCbus from '../pages/MisCbus';
@@ -62,6 +63,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'sindicatos': Sindicatos,
   'documentos': DocumentosFirmados,
   'hys': Hys,
+  'reglamento': Reglamento,
   'escalas': Escalas,
   'art-empresas': ArtEmpresas,
   'mis-cbus': MisCbus,
