@@ -10,13 +10,15 @@ const $ = (n: any) => (Number(n) || 0).toLocaleString('es-AR', { minimumFraction
 // ───────────── Individual ─────────────
 function Individual() {
   const [q, setQ] = useState(''); const [matches, setMatches] = useState<Empleado[]>([]); const [sel, setSel] = useState<Empleado | null>(null);
+  const [empresa, setEmpresa] = useState(''); const [empresas, setEmpresas] = useState<string[]>([]);
+  useEffect(() => { api.get<Empleado[]>('/empleados').then((es) => setEmpresas([...new Set(es.map((e) => e.empresa))].sort())).catch(() => {}); }, []);
   const [mes, setMes] = useState(new Date().getMonth() + 1); const [anio, setAnio] = useState(new Date().getFullYear());
   const [tipo, setTipo] = useState('mensual');
   const [fin, setFin] = useState<Record<string, string>>({ motivoBaja: 'sin_causa' });
   const [recibo, setRecibo] = useState<Recibo | null>(null);
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false); const [msg, setMsg] = useState('');
 
-  async function buscar(v: string) { setQ(v); setSel(null); if (v.trim().length < 2) { setMatches([]); return; } try { setMatches((await api.get<Empleado[]>(`/empleados?q=${encodeURIComponent(v)}`)).slice(0, 8)); } catch { /* */ } }
+  async function buscar(v: string) { setQ(v); setSel(null); if (v.trim().length < 2) { setMatches([]); return; } try { const qs = `/empleados?q=${encodeURIComponent(v)}${empresa ? `&empresa=${encodeURIComponent(empresa)}` : ''}`; setMatches((await api.get<Empleado[]>(qs)).slice(0, 8)); } catch { /* */ } }
   function elegir(e: Empleado) { setSel(e); setQ(`${e.nom} (${e.legNum})`); setMatches([]); setRecibo(null); setMsg(''); }
   function body() { const b: any = { empleadoId: sel!.id, anio, mes, tipo }; if (tipo === 'final') Object.assign(b, { fechaEgreso: fin.fechaEgreso, motivoBaja: fin.motivoBaja, diasVacNoGozadas: fin.diasVacNoGozadas ? Number(fin.diasVacNoGozadas) : 0, mejorRem: fin.mejorRem ? Number(fin.mejorRem) : undefined }); if (tipo === 'vacaciones' && fin.diasVac) b.diasVac = Number(fin.diasVac); if (tipo === 'anticipo') b.montoAnticipo = Number(fin.montoAnticipo || 0); if (tipo === 'complementaria') { b.montoAjuste = Number(fin.montoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } if (tipo === 'anticipo_ajuste') { b.montoAnticipoAjuste = Number(fin.montoAnticipoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } if (tipo === 'mensual' || tipo === 'quincenal_1' || tipo === 'quincenal_2') { if (fin.ajusteSueldoBruto) b.ajusteSueldoBruto = Number(fin.ajusteSueldoBruto); if (fin.anticipoAjusteDesc) b.anticipoAjusteDesc = Number(fin.anticipoAjusteDesc); } return b; }
   async function calcular() { if (!sel) return; setErr(''); setMsg(''); setBusy(true); setRecibo(null); try { setRecibo(await api.post<Recibo>('/liquidacion/calcular', body())); } catch (e: any) { setErr(e.message); } finally { setBusy(false); } }
@@ -25,6 +27,13 @@ function Individual() {
   return (
     <>
       <div className="card" style={{ marginBottom: 18 }}>
+        <div className="field" style={{ marginBottom: 12, maxWidth: 360 }}>
+          <label>Empresa</label>
+          <select className="input" value={empresa} onChange={(e) => { setEmpresa(e.target.value); setSel(null); setMatches([]); setQ(''); }}>
+            <option value="">Todas las empresas</option>
+            {empresas.map((em) => <option key={em} value={em}>{em}</option>)}
+          </select>
+        </div>
         <div className="field" style={{ position: 'relative', marginBottom: 12 }}>
           <label>Empleado</label>
           <input className="input" placeholder="Buscar por nombre, legajo o DNI…" value={q} onChange={(e) => buscar(e.target.value)} />

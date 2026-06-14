@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
-interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; cuota_desde?: string; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
+interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; cuota_desde?: string; cuotas_pagadas?: number; total_pagado?: number; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
+interface Cuota { nro: number; anio: number; mes: number; monto: number; }
 
 const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 const colorEstado = (e: string) => e === 'aprobado' ? 'var(--green)' : e === 'rechazado' ? 'var(--red)' : 'var(--yellow)';
@@ -18,6 +19,9 @@ export default function Adelantos() {
   const [busy, setBusy] = useState(false);
   const proxMes = (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
   const [aprob, setAprob] = useState<Record<number, { cuotas: string; cuotaDesde: string }>>({});
+  const [verCuotas, setVerCuotas] = useState<number | null>(null);
+  const [cuotas, setCuotas] = useState<Cuota[]>([]);
+  async function abrirCuotas(id: number) { if (verCuotas === id) { setVerCuotas(null); return; } try { setCuotas(await api.get<Cuota[]>(`/anticipos/${id}/cuotas`)); setVerCuotas(id); } catch (e: any) { setErr(e.message); } }
 
   async function load() { try { setItems(await api.get<Anticipo[]>(modoMios ? '/anticipos/mias' : '/anticipos')); } catch (e: any) { setErr(e.message); } }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key]);
@@ -60,10 +64,10 @@ export default function Adelantos() {
         <table>
           <thead><tr>
             {puedeAprobar && <th>Empleado</th>}
-            <th>Monto</th><th>Cuotas</th><th>1ª cuota</th><th>Motivo</th><th>Fecha</th><th>Estado</th>{puedeAprobar && <th></th>}
+            <th>Monto</th><th>Cuotas</th><th>1ª cuota</th><th>Descontado</th><th>Motivo</th><th>Fecha</th><th>Estado</th>{puedeAprobar && <th></th>}
           </tr></thead>
           <tbody>
-            {items.map((a) => (
+            {items.map((a) => [
               <tr key={a.id}>
                 {puedeAprobar && <td>{a.nom} <span className="muted">({a.leg_num} · {a.empresa})</span></td>}
                 <td>{money(a.monto)}</td>
@@ -73,6 +77,9 @@ export default function Adelantos() {
                 <td>{puedeAprobar && a.estado === 'pendiente'
                   ? <input className="input" style={{ width: 110 }} type="month" value={(aprob[a.id]?.cuotaDesde) ?? proxMes} onChange={(e) => setAp(a.id, 'cuotaDesde', e.target.value, a)} />
                   : (a.cuota_desde || '—')}</td>
+                <td>{a.estado === 'aprobado'
+                  ? <button className="btn ghost" style={{ padding: '2px 8px', fontSize: 12 }} onClick={() => abrirCuotas(a.id)}>{a.cuotas_pagadas || 0}/{a.cuotas} {verCuotas === a.id ? '▴' : '▾'}</button>
+                  : <span className="muted">—</span>}</td>
                 <td>{a.motivo || '—'}</td>
                 <td className="muted">{new Date(a.created_at).toLocaleDateString('es-AR')}</td>
                 <td><span className="badge" style={{ color: colorEstado(a.estado) }}>{a.estado}</span></td>
@@ -82,8 +89,23 @@ export default function Adelantos() {
                     <button className="btn danger" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => resolver(a, 'rechazado')}>Rechazar</button>
                   </> : <span className="muted" style={{ fontSize: 12 }}>{a.resuelto_por ? `por ${a.resuelto_por}` : ''}</span>}
                 </td>}
-              </tr>
-            ))}
+              </tr>,
+              verCuotas === a.id && (
+                <tr key={`c${a.id}`}>
+                  <td colSpan={puedeAprobar ? 8 : 6} style={{ background: 'var(--bg2)', padding: '8px 14px' }}>
+                    <strong style={{ fontSize: 13 }}>Cuotas aplicadas</strong>
+                    {!cuotas.length && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Todavía no se aplicó ninguna cuota en liquidaciones.</div>}
+                    {cuotas.length > 0 && (
+                      <table style={{ marginTop: 6, fontSize: 12 }}><tbody>
+                        {cuotas.map((c, i) => <tr key={i}><td style={{ padding: '2px 10px' }}>Cuota {c.nro}/{a.cuotas}</td><td style={{ padding: '2px 10px' }}>{String(c.mes).padStart(2, '0')}/{c.anio}</td><td style={{ padding: '2px 10px', fontFamily: 'monospace' }}>{money(c.monto)}</td></tr>)}
+                        <tr style={{ borderTop: '1px solid var(--border)' }}><td style={{ padding: '2px 10px', fontWeight: 600 }}>Total descontado</td><td></td><td style={{ padding: '2px 10px', fontWeight: 600, fontFamily: 'monospace' }}>{money(a.total_pagado || 0)}</td></tr>
+                        <tr><td style={{ padding: '2px 10px' }}>Saldo</td><td></td><td style={{ padding: '2px 10px', fontFamily: 'monospace' }}>{money(a.monto - (a.total_pagado || 0))}</td></tr>
+                      </tbody></table>
+                    )}
+                  </td>
+                </tr>
+              ),
+            ]).flat().filter(Boolean)}
             {!items.length && <tr><td colSpan={puedeAprobar ? 8 : 6} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin adelantos.</td></tr>}
           </tbody>
         </table>
