@@ -6,11 +6,11 @@ import type { Empleado } from '../lib/types';
 
 interface F1357 {
   empleado: { legNum: string; nom: string; empresa: string; cuil?: string; cat?: string };
-  periodo: { anio: number; mes: number; periodoLabel: string; tablas: string };
+  periodo: { anio: number; mes: number; periodoLabel: string; tablas: string; anualizada?: boolean; mesesTranscurridos?: number };
   gravadas: { remBrutaNoHab: number; sac: number; totalGravada: number };
   dedGenerales: { jubilacion: number; obraSocial: number; cuotaSindical: number; total: number };
-  dedPersonales: { mni: number; cargasFamilia: { conyuge: number; hijos: number; hijosIncapacitados: number; total: number; nHijos: number; nHijosInc: number; tieneConyuge: boolean }; dedEspecial: number; dedEspecial2: number; total: number };
-  determinacion: { remSujeta: number; alicuota: number; impuestoDeterminado: number };
+  dedPersonales: { mni: number; cargasFamilia: { total: number; nHijos: number; nHijosInc: number; tieneConyuge: boolean }; dedEspecial: number; dedEspecial2: number; dedVoluntarias: number; total: number };
+  determinacion: { remSujeta: number; impuestoDeterminado: number; retenidoAnterior: number; impuestoARetener: number; devolucion: number };
   nota: string;
 }
 
@@ -46,7 +46,7 @@ function Formulario({ f }: { f: F1357 }) {
         <button className="btn ghost" onClick={print}>🖨 Imprimir / PDF</button>
       </div>
       <div id="f1357-print">
-        <h3 style={{ margin: '0 0 8px' }}>Impuesto a las Ganancias — F.1357</h3>
+        <h3 style={{ margin: '0 0 8px' }}>Impuesto a las Ganancias — F.1357 <span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>({f.periodo.anualizada ? 'anualizado' : `acumulado a ${f.periodo.mesesTranscurridos} mes(es)`})</span></h3>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <tbody>
             <Banda t="Remuneraciones gravadas" />
@@ -60,16 +60,18 @@ function Formulario({ f }: { f: F1357 }) {
             <Fila l="Total deducciones generales" v={f.dedGenerales.total} bold />
             <Banda t="Deducciones personales" />
             <Fila l="Ganancia no imponible (MNI)" v={f.dedPersonales.mni} />
-            <Fila l={`Cargas de familia — cónyuge ${cf.tieneConyuge ? '(1)' : '(0)'}`} v={cf.conyuge} />
-            <Fila l={`Cargas de familia — hijos (${cf.nHijos})`} v={cf.hijos} />
-            {cf.nHijosInc > 0 && <Fila l={`Cargas de familia — hijos incapacitados (${cf.nHijosInc})`} v={cf.hijosIncapacitados} />}
+            <Fila l={`Cargas de familia (cónyuge: ${cf.tieneConyuge ? 'sí' : 'no'} · hijos: ${cf.nHijos}${cf.nHijosInc ? ` · incap.: ${cf.nHijosInc}` : ''})`} v={cf.total} />
             <Fila l="Deducción especial" v={f.dedPersonales.dedEspecial} />
             <Fila l="Deducción especial (2° párr. art. 30)" v={f.dedPersonales.dedEspecial2} />
+            {f.dedPersonales.dedVoluntarias > 0 && <Fila l="Deducciones generales (SIRADIG)" v={f.dedPersonales.dedVoluntarias} />}
             <Fila l="Total deducciones personales" v={f.dedPersonales.total} bold />
             <Banda t="Determinación del impuesto" />
             <Fila l="Remuneración sujeta a impuesto" v={f.determinacion.remSujeta} bold />
-            <tr><td style={{ padding: '3px 10px', borderBottom: '1px solid var(--border)' }}>Alícuota aplicable (art. 94 LIG)</td><td style={{ padding: '3px 10px', borderBottom: '1px solid var(--border)', textAlign: 'right', fontFamily: 'monospace' }}>{f.determinacion.alicuota}%</td></tr>
-            <Fila l="Impuesto determinado" v={f.determinacion.impuestoDeterminado} bold bg="var(--bg2)" />
+            <Fila l="Impuesto determinado (acumulado)" v={f.determinacion.impuestoDeterminado} bold bg="var(--bg2)" />
+            <Fila l="Retenido en períodos anteriores" v={f.determinacion.retenidoAnterior} />
+            {f.determinacion.devolucion > 0
+              ? <Fila l="Devolución a favor del empleado" v={f.determinacion.devolucion} bold bg="var(--bg2)" />
+              : <Fila l="Impuesto a retener del período" v={f.determinacion.impuestoARetener} bold bg="var(--bg2)" />}
           </tbody>
         </table>
         <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>{f.nota}</p>
