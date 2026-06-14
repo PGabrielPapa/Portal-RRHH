@@ -15,6 +15,7 @@ import Asiento from '../pages/Asiento';
 import ArchivosBanco from '../pages/ArchivosBanco';
 import GeneradorReportes from '../pages/GeneradorReportes';
 import Simulaciones from '../pages/Simulaciones';
+import DdjjSindical from '../pages/DdjjSindical';
 import Escalas from '../pages/Escalas';
 import ArtEmpresas from '../pages/ArtEmpresas';
 import MisCbus from '../pages/MisCbus';
@@ -54,6 +55,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'bancos': ArchivosBanco,
   'reportes': GeneradorReportes,
   'simulaciones': Simulaciones,
+  'ddjj-sindical': DdjjSindical,
   'escalas': Escalas,
   'art-empresas': ArtEmpresas,
   'mis-cbus': MisCbus,

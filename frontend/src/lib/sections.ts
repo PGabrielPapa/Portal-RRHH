@@ -57,7 +57,7 @@ export const GROUPS: Group[] = [
       { key: 'asiento', label: 'Asiento contable', ready: true },
       { key: 'bancos', label: 'Archivos de banco', ready: true },
       { key: 'cbu-novedades', label: 'CBU — novedades' },
-      { key: 'ddjj-sindical', label: 'DDJJ sindical' },
+      { key: 'ddjj-sindical', label: 'DDJJ sindical', ready: true },
       { key: 'documentos', label: 'Documentos firmados' },
       { key: 'cert-trabajo-rrhh', label: 'Certificados de trabajo', ready: true },
       { key: 'mensajes-rrhh', label: 'Mensajes de empleados', ready: true },
