@@ -9,6 +9,7 @@ import MensajesRRHH from '../pages/MensajesRRHH';
 import Organigrama from '../pages/Organigrama';
 import Ganancias from '../pages/Ganancias';
 import Escalas from '../pages/Escalas';
+import ArtEmpresas from '../pages/ArtEmpresas';
 import MisCbus from '../pages/MisCbus';
 import Adelantos from '../pages/Adelantos';
 import Parametros from '../pages/Parametros';
@@ -40,6 +41,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'mis-ganancias': Ganancias,
   'ganancias-rrhh': Ganancias,
   'escalas': Escalas,
+  'art-empresas': ArtEmpresas,
   'mis-cbus': MisCbus,
   'anticipos': Adelantos,
   'aprobaciones': Adelantos,
