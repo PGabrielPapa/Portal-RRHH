@@ -31,7 +31,19 @@ function Individual() {
       if (fin.otrosNoRem) { nv.otrosNoRem = Number(fin.otrosNoRem); nv.otrosNoRemLabel = fin.otrosNoRemLabel; }
       if (fin.otrosDesc) { nv.otrosDesc = Number(fin.otrosDesc); nv.otrosDescLabel = fin.otrosDescLabel; }
       if (fin.embargo) nv.embargo = Number(fin.embargo);
+      if (fin.embargoAlimentosPct) nv.embargoAlimentosPct = Number(fin.embargoAlimentosPct);
       if (fin.cuotaAlimentaria) nv.cuotaAlimentaria = Number(fin.cuotaAlimentaria);
+      if (fin.diasSuspension) nv.diasSuspension = Number(fin.diasSuspension);
+      if (fin.ausenciasInjustificadas) nv.ausenciasInjustificadas = Number(fin.ausenciasInjustificadas);
+      if (fin.feriadosTrabajados) nv.feriadosTrabajados = Number(fin.feriadosTrabajados);
+      if (fin.hsExtrasExentas) nv.hsExtrasExentas = Number(fin.hsExtrasExentas);
+      if (fin.bonoProductividadExento) nv.bonoProductividadExento = Number(fin.bonoProductividadExento);
+      if (fin.indemnizaciones) nv.indemnizaciones = Number(fin.indemnizaciones);
+      if (fin.otrosExentos) { nv.otrosExentos = Number(fin.otrosExentos); nv.otrosExentosLabel = fin.otrosExentosLabel; }
+      if (fin.dedVoluntariasAnual) nv.dedVoluntariasAnual = Number(fin.dedVoluntariasAnual);
+      if (fin.tieneConyuge) nv.tieneConyuge = true;
+      if (fin.nroHijosMenores) nv.nroHijosMenores = Number(fin.nroHijosMenores);
+      if (fin.nroHijosIncapacitados) nv.nroHijosIncapacitados = Number(fin.nroHijosIncapacitados);
       Object.assign(b, nv);
     } if (tipo === 'final') Object.assign(b, { fechaEgreso: fin.fechaEgreso, motivoBaja: fin.motivoBaja, diasVacNoGozadas: fin.diasVacNoGozadas ? Number(fin.diasVacNoGozadas) : 0, mejorRem: fin.mejorRem ? Number(fin.mejorRem) : undefined }); if (tipo === 'vacaciones' && fin.diasVac) b.diasVac = Number(fin.diasVac); if (tipo === 'anticipo') b.montoAnticipo = Number(fin.montoAnticipo || 0); if (tipo === 'complementaria') { b.montoAjuste = Number(fin.montoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } if (tipo === 'anticipo_ajuste') { b.montoAnticipoAjuste = Number(fin.montoAnticipoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } if (tipo === 'mensual' || tipo === 'quincenal_1' || tipo === 'quincenal_2') { if (fin.ajusteSueldoBruto) b.ajusteSueldoBruto = Number(fin.ajusteSueldoBruto); if (fin.anticipoAjusteDesc) b.anticipoAjusteDesc = Number(fin.anticipoAjusteDesc); } return b; }
   async function calcular() { if (!sel) return; setErr(''); setMsg(''); setBusy(true); setRecibo(null); try { setRecibo(await api.post<Recibo>('/liquidacion/calcular', body())); } catch (e: any) { setErr(e.message); } finally { setBusy(false); } }
@@ -91,8 +103,24 @@ function Individual() {
               <div className="field"><label>Monto</label><input className="input" type="number" value={fin.otrosNoRem || ''} onChange={(e) => setFin({ ...fin, otrosNoRem: e.target.value })} /></div>
               <div className="field"><label>Otros descuentos — concepto</label><input className="input" value={fin.otrosDescLabel || ''} onChange={(e) => setFin({ ...fin, otrosDescLabel: e.target.value })} /></div>
               <div className="field"><label>Monto</label><input className="input" type="number" value={fin.otrosDesc || ''} onChange={(e) => setFin({ ...fin, otrosDesc: e.target.value })} /></div>
-              <div className="field"><label>Embargo judicial</label><input className="input" type="number" value={fin.embargo || ''} onChange={(e) => setFin({ ...fin, embargo: e.target.value })} /></div>
-              <div className="field"><label>Cuota alimentaria</label><input className="input" type="number" value={fin.cuotaAlimentaria || ''} onChange={(e) => setFin({ ...fin, cuotaAlimentaria: e.target.value })} /></div>
+              <div className="field"><label>Días de suspensión disciplinaria</label><input className="input" type="number" value={fin.diasSuspension || ''} onChange={(e) => setFin({ ...fin, diasSuspension: e.target.value })} /></div>
+              <div className="field"><label>Ausencias injustificadas (días)</label><input className="input" type="number" value={fin.ausenciasInjustificadas || ''} onChange={(e) => setFin({ ...fin, ausenciasInjustificadas: e.target.value })} /></div>
+              <div className="field"><label>Feriados trabajados</label><input className="input" type="number" value={fin.feriadosTrabajados || ''} onChange={(e) => setFin({ ...fin, feriadosTrabajados: e.target.value })} /></div>
+              <div className="field"><label>Horas extra exentas de Ganancias</label><input className="input" type="number" value={fin.hsExtrasExentas || ''} onChange={(e) => setFin({ ...fin, hsExtrasExentas: e.target.value })} /></div>
+              <div className="field"><label>Bono productividad (exento)</label><input className="input" type="number" value={fin.bonoProductividadExento || ''} onChange={(e) => setFin({ ...fin, bonoProductividadExento: e.target.value })} /></div>
+              <div className="field"><label>Indemnizaciones (exento)</label><input className="input" type="number" value={fin.indemnizaciones || ''} onChange={(e) => setFin({ ...fin, indemnizaciones: e.target.value })} /></div>
+              <div className="field"><label>Otros exentos — concepto</label><input className="input" value={fin.otrosExentosLabel || ''} onChange={(e) => setFin({ ...fin, otrosExentosLabel: e.target.value })} /></div>
+              <div className="field"><label>Otros exentos — monto</label><input className="input" type="number" value={fin.otrosExentos || ''} onChange={(e) => setFin({ ...fin, otrosExentos: e.target.value })} /></div>
+              <div className="field"><label>Embargo judicial (común)</label><input className="input" type="number" value={fin.embargo || ''} onChange={(e) => setFin({ ...fin, embargo: e.target.value })} /></div>
+              <div className="field"><label>Embargo/cuota alimentaria (% del neto)</label><input className="input" type="number" value={fin.embargoAlimentosPct || ''} onChange={(e) => setFin({ ...fin, embargoAlimentosPct: e.target.value })} /></div>
+              <div className="field"><label>Cuota alimentaria (monto fijo)</label><input className="input" type="number" value={fin.cuotaAlimentaria || ''} onChange={(e) => setFin({ ...fin, cuotaAlimentaria: e.target.value })} /></div>
+            </div>
+            <div className="muted" style={{ fontSize: 11, margin: '10px 0 4px', textTransform: 'uppercase', letterSpacing: '.05em' }}>Ganancias (SIRADIG / cargas de familia)</div>
+            <div className="grid2">
+              <div className="field"><label>Deducciones voluntarias SIRADIG (anuales)</label><input className="input" type="number" value={fin.dedVoluntariasAnual || ''} onChange={(e) => setFin({ ...fin, dedVoluntariasAnual: e.target.value })} placeholder="seguros, alquiler, médicos…" /></div>
+              <div className="field"><label>Hijos menores a cargo</label><input className="input" type="number" value={fin.nroHijosMenores || ''} onChange={(e) => setFin({ ...fin, nroHijosMenores: e.target.value })} /></div>
+              <div className="field"><label>Hijos incapacitados a cargo</label><input className="input" type="number" value={fin.nroHijosIncapacitados || ''} onChange={(e) => setFin({ ...fin, nroHijosIncapacitados: e.target.value })} /></div>
+              <div className="field" style={{ alignSelf: 'end' }}><label className="row" style={{ gap: 6, cursor: 'pointer' }}><input type="checkbox" checked={!!fin.tieneConyuge} onChange={(e) => setFin({ ...fin, tieneConyuge: e.target.checked ? '1' : '' })} /> Cónyuge a cargo</label></div>
             </div>
           </details>
         )}
