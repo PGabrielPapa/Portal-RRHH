@@ -40,6 +40,7 @@ export const GROUPS: Group[] = [
       { key: 'liquidacion', label: 'Liquidación', ready: true },
       { key: 'recibos-gestion', label: 'Recibos (gestión)', ready: true },
       { key: 'ganancias-rrhh', label: 'Ganancias / F.1357', ready: true },
+      { key: 'ganancias-params', label: 'Parámetros de Ganancias', ready: true },
       { key: 'liquidacion-anual', label: 'Liquidación anual ganancias' },
       { key: 'escalas', label: 'Escalas / convenios', ready: true },
       { key: 'conceptos', label: 'Conceptos', ready: true },
