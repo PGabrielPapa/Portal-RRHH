@@ -5,6 +5,12 @@ import { useAuth } from '../lib/auth';
 interface Tramo { key: string; label: string; }
 interface Cat { cat: string; label: string; nota?: string; tramos: Record<string, number>; }
 interface Reg { key: string; label: string; desc?: string; monto: number; }
+interface Cat2 { cat: string; valorHora?: number | null; basico?: number | null; ok?: boolean; nota?: string; }
+interface Tabla { titulo: string; subtitulo?: string; tipo: string; cats: Cat2[]; }
+interface Adic { concepto: string; detalle?: string; rem?: boolean; }
+interface NR { mes?: string; label: string; monto?: number | null; activo?: boolean; nota?: string; }
+interface Convenio { id: number; codigo: string; nombre: string; cct?: string; vigencia?: string; mesLabel?: string; acuerdo?: string; tablas: Tabla[]; adicionales?: Adic[]; noRemunerativos?: NR[]; }
+
 interface Escala {
   id: number; vigencia: string; mesLabel?: string; origen: string; porcentaje?: number | null; alcance: string; comentario?: string;
   tramos: Tramo[]; categorias: Cat[]; regionales: Reg[]; montos_titulo?: Record<string, number>;
@@ -18,6 +24,8 @@ export default function Escalas() {
   const puedeEditar = user?.role === 'rrhh' || user?.role === 'admin';
   const [versiones, setVersiones] = useState<Escala[]>([]);
   const [activa, setActiva] = useState<Escala | null>(null);
+  const [convenios, setConvenios] = useState<Convenio[]>([]);
+  const [tab, setTab] = useState('interna');
   const [err, setErr] = useState('');
   const [ok, setOk] = useState('');
   // form incremento
@@ -32,6 +40,7 @@ export default function Escalas() {
       const vs = await api.get<Escala[]>('/escala');
       setVersiones(vs);
       setActiva(await api.get<Escala>('/escala/activa'));
+      setConvenios(await api.get<Convenio[]>('/convenios'));
     } catch (e: any) { setErr(e.message); }
   }
   useEffect(() => { load(); }, []);
@@ -49,7 +58,14 @@ export default function Escalas() {
     <>
       <h2 style={{ marginTop: 0 }}>Escalas / convenios</h2>
 
-      {activa && (
+      <div className="row" style={{ gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+        <button className={`btn ${tab === 'interna' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('interna')}>Escala interna</button>
+        {convenios.map((c) => (
+          <button key={c.codigo} className={`btn ${tab === c.codigo ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab(c.codigo)}>{c.codigo}</button>
+        ))}
+      </div>
+
+      {tab === 'interna' && activa && (
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
             <div><strong>Escala vigente</strong> <span className="muted">· {activa.mesLabel || activa.vigencia} {activa.porcentaje ? `· +${activa.porcentaje}%` : '· inicial'}</span></div>
@@ -86,7 +102,7 @@ export default function Escalas() {
         </div>
       )}
 
-      {puedeEditar && (
+      {tab === 'interna' && puedeEditar && (
         <form className="card" style={{ marginBottom: 16 }} onSubmit={aplicar}>
           <h3 style={{ marginTop: 0 }}>Aplicar incremento (paritaria)</h3>
           <div className="grid2" style={{ marginBottom: 10 }}>
@@ -105,7 +121,9 @@ export default function Escalas() {
         </form>
       )}
 
-      <h3 style={{ marginBottom: 8 }}>Historial de versiones</h3>
+      {tab === 'interna' && <ConveniosNada />}
+      {tab === 'interna' && <h3 style={{ marginBottom: 8 }}>Historial de versiones</h3>}
+      {tab === 'interna' && (
       <div className="card" style={{ padding: 0, overflow: 'auto' }}>
         <table>
           <thead><tr><th>Vigencia</th><th>Origen</th><th>%</th><th>Alcance</th><th>Comentario</th>{puedeEditar && <th></th>}</tr></thead>
@@ -123,6 +141,66 @@ export default function Escalas() {
           </tbody>
         </table>
       </div>
+      )}
+
+      {tab !== 'interna' && (() => {
+        const c = convenios.find((x) => x.codigo === tab);
+        if (!c) return null;
+        return (
+          <div>
+            <div className="card" style={{ marginBottom: 14 }}>
+              <strong>{c.codigo} — {c.nombre}</strong>
+              <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{c.cct}{c.mesLabel ? ` · ${c.mesLabel}` : ''}</div>
+              {c.acuerdo && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{c.acuerdo}</div>}
+            </div>
+            {c.tablas.map((t, i) => (
+              <div key={i} className="card" style={{ marginBottom: 12 }}>
+                <strong>{t.titulo}</strong>
+                {t.subtitulo && <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>{t.subtitulo}</div>}
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginTop: 6 }}>
+                  <thead><tr><th style={{ textAlign: 'left', padding: '4px 8px' }}>Categoría</th><th style={{ textAlign: 'right', padding: '4px 8px' }}>{t.tipo === 'hora' ? 'Valor hora' : 'Básico mensual'}</th></tr></thead>
+                  <tbody>
+                    {t.cats.map((cat, j) => {
+                      const v = t.tipo === 'hora' ? cat.valorHora : cat.basico;
+                      return (
+                        <tr key={j}>
+                          <td style={{ padding: '4px 8px', borderTop: '1px solid var(--border)' }}>{cat.cat}{cat.nota ? <span className="muted" style={{ fontSize: 11 }}> · {cat.nota}</span> : ''}</td>
+                          <td style={{ padding: '4px 8px', borderTop: '1px solid var(--border)', textAlign: 'right', fontFamily: 'monospace' }}>{v != null ? `$ ${$(v)}` : <span className="muted">s/d</span>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+            {c.adicionales && c.adicionales.length > 0 && (
+              <div className="card" style={{ marginBottom: 12 }}>
+                <strong>Adicionales</strong>
+                <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13 }}>
+                  {c.adicionales.map((a, i) => <li key={i} style={{ marginBottom: 4 }}>{a.concepto}{a.detalle ? ` — ${a.detalle}` : ''} <span className="badge" style={{ marginLeft: 4 }}>{a.rem ? 'rem.' : 'no rem.'}</span></li>)}
+                </ul>
+              </div>
+            )}
+            {c.noRemunerativos && c.noRemunerativos.length > 0 && (
+              <div className="card">
+                <strong>Sumas no remunerativas (acuerdo vigente)</strong>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginTop: 6 }}>
+                  <tbody>
+                    {c.noRemunerativos.map((n, i) => (
+                      <tr key={i}>
+                        <td style={{ padding: '3px 8px' }}>{n.label}{n.nota ? <span className="muted" style={{ fontSize: 11 }}> · {n.nota}</span> : ''}</td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', fontFamily: 'monospace' }}>{n.monto != null ? `$ ${$(n.monto)}` : <span className="muted">variable</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </>
   );
 }
+
+function ConveniosNada() { return null; }
