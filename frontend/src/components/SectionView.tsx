@@ -13,6 +13,7 @@ import LibroSueldos from '../pages/LibroSueldos';
 import F931 from '../pages/F931';
 import Asiento from '../pages/Asiento';
 import ArchivosBanco from '../pages/ArchivosBanco';
+import GeneradorReportes from '../pages/GeneradorReportes';
 import Escalas from '../pages/Escalas';
 import ArtEmpresas from '../pages/ArtEmpresas';
 import MisCbus from '../pages/MisCbus';
@@ -50,6 +51,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'f931': F931,
   'asiento': Asiento,
   'bancos': ArchivosBanco,
+  'reportes': GeneradorReportes,
   'escalas': Escalas,
   'art-empresas': ArtEmpresas,
   'mis-cbus': MisCbus,

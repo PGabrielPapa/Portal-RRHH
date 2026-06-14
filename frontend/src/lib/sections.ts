@@ -51,7 +51,7 @@ export const GROUPS: Group[] = [
       { key: 'hys', label: 'Higiene y Seguridad' },
       { key: 'beneficios', label: 'Beneficios', ready: true },
       { key: 'elementos-trabajo', label: 'Elementos de trabajo', ready: true },
-      { key: 'reportes', label: 'Generador de reportes' },
+      { key: 'reportes', label: 'Generador de reportes', ready: true },
       { key: 'f931', label: 'F.931', ready: true },
       { key: 'libro-sueldos', label: 'Libro de sueldos', ready: true },
       { key: 'asiento', label: 'Asiento contable', ready: true },
