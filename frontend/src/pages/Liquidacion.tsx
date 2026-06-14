@@ -4,7 +4,7 @@ import type { Empleado } from '../lib/types';
 import ReciboView, { Recibo } from '../components/ReciboView';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-const TIPOS: [string, string][] = [['mensual', 'Mensual'], ['quincenal_1', 'Quincena 1ª (1–15)'], ['quincenal_2', 'Quincena 2ª (16–fin)'], ['sac1', 'SAC 1° semestre'], ['sac2', 'SAC 2° semestre'], ['vacaciones', 'Vacaciones'], ['final', 'Liquidación final']];
+const TIPOS: [string, string][] = [['mensual', 'Mensual'], ['quincenal_1', 'Quincena 1ª (1–15)'], ['quincenal_2', 'Quincena 2ª (16–fin)'], ['sac1', 'SAC 1° semestre'], ['sac2', 'SAC 2° semestre'], ['vacaciones', 'Vacaciones'], ['anticipo', 'Anticipo de haberes'], ['complementaria', 'Complementaria / ajuste de sueldo'], ['final', 'Liquidación final']];
 const $ = (n: any) => (Number(n) || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ───────────── Individual ─────────────
@@ -18,7 +18,7 @@ function Individual() {
 
   async function buscar(v: string) { setQ(v); setSel(null); if (v.trim().length < 2) { setMatches([]); return; } try { setMatches((await api.get<Empleado[]>(`/empleados?q=${encodeURIComponent(v)}`)).slice(0, 8)); } catch { /* */ } }
   function elegir(e: Empleado) { setSel(e); setQ(`${e.nom} (${e.legNum})`); setMatches([]); setRecibo(null); setMsg(''); }
-  function body() { const b: any = { empleadoId: sel!.id, anio, mes, tipo }; if (tipo === 'final') Object.assign(b, { fechaEgreso: fin.fechaEgreso, motivoBaja: fin.motivoBaja, diasVacNoGozadas: fin.diasVacNoGozadas ? Number(fin.diasVacNoGozadas) : 0, mejorRem: fin.mejorRem ? Number(fin.mejorRem) : undefined }); if (tipo === 'vacaciones' && fin.diasVac) b.diasVac = Number(fin.diasVac); return b; }
+  function body() { const b: any = { empleadoId: sel!.id, anio, mes, tipo }; if (tipo === 'final') Object.assign(b, { fechaEgreso: fin.fechaEgreso, motivoBaja: fin.motivoBaja, diasVacNoGozadas: fin.diasVacNoGozadas ? Number(fin.diasVacNoGozadas) : 0, mejorRem: fin.mejorRem ? Number(fin.mejorRem) : undefined }); if (tipo === 'vacaciones' && fin.diasVac) b.diasVac = Number(fin.diasVac); if (tipo === 'anticipo') b.montoAnticipo = Number(fin.montoAnticipo || 0); if (tipo === 'complementaria') { b.montoAjuste = Number(fin.montoAjuste || 0); b.conceptoAjuste = fin.conceptoAjuste; } return b; }
   async function calcular() { if (!sel) return; setErr(''); setMsg(''); setBusy(true); setRecibo(null); try { setRecibo(await api.post<Recibo>('/liquidacion/calcular', body())); } catch (e: any) { setErr(e.message); } finally { setBusy(false); } }
   async function guardar() { if (!sel) return; setErr(''); setBusy(true); try { await api.post('/liquidacion/guardar', body()); setMsg('Recibo guardado y publicado ✓ (visible en “Mis recibos”)'); } catch (e: any) { setErr(e.message); } finally { setBusy(false); } }
 
@@ -40,6 +40,13 @@ function Individual() {
           <div className="field"><label>Año</label><input className="input" type="number" value={anio} onChange={(e) => setAnio(Number(e.target.value))} style={{ width: 100 }} /></div>
         </div>
         {tipo === 'vacaciones' && <div className="field" style={{ marginTop: 10, maxWidth: 200 }}><label>Días de vacaciones</label><input className="input" type="number" value={fin.diasVac || ''} onChange={(e) => setFin({ ...fin, diasVac: e.target.value })} placeholder="por antigüedad" /></div>}
+        {tipo === 'anticipo' && <div className="field" style={{ marginTop: 10, maxWidth: 240 }}><label>Monto del anticipo *</label><input className="input" type="number" value={fin.montoAnticipo || ''} onChange={(e) => setFin({ ...fin, montoAnticipo: e.target.value })} /></div>}
+        {tipo === 'complementaria' && (
+          <div className="grid2" style={{ marginTop: 10 }}>
+            <div className="field"><label>Concepto del ajuste</label><input className="input" value={fin.conceptoAjuste || ''} onChange={(e) => setFin({ ...fin, conceptoAjuste: e.target.value })} placeholder="Ej: Retroactivo paritaria" /></div>
+            <div className="field"><label>Monto del ajuste (remunerativo) *</label><input className="input" type="number" value={fin.montoAjuste || ''} onChange={(e) => setFin({ ...fin, montoAjuste: e.target.value })} /></div>
+          </div>
+        )}
         {tipo === 'final' && (
           <div className="grid2" style={{ marginTop: 10 }}>
             <div className="field"><label>Fecha de egreso *</label><input className="input" type="date" value={fin.fechaEgreso || ''} onChange={(e) => setFin({ ...fin, fechaEgreso: e.target.value })} /></div>
@@ -50,7 +57,7 @@ function Individual() {
           </div>
         )}
         <div className="row" style={{ marginTop: 12 }}>
-          <button className="btn" onClick={calcular} disabled={!sel || busy || (tipo === 'final' && !fin.fechaEgreso)}>{busy ? 'Procesando…' : 'Calcular'}</button>
+          <button className="btn" onClick={calcular} disabled={!sel || busy || (tipo === 'final' && !fin.fechaEgreso) || (tipo === 'anticipo' && !fin.montoAnticipo) || (tipo === 'complementaria' && !fin.montoAjuste)}>{busy ? 'Procesando…' : 'Calcular'}</button>
           {recibo && <button className="btn ghost" onClick={guardar} disabled={busy}>Guardar y publicar</button>}
         </div>
         {err && <div className="err" style={{ marginTop: 10 }}>⚠ {err}</div>}
