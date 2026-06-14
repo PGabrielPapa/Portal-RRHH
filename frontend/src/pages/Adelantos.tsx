@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
-interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
+interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; cuota_desde?: string; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
 
 const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 const colorEstado = (e: string) => e === 'aprobado' ? 'var(--green)' : e === 'rechazado' ? 'var(--red)' : 'var(--yellow)';
@@ -16,6 +16,8 @@ export default function Adelantos() {
   const [f, setF] = useState<Record<string, string>>({ cuotas: '1' });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const proxMes = (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
+  const [aprob, setAprob] = useState<Record<number, { cuotas: string; cuotaDesde: string }>>({});
 
   async function load() { try { setItems(await api.get<Anticipo[]>(modoMios ? '/anticipos/mias' : '/anticipos')); } catch (e: any) { setErr(e.message); } }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key]);
@@ -26,8 +28,14 @@ export default function Adelantos() {
     catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
   async function resolver(a: Anticipo, estado: string) {
-    try { await api.patch(`/anticipos/${a.id}`, { estado }); load(); } catch (e: any) { setErr(e.message); }
+    try {
+      const cfg = aprob[a.id] || { cuotas: String(a.cuotas || 1), cuotaDesde: proxMes };
+      const body: any = { estado };
+      if (estado === 'aprobado') { body.cuotas = Number(cfg.cuotas) || 1; body.cuotaDesde = cfg.cuotaDesde || proxMes; }
+      await api.patch(`/anticipos/${a.id}`, body); load();
+    } catch (e: any) { setErr(e.message); }
   }
+  const setAp = (id: number, k: string, v: string, a: Anticipo) => { const cur = aprob[id] || { cuotas: String(a.cuotas || 1), cuotaDesde: proxMes }; setAprob({ ...aprob, [id]: { ...cur, [k]: v } }); };
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
   return (
@@ -52,13 +60,20 @@ export default function Adelantos() {
         <table>
           <thead><tr>
             {puedeAprobar && <th>Empleado</th>}
-            <th>Monto</th><th>Cuotas</th><th>Motivo</th><th>Fecha</th><th>Estado</th>{puedeAprobar && <th></th>}
+            <th>Monto</th><th>Cuotas</th><th>1ª cuota</th><th>Motivo</th><th>Fecha</th><th>Estado</th>{puedeAprobar && <th></th>}
           </tr></thead>
           <tbody>
             {items.map((a) => (
               <tr key={a.id}>
                 {puedeAprobar && <td>{a.nom} <span className="muted">({a.leg_num} · {a.empresa})</span></td>}
-                <td>{money(a.monto)}</td><td>{a.cuotas}</td><td>{a.motivo || '—'}</td>
+                <td>{money(a.monto)}</td>
+                <td>{puedeAprobar && a.estado === 'pendiente'
+                  ? <input className="input" style={{ width: 60 }} type="number" min="1" value={(aprob[a.id]?.cuotas) ?? String(a.cuotas || 1)} onChange={(e) => setAp(a.id, 'cuotas', e.target.value, a)} />
+                  : a.cuotas}</td>
+                <td>{puedeAprobar && a.estado === 'pendiente'
+                  ? <input className="input" style={{ width: 110 }} type="month" value={(aprob[a.id]?.cuotaDesde) ?? proxMes} onChange={(e) => setAp(a.id, 'cuotaDesde', e.target.value, a)} />
+                  : (a.cuota_desde || '—')}</td>
+                <td>{a.motivo || '—'}</td>
                 <td className="muted">{new Date(a.created_at).toLocaleDateString('es-AR')}</td>
                 <td><span className="badge" style={{ color: colorEstado(a.estado) }}>{a.estado}</span></td>
                 {puedeAprobar && <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -69,7 +84,7 @@ export default function Adelantos() {
                 </td>}
               </tr>
             ))}
-            {!items.length && <tr><td colSpan={puedeAprobar ? 7 : 5} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin adelantos.</td></tr>}
+            {!items.length && <tr><td colSpan={puedeAprobar ? 8 : 6} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin adelantos.</td></tr>}
           </tbody>
         </table>
       </div>
