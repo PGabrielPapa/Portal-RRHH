@@ -22,6 +22,7 @@ import Hys from '../pages/Hys';
 import Reglamento from '../pages/Reglamento';
 import CierrePeriodos from '../pages/CierrePeriodos';
 import NivelesUsuario from '../pages/NivelesUsuario';
+import LiquidacionAnual from '../pages/LiquidacionAnual';
 import Escalas from '../pages/Escalas';
 import ArtEmpresas from '../pages/ArtEmpresas';
 import MisCbus from '../pages/MisCbus';
@@ -68,6 +69,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'reglamento': Reglamento,
   'cierre-periodos': CierrePeriodos,
   'user-levels': NivelesUsuario,
+  'liquidacion-anual': LiquidacionAnual,
   'escalas': Escalas,
   'art-empresas': ArtEmpresas,
   'mis-cbus': MisCbus,
