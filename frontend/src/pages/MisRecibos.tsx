@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import ReciboView, { Recibo } from '../components/ReciboView';
+import { imprimirRecibo } from '../lib/reciboPrint';
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
@@ -28,7 +29,7 @@ export default function MisRecibos() {
 
       {sel ? (
         <>
-          <button className="btn ghost" style={{ marginBottom: 12 }} onClick={() => setSel(null)}>← Volver</button>
+          <div className="row" style={{ marginBottom: 12, gap: 8 }}><button className="btn ghost" onClick={() => setSel(null)}>← Volver</button><button className="btn" onClick={() => sel && imprimirRecibo(sel)}>🖨 Imprimir / PDF (original + duplicado)</button></div>
           <div className="card"><ReciboView recibo={sel} /></div>
         </>
       ) : (

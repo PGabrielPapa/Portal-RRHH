@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import type { Empleado } from '../lib/types';
 import ReciboView, { Recibo } from '../components/ReciboView';
+import { imprimirRecibo } from '../lib/reciboPrint';
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
@@ -16,6 +17,8 @@ export default function RecibosGestion() {
   const [anio, setAnio] = useState('');
   const [q, setQ] = useState('');
   const [sel, setSel] = useState<Recibo | null>(null);
+  const [selId, setSelId] = useState<number | null>(null);
+  const [vistas, setVistas] = useState<{ created_at: string; nom: string; leg_num: string }[] | null>(null);
   const [err, setErr] = useState('');
 
   async function load() {
@@ -36,12 +39,25 @@ export default function RecibosGestion() {
 
   async function ver(it: Item) {
     setErr('');
+    setVistas(null); setSelId(it.id);
     try { setSel(await api.get<Recibo>(`/recibos/${it.id}`)); } catch (e: any) { setErr(e.message); }
   }
 
+  async function verVistas() { if (!selId) return; try { setVistas(await api.get(`/recibos/${selId}/vistas`)); } catch (e: any) { setErr(e.message); } }
   if (sel) return (
     <>
-      <button className="btn ghost" style={{ marginBottom: 12 }} onClick={() => setSel(null)}>← Volver a la lista</button>
+      <div className="row" style={{ marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn ghost" onClick={() => { setSel(null); setSelId(null); }}>← Volver a la lista</button>
+        <button className="btn" onClick={() => imprimirRecibo(sel)}>🖨 Imprimir / PDF</button>
+        <button className="btn ghost" onClick={verVistas}>👁 Ver visualizaciones del empleado</button>
+      </div>
+      {vistas && (
+        <div className="card" style={{ marginBottom: 12 }}>
+          <strong>Visualizaciones del empleado</strong>
+          {!vistas.length && <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>El empleado todavía no visualizó este recibo.</div>}
+          {vistas.length > 0 && <table style={{ marginTop: 6, fontSize: 13 }}><tbody>{vistas.map((v, i) => <tr key={i}><td>{v.nom} <span className="muted">({v.leg_num})</span></td><td className="muted">{new Date(v.created_at).toLocaleString('es-AR')}</td></tr>)}</tbody></table>}
+        </div>
+      )}
       <div className="card"><ReciboView recibo={sel} /></div>
     </>
   );

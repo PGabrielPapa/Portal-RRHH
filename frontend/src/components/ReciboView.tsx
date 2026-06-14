@@ -12,6 +12,11 @@ export interface Recibo {
     remun: number; noRem: number; exento: number; descuentos: number; neto: number; costoTotal: number;
     cargas: Record<string, { empleador: number; trabajador: number }>;
   };
+  ganancias?: {
+    remGravAcum: number; aportesAcum: number; mesesTranscurridos: number; anualizada: boolean;
+    mni: number; dedEspecial: number; dedEspecial2: number; cargasFamilia: number; dedVoluntarias: number;
+    remSujeta: number; impuestoDeterminado: number; retenidoAnterior: number; retencionPeriodo: number; periodo?: string;
+  } | null;
   nota?: string;
 }
 
@@ -60,6 +65,24 @@ export default function ReciboView({ recibo }: { recibo: Recibo }) {
             ))}
             <tr><td style={{ fontWeight: 600 }}>Total contribuciones</td><td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{money(recibo.costoEmpleador.totalContrib)}</td></tr>
             <tr><td style={{ fontWeight: 600 }}>Costo laboral total</td><td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{money(recibo.costoEmpleador.costoTotal)}</td></tr>
+          </tbody></table>
+        </div>
+      )}
+
+      {recibo.ganancias && (
+        <div style={{ marginTop: 16 }}>
+          <h4 style={{ margin: '0 0 6px' }}>Impuesto a las Ganancias — {recibo.ganancias.anualizada ? 'liquidación anualizada' : `acumulado a ${recibo.ganancias.mesesTranscurridos} mes(es)`}{recibo.ganancias.periodo ? ` · tabla ${recibo.ganancias.periodo}` : ''}</h4>
+          <table style={{ width: '100%', fontSize: 13 }}><tbody>
+            <tr><td>Remuneración gravada acumulada</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(recibo.ganancias.remGravAcum)}</td></tr>
+            <tr><td>(−) Aportes acumulados</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(recibo.ganancias.aportesAcum)}</td></tr>
+            <tr><td>(−) Ganancia no imponible</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(recibo.ganancias.mni)}</td></tr>
+            <tr><td>(−) Deducción especial</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(recibo.ganancias.dedEspecial + recibo.ganancias.dedEspecial2)}</td></tr>
+            {recibo.ganancias.cargasFamilia > 0 && <tr><td>(−) Cargas de familia</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(recibo.ganancias.cargasFamilia)}</td></tr>}
+            {recibo.ganancias.dedVoluntarias > 0 && <tr><td>(−) Deducciones SIRADIG</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(recibo.ganancias.dedVoluntarias)}</td></tr>}
+            <tr><td style={{ fontWeight: 600 }}>Ganancia sujeta a impuesto</td><td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{money(recibo.ganancias.remSujeta)}</td></tr>
+            <tr><td>Impuesto determinado (acumulado)</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(recibo.ganancias.impuestoDeterminado)}</td></tr>
+            <tr><td>(−) Retenido en meses anteriores</td><td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{money(recibo.ganancias.retenidoAnterior)}</td></tr>
+            <tr><td style={{ fontWeight: 600 }}>Retención del período</td><td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace', color: recibo.ganancias.retencionPeriodo < 0 ? 'var(--green)' : undefined }}>{money(recibo.ganancias.retencionPeriodo)}</td></tr>
           </tbody></table>
         </div>
       )}
