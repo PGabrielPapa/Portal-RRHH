@@ -46,7 +46,7 @@ export const GROUPS: Group[] = [
       { key: 'conceptos', label: 'Conceptos', ready: true },
       { key: 'sanciones', label: 'Sanciones', ready: true },
       { key: 'evaluaciones', label: 'Evaluaciones de desempeño', ready: true },
-      { key: 'simulaciones', label: 'Simulaciones' },
+      { key: 'simulaciones', label: 'Simulaciones', ready: true },
       { key: 'licencias-rrhh', ready: true, label: 'Licencias (gestión)' },
       { key: 'hys', label: 'Higiene y Seguridad' },
       { key: 'beneficios', label: 'Beneficios', ready: true },
