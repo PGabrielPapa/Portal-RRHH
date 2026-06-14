@@ -14,7 +14,8 @@ export default function Adelantos() {
   const modoMios = key === 'anticipos';   // personal vs aprobaciones
   const puedeAprobar = !modoMios;
   const [items, setItems] = useState<Anticipo[]>([]);
-  const [f, setF] = useState<Record<string, string>>({ cuotas: '1' });
+  const [f, setF] = useState<Record<string, string>>({});
+  const [ultimoNeto, setUltimoNeto] = useState<number | null>(null);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const proxMes = (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
@@ -24,12 +25,20 @@ export default function Adelantos() {
   async function abrirCuotas(id: number) { if (verCuotas === id) { setVerCuotas(null); return; } try { setCuotas(await api.get<Cuota[]>(`/anticipos/${id}/cuotas`)); setVerCuotas(id); } catch (e: any) { setErr(e.message); } }
 
   async function load() { try { setItems(await api.get<Anticipo[]>(modoMios ? '/anticipos/mias' : '/anticipos')); } catch (e: any) { setErr(e.message); } }
+  useEffect(() => { if (modoMios) api.get<{ neto: number }[]>('/recibos').then((r) => { if (r.length) setUltimoNeto(Number(r[0].neto)); }).catch(() => {}); }, [modoMios]);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key]);
 
+  const MOTIVOS = ['Gastos médicos', 'Gastos personales', 'Emergencia familiar', 'Refacción / vivienda', 'Educación', 'Deudas', 'Otro'];
+  const tope = ultimoNeto != null ? ultimoNeto / 2 : null;
+  const pctTope = tope && Number(f.monto) > 0 ? (Number(f.monto) / tope * 100) : 0;
+  const excede = tope != null && Number(f.monto) > tope;
   async function solicitar(e: React.FormEvent) {
     e.preventDefault(); setErr(''); setBusy(true);
-    try { await api.post('/anticipos', { monto: f.monto, motivo: f.motivo, cuotas: f.cuotas }); setF({ cuotas: '1' }); load(); }
-    catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    try {
+      const motivo = `${f.motivoSel || 'Otro'}${f.explicacion ? ' — ' + f.explicacion.trim() : ''}`;
+      await api.post('/anticipos', { monto: f.monto, motivo });
+      setF({}); load();
+    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
   async function resolver(a: Anticipo, estado: string) {
     try {
@@ -40,7 +49,7 @@ export default function Adelantos() {
     } catch (e: any) { setErr(e.message); }
   }
   const setAp = (id: number, k: string, v: string, a: Anticipo) => { const cur = aprob[id] || { cuotas: String(a.cuotas || 1), cuotaDesde: proxMes }; setAprob({ ...aprob, [id]: { ...cur, [k]: v } }); };
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
 
   return (
     <>
@@ -49,13 +58,28 @@ export default function Adelantos() {
       {!puedeAprobar && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={solicitar}>
           <h3 style={{ marginTop: 0 }}>Solicitar adelanto</h3>
+          {ultimoNeto != null && (
+            <div className="card" style={{ marginBottom: 12, padding: '8px 14px', fontSize: 13, background: 'var(--bg2)' }}>
+              Último neto liquidado: <strong>{money(ultimoNeto)}</strong> · Tope de referencia (50%): <strong style={{ color: 'var(--accent2)' }}>{money(tope!)}</strong>
+            </div>
+          )}
           <div className="grid2" style={{ marginBottom: 10 }}>
-            <div className="field"><label>Monto *</label><input className="input" value={f.monto || ''} onChange={set('monto')} /></div>
-            <div className="field"><label>Cuotas</label><input className="input" value={f.cuotas || ''} onChange={set('cuotas')} /></div>
+            <div className="field"><label>Monto *</label><input className="input" type="number" value={f.monto || ''} onChange={set('monto')} /></div>
+            <div className="field"><label>Motivo *</label><select className="input" value={f.motivoSel || ''} onChange={set('motivoSel')}><option value="">— Elegí un motivo —</option>{MOTIVOS.map((m) => <option key={m}>{m}</option>)}</select></div>
           </div>
-          <div className="field" style={{ marginBottom: 12 }}><label>Motivo</label><textarea className="input" rows={2} value={f.motivo || ''} onChange={set('motivo')} /></div>
+          {tope != null && Number(f.monto) > 0 && (
+            <div style={{ marginBottom: 10, fontSize: 13, color: excede ? 'var(--red)' : 'var(--green)' }}>
+              {excede ? '⚠' : '✓'} Estás solicitando el <strong>{pctTope.toFixed(1)}%</strong> del tope de referencia{excede ? ' — excede el 50% del último neto' : ' (dentro del 50%)'}
+            </div>
+          )}
+          <div className="field" style={{ marginBottom: 12 }}>
+            <label>Explicación (hasta 500 caracteres)</label>
+            <textarea className="input" rows={3} maxLength={500} value={f.explicacion || ''} onChange={set('explicacion')} />
+            <div className="muted" style={{ textAlign: 'right', fontSize: 11 }}>{(f.explicacion || '').length} / 500</div>
+          </div>
           {err && <div className="err" style={{ marginBottom: 8 }}>⚠ {err}</div>}
-          <button className="btn" disabled={busy || !f.monto}>{busy ? 'Enviando…' : 'Solicitar'}</button>
+          <button className="btn" disabled={busy || !f.monto || !f.motivoSel}>{busy ? 'Enviando…' : 'Solicitar'}</button>
+          <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>La cantidad de cuotas de descuento la define RR.HH. al aprobar el adelanto.</p>
         </form>
       )}
       {puedeAprobar && err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
