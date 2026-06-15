@@ -31,6 +31,7 @@ export default function Licencias() {
   const { key } = useParams();
   const modoMias = key === 'mis-licencias';
   const esRRHH = key === 'licencias-rrhh';
+  const esEquipo = !modoMias && !esRRHH;   // gerente: licencias del equipo
   const titulo = modoMias ? 'Mis licencias' : esRRHH ? 'Licencias — gestión RR.HH.' : 'Licencias del equipo';
 
   const [items, setItems] = useState<Lic[]>([]);
@@ -40,6 +41,8 @@ export default function Licencias() {
   const [estado, setEstado] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [q, setQ] = useState('');
+  const [directos, setDirectos] = useState<Empleado[]>([]);
+  const [filtroEmp, setFiltroEmp] = useState('');
   const [empresas, setEmpresas] = useState<string[]>([]);
   const [vac, setVac] = useState<any>(null);
   // registrar (RR.HH.)
@@ -61,6 +64,7 @@ export default function Licencias() {
   }
   useEffect(() => { if (modoMias) api.get('/licencias/vacaciones-info').then(setVac).catch(() => {}); }, [modoMias]);
   useEffect(() => { if (!modoMias) api.get<Empleado[]>('/empleados').then((es) => setEmpresas([...new Set(es.map((e) => e.empresa))].sort())).catch(() => {}); }, [modoMias]);
+  useEffect(() => { if (esEquipo) api.get<Empleado[]>('/empleados/equipo?directos=1').then(setDirectos).catch(() => {}); }, [esEquipo]);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key, estado, empresa, q]);
 
   async function solicitar(e: React.FormEvent) {
@@ -155,7 +159,13 @@ export default function Licencias() {
 
       {!modoMias && (
         <div className="row" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
-          <input className="input" style={{ maxWidth: 240 }} placeholder="Buscar empleado o legajo…" value={q} onChange={(e) => setQ(e.target.value)} />
+          {esEquipo && (
+            <select className="input" style={{ maxWidth: 240 }} value={filtroEmp} onChange={(e) => setFiltroEmp(e.target.value)}>
+              <option value="">{directos.length ? 'Todo mi equipo (directos)' : 'No tenés reportes directos'}</option>
+              {directos.map((x) => <option key={x.id} value={x.legNum}>{x.nom} ({x.legNum})</option>)}
+            </select>
+          )}
+          {!esEquipo && <input className="input" style={{ maxWidth: 240 }} placeholder="Buscar empleado o legajo…" value={q} onChange={(e) => setQ(e.target.value)} />}
           {esRRHH && (
             <select className="input" style={{ maxWidth: 200 }} value={empresa} onChange={(e) => setEmpresa(e.target.value)}>
               <option value="">Todas las empresas</option>
@@ -180,7 +190,7 @@ export default function Licencias() {
             <th>Tipo</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th><th>Comprobante</th>{!modoMias && <th></th>}
           </tr></thead>
           <tbody>
-            {items.map((l) => (
+            {(esEquipo && filtroEmp ? items.filter((l) => l.leg_num === filtroEmp) : items).map((l) => (
               <tr key={l.id}>
                 {!modoMias && <td>{l.nom} <span className="muted">({l.leg_num})</span></td>}
                 {esRRHH && <td>{l.empresa}</td>}
