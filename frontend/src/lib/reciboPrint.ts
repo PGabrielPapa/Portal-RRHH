@@ -86,10 +86,13 @@ function copia(r: Recibo, marca: string): string {
     ${pieDonut(r)}
     <div class="firmas">
       <div class="firma">
-        ${r.firmaEmpleador ? `<img src="${r.firmaEmpleador}" style="max-height:54px;max-width:160px;display:block;margin:0 auto 2px"/>` : ''}
-        ${r.firmante?.nombre ? `<div style="font-weight:bold">${esc(r.firmante.nombre)}</div>${r.firmante?.cargo ? `<div style="font-size:8px;text-transform:uppercase">${esc(r.firmante.cargo)}</div>` : ''}` : 'Firma del empleador'}
+        <div class="sig">${r.firmaEmpleador ? `<img src="${r.firmaEmpleador}"/>` : ''}</div>
+        <div class="line">${r.firmante?.nombre ? `<b>${esc(r.firmante.nombre)}</b>${r.firmante?.cargo ? `<div style="font-size:8px;text-transform:uppercase">${esc(r.firmante.cargo)}</div>` : ''}` : 'Firma del empleador'}</div>
       </div>
-      <div class="firma">Recibí conforme — firma del empleado</div>
+      <div class="firma">
+        <div class="sig"></div>
+        <div class="line">Recibí conforme — firma del empleado</div>
+      </div>
     </div>
   </div>`;
 }
@@ -121,8 +124,11 @@ export function imprimirRecibo(r: Recibo) {
     .leyenda { flex: 1; font-size: 9px; }
     .det { margin-top: 6px; }
     .det th, .det td { font-size: 9px; padding: 2px 6px; }
-    .firmas { display: flex; justify-content: space-between; margin-top: 24px; }
-    .firma { width: 45%; border-top: 1px solid #333; padding-top: 4px; font-size: 9px; text-align: center; }
+    .firmas { display: flex; justify-content: space-between; margin-top: 48px; }
+    .firma { width: 45%; font-size: 9px; text-align: center; }
+    .firma .sig { height: 64px; display: flex; align-items: flex-end; justify-content: center; }
+    .firma .sig img { max-height: 60px; max-width: 180px; }
+    .firma .line { border-top: 1px solid #333; padding-top: 4px; margin-top: 2px; }
   </style></head><body>
   ${copia(r, 'ORIGINAL · Copia para el empleador')}
   ${copia(r, 'DUPLICADO · Copia para el trabajador')}
