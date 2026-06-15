@@ -26,7 +26,7 @@ export const GROUPS: Group[] = [
   {
     panel: 'Gerencia', roles: ['manager', 'admin'],
     items: [
-      { key: 'aprobaciones', label: 'Aprobaciones (adelantos)', ready: true },
+      { key: 'aprobaciones', label: 'Adelantos del equipo', ready: true },
       { key: 'licencias-equipo', ready: true, label: 'Licencias del equipo' },
       { key: 'organigrama', label: 'Organigrama / equipo', ready: true },
       { key: 'sanciones-equipo', label: 'Sanciones del equipo', ready: true },
@@ -37,6 +37,7 @@ export const GROUPS: Group[] = [
     panel: 'RR.HH.', roles: ['rrhh', 'admin'],
     items: [
       { key: 'empleados', label: 'ABM Empleados', ready: true },
+      { key: 'adelantos-rrhh', label: 'Adelantos (otorgamiento)', ready: true },
       { key: 'liquidacion', label: 'Liquidación', ready: true },
       { key: 'recibos-gestion', label: 'Recibos (gestión)', ready: true },
       { key: 'ganancias-rrhh', label: 'Ganancias / F.1357', ready: true },

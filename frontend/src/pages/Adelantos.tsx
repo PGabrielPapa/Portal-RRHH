@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import MiBanner from '../components/MiBanner';
 
-interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; cuota_desde?: string; cuotas_pagadas?: number; total_pagado?: number; bruto?: number; ultimo_neto?: number; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
+interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; cuota_desde?: string; cuotas_pagadas?: number; total_pagado?: number; bruto?: number; ultimo_neto?: number; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; recomendacion?: string; recomendado_por?: string; }
 interface Cuota { nro: number; anio: number; mes: number; monto: number; }
 
 const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
@@ -13,10 +13,12 @@ const colorEstado = (e: string) => e === 'aprobado' ? 'var(--green)' : e === 're
 export default function Adelantos() {
   const { key } = useParams();
   const { user } = useAuth();
-  const modoMios = key === 'anticipos';   // personal vs aprobaciones
-  const puedeAprobar = !modoMios;
-  const esGerente = user?.role === 'manager';   // el gerente NO define cuotas (lo hace RR.HH./admin)
-  const defineCuotas = puedeAprobar && !esGerente;
+  const modoMios = key === 'anticipos';           // empleado
+  const modoRecomendar = key === 'aprobaciones';  // gerente: recomienda (visto bueno)
+  const modoResolver = key === 'adelantos-rrhh';  // RR.HH./admin: otorga/rechaza + define cuotas
+  const puedeAprobar = modoRecomendar || modoResolver;
+  const defineCuotas = modoResolver;
+  void user;
   const [items, setItems] = useState<Anticipo[]>([]);
   const [f, setF] = useState<Record<string, string>>({});
   const [ultimoNeto, setUltimoNeto] = useState<number | null>(null);
@@ -45,6 +47,10 @@ export default function Adelantos() {
       await api.post('/anticipos', { monto: f.monto, motivo });
       setF({}); load();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  }
+  async function recomendar(a: Anticipo, recomendacion: string) {
+    try { await api.patch(`/anticipos/${a.id}/recomendacion`, { recomendacion }); load(); }
+    catch (e: any) { setErr(e.message); }
   }
   async function resolver(a: Anticipo, estado: string) {
     try {
@@ -121,7 +127,7 @@ export default function Adelantos() {
         <table>
           <thead><tr>
             {puedeAprobar && <th>Empleado</th>}
-            <th>Monto</th>{puedeAprobar && <th>% sobre ½ neto (últ. liq.)</th>}<th>Cuotas</th><th>1ª cuota</th><th>Descontado</th><th>Motivo</th><th>Fecha</th><th>Estado</th>{puedeAprobar && <th></th>}
+            <th>Monto</th>{puedeAprobar && <th>% sobre ½ neto (últ. liq.)</th>}{puedeAprobar && <th>Recom. gerente</th>}<th>Cuotas</th><th>1ª cuota</th><th>Descontado</th><th>Motivo</th><th>Fecha</th><th>Estado</th>{puedeAprobar && <th></th>}
           </tr></thead>
           <tbody>
             {items.map((a) => [
@@ -139,6 +145,12 @@ export default function Adelantos() {
                     <span style={{ color: exc ? 'var(--red)' : 'var(--green)' }}>{exc ? '⚠ ' : '✓ '}{pct.toFixed(1)}%</span>
                   </> : <span className="muted">sin liquidación</span>}</td>
                 ); })()}
+                {puedeAprobar && <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                  {a.recomendacion === 'favorable' ? <span style={{ color: 'var(--green)' }}>👍 favorable</span>
+                    : a.recomendacion === 'desfavorable' ? <span style={{ color: 'var(--red)' }}>👎 desfavorable</span>
+                    : <span className="muted">— sin recomendar</span>}
+                  {a.recomendado_por && <div className="muted" style={{ fontSize: 10 }}>por {a.recomendado_por}</div>}
+                </td>}
                 <td>{defineCuotas && a.estado === 'pendiente'
                   ? <input className="input" style={{ width: 60 }} type="number" min="1" value={(aprob[a.id]?.cuotas) ?? String(a.cuotas || 1)} onChange={(e) => setAp(a.id, 'cuotas', e.target.value, a)} />
                   : a.cuotas}</td>
@@ -152,15 +164,20 @@ export default function Adelantos() {
                 <td className="muted">{new Date(a.created_at).toLocaleDateString('es-AR')}</td>
                 <td><span className="badge" style={{ color: colorEstado(a.estado) }}>{a.estado}</span></td>
                 {puedeAprobar && <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  {a.estado === 'pendiente' ? <>
-                    <button className="btn" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => resolver(a, 'aprobado')}>Aprobar</button>
-                    <button className="btn danger" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => resolver(a, 'rechazado')}>Rechazar</button>
-                  </> : <span className="muted" style={{ fontSize: 12 }}>{a.resuelto_por ? `por ${a.resuelto_por}` : ''}</span>}
+                  {a.estado === 'pendiente'
+                    ? (modoRecomendar ? <>
+                        <button className="btn" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => recomendar(a, 'favorable')}>👍 Recomendar</button>
+                        <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => recomendar(a, 'desfavorable')}>👎 No</button>
+                      </> : <>
+                        <button className="btn" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => resolver(a, 'aprobado')}>Otorgar</button>
+                        <button className="btn danger" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => resolver(a, 'rechazado')}>Rechazar</button>
+                      </>)
+                    : <span className="muted" style={{ fontSize: 12 }}>{a.resuelto_por ? `por ${a.resuelto_por}` : ''}</span>}
                 </td>}
               </tr>,
               verCuotas === a.id && (
                 <tr key={`c${a.id}`}>
-                  <td colSpan={puedeAprobar ? 9 : 6} style={{ background: 'var(--bg2)', padding: '8px 14px' }}>
+                  <td colSpan={puedeAprobar ? 11 : 6} style={{ background: 'var(--bg2)', padding: '8px 14px' }}>
                     <strong style={{ fontSize: 13 }}>Cuotas aplicadas</strong>
                     {!cuotas.length && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Todavía no se aplicó ninguna cuota en liquidaciones.</div>}
                     {cuotas.length > 0 && (
@@ -174,7 +191,7 @@ export default function Adelantos() {
                 </tr>
               ),
             ]).flat().filter(Boolean)}
-            {!items.length && <tr><td colSpan={puedeAprobar ? 9 : 6} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin adelantos.</td></tr>}
+            {!items.length && <tr><td colSpan={puedeAprobar ? 11 : 6} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin adelantos.</td></tr>}
           </tbody>
         </table>
       </div>
