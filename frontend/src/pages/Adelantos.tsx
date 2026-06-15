@@ -68,10 +68,11 @@ export default function Adelantos() {
               <a className="btn ghost" href="/reglamento-adelantos.docx" download style={{ padding: '3px 10px', fontSize: 12 }}>📄 Descargar reglamento</a>
             </div>
             <ul style={{ margin: '6px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>
-              <li>Se otorgan por excepción, mediante pedido por escrito y fundado, a través del superior inmediato (criterio de alivio financiero ante situaciones extraordinarias).</li>
-              <li>Tope (LCT): hasta el 50% del neto mensual; se descuenta en el mismo mes de otorgamiento.</li>
-              <li>Un (1) anticipo por trimestre, excluyendo junio, julio, diciembre y enero (no se otorgan).</li>
-              <li>Si hay cuenta corriente abierta (préstamo/adelanto sin cancelar), no se otorga uno nuevo hasta cancelarla.</li>
+              <li>Se otorgan por excepción. Pedido por escrito y fundado; la vía de presentación es a través del superior inmediato. Criterio de alivio financiero ante situaciones extraordinarias.</li>
+              <li>Se respeta el tope de la Ley de Contrato de Trabajo: 50% del neto mensual como máximo, y se descuenta en el mismo mes de otorgamiento.</li>
+              <li>Tope de otorgamiento: 1 anticipo por trimestre, excluyendo los meses de junio, julio, diciembre y enero, en los cuales no se otorga.</li>
+              <li>Si hay cuenta corriente abierta (préstamo), no se otorga un nuevo anticipo y/o préstamo hasta que sea cancelada en su totalidad.</li>
+              <li>Se comunicará el reglamento a la totalidad del personal mediante correo electrónico.</li>
             </ul>
             {mesBloqueado && <div style={{ color: 'var(--yellow)', marginTop: 6 }}>⚠ Este mes no se pueden solicitar adelantos (junio, julio, diciembre o enero).</div>}
           </div>
@@ -106,9 +107,11 @@ export default function Adelantos() {
             <a className="btn ghost" href="/reglamento-adelantos.docx" download style={{ padding: '3px 10px', fontSize: 12 }}>📄 Descargar reglamento</a>
           </div>
           <ul style={{ margin: '6px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>
-            <li>Tope (LCT): 50% del neto mensual del empleado (sin SAC) — columna "% sobre ½ neto"; se descuenta en el mismo mes.</li>
-            <li>Un (1) anticipo por trimestre, excluyendo junio, julio, diciembre y enero (no corresponden).</li>
-            <li>No corresponde si el empleado tiene cuenta corriente abierta (adelanto sin cancelar).</li>
+            <li>Se otorgan por excepción. Pedido por escrito y fundado; la vía de presentación es a través del superior inmediato. Criterio de alivio financiero ante situaciones extraordinarias.</li>
+            <li>Se respeta el tope de la Ley de Contrato de Trabajo: 50% del neto mensual como máximo, y se descuenta en el mismo mes de otorgamiento.</li>
+            <li>Tope de otorgamiento: 1 anticipo por trimestre, excluyendo los meses de junio, julio, diciembre y enero, en los cuales no se otorga.</li>
+            <li>Si hay cuenta corriente abierta (préstamo), no se otorga un nuevo anticipo y/o préstamo hasta que sea cancelada en su totalidad.</li>
+            <li>Se comunicará el reglamento a la totalidad del personal mediante correo electrónico.</li>
           </ul>
         </div>
       )}
