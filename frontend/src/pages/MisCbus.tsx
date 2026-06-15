@@ -5,121 +5,104 @@ import { bancoDesdeCBU, validarCBU } from '../lib/cbu';
 
 interface Cbu { id: number; cbu: string; banco?: string; alias?: string; titular?: string; porcentaje: number; activo: boolean; vigencia_desde?: string; vigencia_hasta?: string; }
 interface Resp { items: Cbu[]; historial: Cbu[]; sumaActivos: number; }
+interface Row { id?: number; cbu: string; banco: string; alias: string; titular: string; porcentaje: string; }
 
 const fmtCbu = (c: string) => (c || '').replace(/(.{4})/g, '$1 ').trim();
 const fmtFecha = (s?: string) => s ? new Date(s).toLocaleDateString('es-AR') : '—';
 
 export default function MisCbus() {
-  const [items, setItems] = useState<Cbu[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [historial, setHistorial] = useState<Cbu[]>([]);
-  const [suma, setSuma] = useState(0);
-  const [f, setF] = useState<Record<string, string>>({});
   const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
   const [busy, setBusy] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
-  const [editPct, setEditPct] = useState('');
 
   async function load() {
-    try { const r = await api.get<Resp>('/cbus'); setItems(r.items); setHistorial(r.historial || []); setSuma(r.sumaActivos); }
-    catch (e: any) { setErr(e.message); }
+    try {
+      const r = await api.get<Resp>('/cbus');
+      setRows(r.items.map((c) => ({ id: c.id, cbu: c.cbu, banco: c.banco || '', alias: c.alias || '', titular: c.titular || '', porcentaje: String(c.porcentaje) })));
+      setHistorial(r.historial || []);
+    } catch (e: any) { setErr(e.message); }
   }
   useEffect(() => { load(); }, []);
 
-  const disponible = Math.max(0, Math.round((100 - suma) * 100) / 100);
-  const cbuVal = useMemo(() => f.cbu ? validarCBU(f.cbu) : null, [f.cbu]);
-  const bancoAuto = useMemo(() => bancoDesdeCBU(f.cbu || ''), [f.cbu]);
+  const suma = useMemo(() => Math.round(rows.reduce((a, r) => a + (Number(r.porcentaje) || 0), 0) * 100) / 100, [rows]);
+  const sumaOk = Math.abs(suma - 100) < 0.01;
+  const cbusOk = rows.length > 0 && rows.every((r) => validarCBU(r.cbu).ok && Number(r.porcentaje) > 0);
+  const puedeGuardar = sumaOk && cbusOk;
 
-  async function add(e: React.FormEvent) {
-    e.preventDefault(); setErr(''); setBusy(true);
+  const upd = (i: number, k: keyof Row, v: string) => setRows((p) => p.map((r, j) => j === i ? { ...r, [k]: v, ...(k === 'cbu' ? { banco: r.banco || bancoDesdeCBU(v) || '' } : {}) } : r));
+  const addRow = () => setRows((p) => [...p, { cbu: '', banco: '', alias: '', titular: '', porcentaje: '' }]);
+  const delRow = (i: number) => setRows((p) => p.filter((_, j) => j !== i));
+  const repartirParejo = () => setRows((p) => {
+    if (!p.length) return p;
+    const base = Math.floor(10000 / p.length) / 100;            // 2 decimales hacia abajo
+    return p.map((r, i) => ({ ...r, porcentaje: String(i === p.length - 1 ? Math.round((100 - base * (p.length - 1)) * 100) / 100 : base) }));
+  });
+
+  async function guardar() {
+    setErr(''); setOk(''); setBusy(true);
     try {
-      await api.post('/cbus', { cbu: f.cbu, banco: f.banco || bancoAuto, alias: f.alias, titular: f.titular, porcentaje: Number(f.porcentaje) });
-      setF({}); load();
+      await api.put('/cbus/distribucion', { cuentas: rows.map((r) => ({ id: r.id, cbu: r.cbu, banco: r.banco, alias: r.alias, titular: r.titular, porcentaje: Number(r.porcentaje) })) });
+      setOk('Distribución guardada (100% de acreditación).'); load();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
-  async function toggle(c: Cbu) { setErr(''); try { await api.patch(`/cbus/${c.id}/activo`, { activo: !c.activo }); load(); } catch (e: any) { setErr(e.message); } }
-  async function quitar(c: Cbu) { setErr(''); try { await api.del(`/cbus/${c.id}`); load(); } catch (e: any) { setErr(e.message); } }
-  async function guardarPct(c: Cbu) { setErr(''); try { await api.patch(`/cbus/${c.id}`, { porcentaje: Number(editPct) }); setEditId(null); load(); } catch (e: any) { setErr(e.message); } }
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
-
-  const sumaOk = Math.abs(suma - 100) < 0.01;
 
   return (
     <>
-      <MiBanner subtitulo="Repartí tu sueldo entre tus cuentas" />
+      <MiBanner />
       <div className="card" style={{ marginBottom: 14, fontSize: 13, lineHeight: 1.6 }}>
-        💡 Podés <strong>repartir tu sueldo entre varias cuentas</strong> indicando el porcentaje del neto que va a cada una.
-        Los porcentajes de las cuentas activas deben sumar 100%.
+        💡 Repartí tu sueldo entre tus cuentas indicando el porcentaje del neto que va a cada una.
+        <strong> La suma de las cuentas activas debe ser siempre 100%</strong>: el sistema no guarda una distribución que no sume 100%.
       </div>
-      {items.length > 0 && (
-        <div className="card" style={{ marginBottom: 14, padding: '8px 14px', fontSize: 13,
-          background: sumaOk ? 'rgba(34,197,94,.08)' : 'rgba(239,68,68,.08)',
-          border: `1px solid ${sumaOk ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)'}`,
-          color: sumaOk ? 'var(--green)' : 'var(--red)' }}>
-          {sumaOk ? '✓ Distribución completa: 100%' : `⚠ Los porcentajes activos suman ${suma}% — debés ajustar para que sumen 100%`}
-        </div>
-      )}
 
-      <form className="card" style={{ marginBottom: 18 }} onSubmit={add}>
-        <h3 style={{ marginTop: 0 }}>Agregar cuenta</h3>
-        <div className="grid2" style={{ marginBottom: 10 }}>
-          <div className="field">
-            <label>CBU (22 dígitos) *</label>
-            <input className="input" maxLength={22} inputMode="numeric" value={f.cbu || ''} onChange={(e) => setF({ ...f, cbu: e.target.value.replace(/\D/g, '') })} style={{ fontFamily: 'monospace', letterSpacing: 1 }} />
-            {f.cbu && (
-              <div className="muted" style={{ marginTop: 4, fontSize: 12 }}>
-                Banco: <strong>{bancoAuto || '—'}</strong>
-                {cbuVal && (cbuVal.ok
-                  ? <span style={{ color: 'var(--green)', marginLeft: 8 }}>✓ CBU válido</span>
-                  : <span style={{ color: 'var(--yellow)', marginLeft: 8 }}>⚠ {cbuVal.error}</span>)}
-              </div>
-            )}
-          </div>
-          <div className="field"><label>Banco (autodetectado)</label><input className="input" value={f.banco ?? bancoAuto} onChange={set('banco')} placeholder={bancoAuto} /></div>
-          <div className="field"><label>Alias</label><input className="input" value={f.alias || ''} onChange={set('alias')} placeholder="ej: SUELDO.GALICIA" /></div>
-          <div className="field"><label>Titular</label><input className="input" value={f.titular || ''} onChange={set('titular')} /></div>
-          <div className="field"><label>Porcentaje del neto * (disponible: {disponible}%)</label>
-            <input className="input" type="number" step="0.01" min="0.01" max="100" value={f.porcentaje || ''} onChange={set('porcentaje')} placeholder={String(disponible)} /></div>
-        </div>
-        {err && <div className="err" style={{ marginBottom: 8 }}>⚠ {err}</div>}
-        <button className="btn" disabled={busy || !f.cbu || !f.porcentaje || (cbuVal ? !cbuVal.ok : false)}>{busy ? 'Guardando…' : '+ Agregar cuenta'}</button>
-      </form>
+      <div className="card" style={{ marginBottom: 14, padding: '8px 14px', fontSize: 13,
+        background: sumaOk ? 'rgba(34,197,94,.08)' : 'rgba(239,68,68,.08)',
+        border: `1px solid ${sumaOk ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)'}`,
+        color: sumaOk ? 'var(--green)' : 'var(--red)' }}>
+        {sumaOk ? '✓ Distribución completa: 100%' : `⚠ Las cuentas suman ${suma}% — ajustá para que sumen 100% (faltan ${Math.round((100 - suma) * 100) / 100}%)`}
+      </div>
 
-      <div className="card" style={{ padding: 0, overflow: 'auto' }}>
+      <div className="card" style={{ marginBottom: 14, padding: 0, overflow: 'auto' }}>
         <table>
-          <thead><tr><th>CBU</th><th>Banco</th><th>Alias</th><th>Titular</th><th>% Acreditación</th><th>Vigente desde</th><th></th></tr></thead>
+          <thead><tr><th>CBU (22 dígitos)</th><th>Banco</th><th>Alias</th><th>Titular</th><th style={{ width: 110 }}>% acreditación</th><th></th></tr></thead>
           <tbody>
-            {items.map((c) => (
-              <tr key={c.id}>
-                <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{fmtCbu(c.cbu)}</td>
-                <td>{c.banco || '—'}</td><td>{c.alias || '—'}</td><td>{c.titular || '—'}</td>
-                <td>
-                  {editId === c.id
-                    ? <span className="row" style={{ gap: 4 }}>
-                        <input className="input" style={{ width: 80 }} type="number" step="0.01" min="0.01" max="100" value={editPct} onChange={(e) => setEditPct(e.target.value)} />
-                        <button className="btn" style={{ padding: '3px 8px', fontSize: 12 }} onClick={() => guardarPct(c)}>✓</button>
-                        <button className="btn ghost" style={{ padding: '3px 8px', fontSize: 12 }} onClick={() => setEditId(null)}>✕</button>
-                      </span>
-                    : <span style={{ fontFamily: 'monospace', cursor: 'pointer' }} onClick={() => { setEditId(c.id); setEditPct(String(c.porcentaje)); }} title="Editar">
-                        {Number(c.porcentaje).toFixed(Number(c.porcentaje) % 1 === 0 ? 0 : 2)}% ✎
-                      </span>}
-                </td>
-                <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{fmtFecha(c.vigencia_desde)}</td>
-                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => toggle(c)}>Desactivar</button>
-                  <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, color: 'var(--red)' }} onClick={() => quitar(c)}>✕ Quitar</button>
-                </td>
-              </tr>
-            ))}
-            {!items.length && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 20 }}>No tenés cuentas activas.</td></tr>}
+            {rows.map((r, i) => {
+              const v = r.cbu ? validarCBU(r.cbu) : null;
+              return (
+                <tr key={i}>
+                  <td>
+                    <input className="input" maxLength={22} inputMode="numeric" style={{ fontFamily: 'monospace', letterSpacing: 1, minWidth: 220 }}
+                      value={r.cbu} onChange={(e) => upd(i, 'cbu', e.target.value.replace(/\D/g, ''))} />
+                    {r.cbu && v && !v.ok && <div style={{ color: 'var(--yellow)', fontSize: 11 }}>⚠ {v.error}</div>}
+                  </td>
+                  <td><input className="input" style={{ minWidth: 120 }} value={r.banco} onChange={(e) => upd(i, 'banco', e.target.value)} placeholder={bancoDesdeCBU(r.cbu) || ''} /></td>
+                  <td><input className="input" style={{ minWidth: 110 }} value={r.alias} onChange={(e) => upd(i, 'alias', e.target.value)} /></td>
+                  <td><input className="input" style={{ minWidth: 110 }} value={r.titular} onChange={(e) => upd(i, 'titular', e.target.value)} /></td>
+                  <td><input className="input" type="number" step="0.01" min="0.01" max="100" style={{ width: 90 }} value={r.porcentaje} onChange={(e) => upd(i, 'porcentaje', e.target.value)} /></td>
+                  <td style={{ textAlign: 'right' }}><button className="btn ghost" style={{ padding: '4px 9px', fontSize: 12, color: 'var(--red)' }} onClick={() => delRow(i)}>✕</button></td>
+                </tr>
+              );
+            })}
+            {!rows.length && <tr><td colSpan={6} className="muted" style={{ textAlign: 'center', padding: 18 }}>No tenés cuentas. Agregá una al 100% o repartí entre varias.</td></tr>}
           </tbody>
         </table>
       </div>
 
+      {err && <div className="err" style={{ marginBottom: 10 }}>⚠ {err}</div>}
+      {ok && <div className="muted" style={{ color: 'var(--green)', marginBottom: 10 }}>✓ {ok}</div>}
+      <div className="row" style={{ gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+        <button className="btn ghost" onClick={addRow}>+ Agregar cuenta</button>
+        {rows.length > 1 && <button className="btn ghost" onClick={repartirParejo}>Repartir en partes iguales</button>}
+        <div style={{ flex: 1 }} />
+        <button className="btn" onClick={guardar} disabled={busy || !puedeGuardar} title={!sumaOk ? 'Debe sumar 100%' : (!cbusOk ? 'Revisá los CBU y porcentajes' : '')}>{busy ? 'Guardando…' : 'Guardar distribución (100%)'}</button>
+      </div>
+
       {historial.length > 0 && <>
-        <h3 style={{ marginTop: 22, marginBottom: 8 }}>Historial de cuentas</h3>
+        <h3 style={{ marginTop: 6, marginBottom: 8 }}>Historial de cuentas</h3>
         <div className="card" style={{ padding: 0, overflow: 'auto' }}>
           <table>
-            <thead><tr><th>CBU</th><th>Banco</th><th>%</th><th>Vigencia</th><th></th></tr></thead>
+            <thead><tr><th>CBU</th><th>Banco</th><th>%</th><th>Vigencia</th></tr></thead>
             <tbody>
               {historial.map((c) => (
                 <tr key={c.id} style={{ opacity: 0.7 }}>
@@ -127,10 +110,6 @@ export default function MisCbus() {
                   <td>{c.banco || '—'}</td>
                   <td style={{ fontFamily: 'monospace' }}>{Number(c.porcentaje).toFixed(0)}%</td>
                   <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{fmtFecha(c.vigencia_desde)} → {fmtFecha(c.vigencia_hasta)}</td>
-                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => toggle(c)}>Reactivar</button>
-                    <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, color: 'var(--red)' }} onClick={() => quitar(c)}>✕ Quitar</button>
-                  </td>
                 </tr>
               ))}
             </tbody>
