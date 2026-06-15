@@ -5,7 +5,7 @@ interface Item { id: number; legNum: string; apellido: string; nombre: string; e
 interface Resp { periodo: { anio: number; mes: number }; items: Item[]; totales: { cant: number; basico: number; adicAntiguedad: number; remun: number; contrib: number; costo: number }; }
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-const money = (n: number) => '$ ' + (Number(n) || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (n: number) => '$\u00A0' + (Number(n) || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtFecha = (s?: string) => s ? String(s).slice(0, 10).split('-').reverse().join('/') : '—';
 const legD = (l?: string) => String(l || '').replace(/\D/g, '').padStart(6, '0');
 
@@ -58,11 +58,11 @@ export default function CostoEquipo() {
                 <td className="muted">{it.tarea || '—'}</td>
                 <td className="muted" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{fmtFecha(it.ingreso)}</td>
                 <td style={{ textAlign: 'right' }}>{it.antiguedad}a</td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{money(it.basico)}</td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{money(it.adicAntiguedad)}</td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{money(it.remun)}</td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--yellow)' }}>{money(it.contrib)}</td>
-                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{money(it.costo)}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{money(it.basico)}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{money(it.adicAntiguedad)}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{money(it.remun)}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', color: 'var(--yellow)' }}>{money(it.contrib)}</td>
+                <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', fontWeight: 600 }}>{money(it.costo)}</td>
               </tr>
             ))}
             {!items.length && !busy && <tr><td colSpan={12} className="muted" style={{ textAlign: 'center', padding: 20 }}>No tenés empleados a cargo en el organigrama.</td></tr>}
@@ -70,11 +70,11 @@ export default function CostoEquipo() {
           {t && items.length > 0 && (
             <tfoot><tr style={{ borderTop: '2px solid var(--border)', fontWeight: 700 }}>
               <td colSpan={7}>Totales ({t.cant})</td>
-              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{money(t.basico)}</td>
-              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{money(t.adicAntiguedad)}</td>
-              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{money(t.remun)}</td>
-              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--yellow)' }}>{money(t.contrib)}</td>
-              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--green)' }}>{money(t.costo)}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{money(t.basico)}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{money(t.adicAntiguedad)}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{money(t.remun)}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', color: 'var(--yellow)' }}>{money(t.contrib)}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', color: 'var(--green)' }}>{money(t.costo)}</td>
             </tr></tfoot>
           )}
         </table>
