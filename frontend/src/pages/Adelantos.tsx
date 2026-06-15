@@ -97,12 +97,17 @@ export default function Adelantos() {
               <tr key={a.id}>
                 {puedeAprobar && <td>{a.nom} <span className="muted">({a.leg_num} · {a.empresa})</span></td>}
                 <td>{money(a.monto)}</td>
-                {puedeAprobar && (() => { const neto = a.ultimo_neto || 0; const tope = neto / 2; const pctNeto = neto > 0 ? (a.monto / neto * 100) : 0; const exc = tope > 0 && a.monto > tope; return (
+                {puedeAprobar && (() => {
+                  const real = a.ultimo_neto || 0;
+                  const est = real > 0 ? false : true;
+                  const neto = real > 0 ? real : (a.bruto ? a.bruto * 0.83 : 0);
+                  const tope = neto / 2; const pctNeto = neto > 0 ? (a.monto / neto * 100) : 0; const exc = tope > 0 && a.monto > tope;
+                  return (
                   <td style={{ fontSize: 12 }}>{neto > 0 ? <>
-                    <span className="muted">neto {money(neto)}</span><br />
+                    <span className="muted">neto {money(neto)}{est ? ' (est.)' : ''}</span><br />
                     <span style={{ color: exc ? 'var(--red)' : 'var(--green)' }}>{exc ? '⚠ ' : '✓ '}{pctNeto.toFixed(1)}% del neto</span>
                     <span className="muted"> · tope 50% {money(tope)}</span>
-                  </> : <span className="muted">s/neto</span>}</td>
+                  </> : <span className="muted">s/dato</span>}</td>
                 ); })()}
                 <td>{puedeAprobar && a.estado === 'pendiente'
                   ? <input className="input" style={{ width: 60 }} type="number" min="1" value={(aprob[a.id]?.cuotas) ?? String(a.cuotas || 1)} onChange={(e) => setAp(a.id, 'cuotas', e.target.value, a)} />
