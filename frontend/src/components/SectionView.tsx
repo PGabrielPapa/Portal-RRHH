@@ -46,6 +46,7 @@ import Elementos from '../pages/Elementos';
 import Beneficios from '../pages/Beneficios';
 import CambiosDomicilio from '../pages/CambiosDomicilio';
 import MisFamiliares from '../pages/MisFamiliares';
+import CostoEquipo from '../pages/CostoEquipo';
 import Justificaciones from '../pages/Justificaciones';
 
 // Módulos ya migrados (clave de sección → componente).
@@ -78,6 +79,7 @@ const COMPONENTS: Record<string, ComponentType> = {
   'mis-cbus': MisCbus,
   'anticipos': Adelantos,
   'aprobaciones': Adelantos,
+  'costo-equipo': CostoEquipo,
   'adelantos-rrhh': Adelantos,
   'parametros': Parametros,
   'conceptos': Conceptos,

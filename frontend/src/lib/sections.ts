@@ -29,6 +29,7 @@ export const GROUPS: Group[] = [
       { key: 'aprobaciones', label: 'Adelantos del equipo', ready: true },
       { key: 'licencias-equipo', ready: true, label: 'Licencias del equipo' },
       { key: 'organigrama', label: 'Organigrama / equipo', ready: true },
+      { key: 'costo-equipo', label: 'Costo laboral del equipo', ready: true },
       { key: 'sanciones-equipo', label: 'Sanciones del equipo', ready: true },
       { key: 'evaluaciones-equipo', label: 'Evaluaciones del equipo', ready: true },
     ],
