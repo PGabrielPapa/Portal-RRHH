@@ -7,7 +7,7 @@ export interface CertData {
   destinatario?: string;
   campos: Record<string, boolean>;
   firmante?: { nombre?: string; cargo?: string } | null;
-  empleado: { nom: string; dni: string; cuil?: string; legNum: string; empresa: string; cuit?: string; logo?: string; firma?: string; ingreso?: string; cat?: string; bruto?: number; condicion?: string; lugar?: string };
+  empleado: { nom: string; dni: string; cuil?: string; legNum: string; empresa: string; cuit?: string; logo?: string; firma?: string; ingreso?: string; cat?: string; categoria?: string; bruto?: number; condicion?: string; lugar?: string };
 }
 
 export function imprimirCertificado(d: CertData) {
@@ -16,7 +16,8 @@ export function imprimirCertificado(d: CertData) {
   partes.push(`presta servicios en relación de dependencia en esta empresa`);
   if (c.fecha_ingreso && e.ingreso) partes.push(`desde el ${fmtFecha(e.ingreso)}`);
   if (c.antiguedad && e.ingreso) partes.push(`con una antigüedad de ${aniosAntig(e.ingreso)} año(s)`);
-  if ((c.cargo || c.categoria) && e.cat) partes.push(`desempeñándose en la categoría "${e.cat}"`);
+  const catReal = e.categoria || e.cat;
+  if ((c.cargo || c.categoria) && catReal) partes.push(`desempeñándose en la categoría "${catReal}"`);
   if (c.condicion && e.condicion) partes.push(`bajo la condición de ${e.condicion}`);
   if (c.lugar_trabajo && e.lugar) partes.push(`en ${e.lugar}`);
   if (c.remuneracion) partes.push(`percibiendo una remuneración bruta mensual de ${money(e.bruto || 0)}`);
