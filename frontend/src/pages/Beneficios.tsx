@@ -17,15 +17,26 @@ export default function Beneficios() {
   const [emp, setEmp] = useState<Empleado | null>(null);
   const [f, setF] = useState<Record<string, string>>({ tipo: 'prepaga', modalidad: 'fijo' });
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
+  const [editB, setEditB] = useState<B | null>(null);
 
   async function load() { try { const p = new URLSearchParams(); if (q) p.set('q', q); if (empresa) p.set('empresa', empresa); setItems(await api.get<B[]>(`/beneficios?${p}`)); } catch (e: any) { setMsg({ t: e.message, ok: false }); } }
   useEffect(() => { api.get<Empleado[]>('/empleados').then((es) => setEmpresas([...new Set(es.map((e) => e.empresa))].sort())).catch(() => {}); }, []);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [q, empresa]);
 
+  function cancelarEdicion() { setEditB(null); setF({ tipo: 'prepaga', modalidad: 'fijo' }); setEmp(null); }
+  function editar(b: B) {
+    setEditB(b);
+    setF({ tipo: b.tipo, modalidad: b.modalidad || 'fijo', monto: String(b.monto ?? ''), proveedor: b.proveedor || '', vigenciaDesde: (b.vigencia_desde || '').slice(0, 10), vigenciaHasta: (b.vigencia_hasta || '').slice(0, 10), detalle: b.detalle || '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
   async function registrar(e: React.FormEvent) {
-    e.preventDefault(); if (!emp) return;
-    try { await api.post('/beneficios', { empleadoId: emp.id, tipo: f.tipo, modalidad: f.modalidad, monto: f.monto, proveedor: f.proveedor, vigenciaDesde: f.vigenciaDesde, vigenciaHasta: f.vigenciaHasta, detalle: f.detalle }); setMsg({ t: 'Beneficio asignado', ok: true }); setF({ tipo: 'prepaga', modalidad: 'fijo' }); setEmp(null); load(); }
-    catch (e: any) { setMsg({ t: e.message, ok: false }); }
+    e.preventDefault();
+    const body = { tipo: f.tipo, modalidad: f.modalidad, monto: f.monto, proveedor: f.proveedor, vigenciaDesde: f.vigenciaDesde, vigenciaHasta: f.vigenciaHasta, detalle: f.detalle };
+    try {
+      if (editB) { await api.put(`/beneficios/${editB.id}`, body); setMsg({ t: 'Beneficio actualizado', ok: true }); }
+      else { if (!emp) return; await api.post('/beneficios', { empleadoId: emp.id, ...body }); setMsg({ t: 'Beneficio asignado', ok: true }); }
+      cancelarEdicion(); load();
+    } catch (e: any) { setMsg({ t: e.message, ok: false }); }
   }
   async function baja(b: B) { try { await api.patch(`/beneficios/${b.id}/activo`, { activo: !b.activo }); load(); } catch (e: any) { setMsg({ t: e.message, ok: false }); } }
   const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
@@ -33,8 +44,8 @@ export default function Beneficios() {
   return (
     <>
       <form className="card" style={{ marginBottom: 18 }} onSubmit={registrar}>
-        <h3 style={{ marginTop: 0 }}>Asignar beneficio</h3>
-        <div className="field" style={{ marginBottom: 10 }}><label>Empleado *</label><EmpleadoPicker onSelect={setEmp} /></div>
+        <h3 style={{ marginTop: 0 }}>{editB ? `Editar beneficio — ${editB.nom} (${editB.leg_num})` : 'Asignar beneficio'}</h3>
+        {!editB && <div className="field" style={{ marginBottom: 10 }}><label>Empleado *</label><EmpleadoPicker onSelect={setEmp} /></div>}
         <div className="grid2" style={{ marginBottom: 10 }}>
           <div className="field"><label>Tipo</label><select className="input" value={f.tipo} onChange={set('tipo')}>{TIPOS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
           <div className="field"><label>Modalidad</label><select className="input" value={f.modalidad} onChange={set('modalidad')}>{MODALIDADES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
@@ -45,7 +56,10 @@ export default function Beneficios() {
         </div>
         <div className="field" style={{ marginBottom: 12 }}><label>Detalle</label><input className="input" value={f.detalle || ''} onChange={set('detalle')} placeholder="Plan, N° afiliado, condiciones…" /></div>
         {msg && <div className={msg.ok ? 'ok' : 'err'} style={{ marginBottom: 8 }}>{msg.ok ? '✓ ' : '⚠ '}{msg.t}</div>}
-        <button className="btn" disabled={!emp}>Asignar</button>
+        <div className="row" style={{ gap: 8 }}>
+          <button className="btn" disabled={!editB && !emp}>{editB ? 'Guardar cambios' : 'Asignar'}</button>
+          {editB && <button type="button" className="btn ghost" onClick={cancelarEdicion}>Cancelar</button>}
+        </div>
       </form>
       <div className="row" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
         <input className="input" style={{ maxWidth: 240 }} placeholder="Buscar empleado o legajo…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -60,7 +74,10 @@ export default function Beneficios() {
                 <td>{b.nom} <span className="muted">({b.leg_num})</span></td><td>{tipoLabel(b.tipo)}</td><td>{modalLabel(b.modalidad)}</td><td>{money(b.monto)}</td><td>{b.proveedor || '—'}</td>
                 <td className="muted">{fmt(b.vigencia_desde)}{b.vigencia_hasta ? ` → ${fmt(b.vigencia_hasta)}` : ''}</td>
                 <td><span className="badge" style={{ color: b.activo ? 'var(--green)' : 'var(--t3)' }}>{b.activo ? 'Activo' : 'Baja'}</span></td>
-                <td style={{ textAlign: 'right' }}><button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => baja(b)}>{b.activo ? 'Dar de baja' : 'Reactivar'}</button></td>
+                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => editar(b)}>Editar</button>
+                  <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => baja(b)}>{b.activo ? 'Dar de baja' : 'Reactivar'}</button>
+                </td>
               </tr>
             ))}
             {!items.length && <tr><td colSpan={8} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin beneficios.</td></tr>}
