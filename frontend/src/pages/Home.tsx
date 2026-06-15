@@ -15,7 +15,7 @@ const META: Record<string, { ico: string; col: string; desc: string }> = {
   'mensajes': { ico: '💬', col: '61,127,255', desc: 'Enviá una consulta o mensaje a Recursos Humanos' },
   'mis-cbus': { ico: '🏦', col: '61,200,160', desc: 'Cargá tus cuentas y el porcentaje de acreditación' },
   'cert-trabajo': { ico: '📋', col: '99,102,241', desc: 'Solicitá tu certificado laboral firmado' },
-  'mis-sanciones': { ico: '⚠️', col: '239,68,68', desc: 'Consultá tus sanciones y notificaciones' },
+  'mis-sanciones': { ico: '⚖️', col: '239,68,68', desc: 'Consultá tus sanciones y notificaciones' },
   'mis-evaluaciones': { ico: '📈', col: '94,194,255', desc: 'Consultá tus evaluaciones de desempeño' },
   'mis-familiares': { ico: '👨‍👩‍👧', col: '94,194,255', desc: 'Cargá y gestioná tu grupo familiar' },
   'aprobaciones': { ico: '✅', col: '34,197,94', desc: 'Aprobá o rechazá adelantos de tu equipo' },
