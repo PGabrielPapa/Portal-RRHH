@@ -1,4 +1,4 @@
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ComponentType } from 'react';
 import { findSection } from '../lib/sections';
 import Placeholder from './Placeholder';
@@ -108,5 +108,20 @@ export default function SectionView() {
   const section = key ? findSection(key) : undefined;
   if (!section) return <Navigate to="/" replace />;
   const Comp = COMPONENTS[section.key];
-  return Comp ? <Comp /> : <Placeholder label={section.label} />;
+  return (
+    <>
+      <BackBar label={section.label} />
+      {Comp ? <Comp /> : <Placeholder label={section.label} />}
+    </>
+  );
+}
+
+function BackBar({ label }: { label: string }) {
+  const nav = useNavigate();
+  return (
+    <div className="row" style={{ alignItems: 'center', gap: 10, marginBottom: 14 }}>
+      <button className="btn ghost" onClick={() => nav('/')} title="Volver al menú">← Atrás</button>
+      <span className="muted" style={{ fontSize: 12 }}>Inicio / {label}</span>
+    </div>
+  );
 }
