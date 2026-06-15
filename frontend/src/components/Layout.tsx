@@ -19,7 +19,7 @@ export default function Layout() {
           {groups.map((g) => (
             <div key={g.panel} style={{ marginTop: 12 }}>
               <div className="sb-group-label">{g.panel}</div>
-              {g.items.map((it) => (
+              {g.items.slice().sort((a, b) => a.label.localeCompare(b.label, 'es')).map((it) => (
                 <NavLink key={it.key} to={`/m/${it.key}`} className={({ isActive }) => `sb-item${isActive ? ' active' : ''}`}>
                   <span>{it.label}</span>
                   {!it.ready && <span title="En migración" style={{ fontSize: 10, opacity: .6 }}>🚧</span>}

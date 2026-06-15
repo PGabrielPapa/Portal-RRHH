@@ -38,7 +38,7 @@ export default function Home() {
         <div key={g.panel} style={{ marginBottom: 26 }}>
           <div className="sb-group-label" style={{ padding: '0 0 10px' }}>{g.panel}</div>
           <div className="home-grid">
-            {g.items.filter((it) => it.ready).map((it) => {
+            {g.items.filter((it) => it.ready).slice().sort((a, b) => a.label.localeCompare(b.label, 'es')).map((it) => {
               const m = META[it.key] || fallback;
               return (
                 <a key={it.key} className="home-card" onClick={() => nav(`/m/${it.key}`)}>
