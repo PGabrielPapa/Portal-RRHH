@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 import { construirOrganigrama, type Emp, type OrgNode } from '../lib/organigrama';
+import { useAuth } from '../lib/auth';
 
 const legD = (l?: string) => String(l || '').replace(/\D/g, '').padStart(6, '0');
 
@@ -48,7 +49,9 @@ function Nodo({ nodo, nivel, expandido, toggle, q }: { nodo: OrgNode; nivel: num
 }
 
 export default function Organigrama() {
+  const { user } = useAuth();
   const [nomina, setNomina] = useState<Emp[]>([]);
+  const [autoHecho, setAutoHecho] = useState(false);
   const [empresa, setEmpresa] = useState('');
   const [q, setQ] = useState('');
   const [empresas, setEmpresas] = useState<string[]>([]);
@@ -63,6 +66,16 @@ export default function Organigrama() {
   }, []);
 
   const { raices, totalEmpleados, nodos } = useMemo(() => construirOrganigrama(nomina, empresa), [nomina, empresa]);
+
+  useEffect(() => {
+    if (autoHecho || !user?.nom || !Object.keys(nodos).length) return;
+    const mi = String(user.nom).toUpperCase().trim();
+    const nodo = nodos[mi]; if (!nodo) return;
+    const exp = new Set<string>([mi]);
+    const expandir = (n: OrgNode, prof: number) => { if (prof > 10) return; for (const k of Object.keys(n.subManagers)) { exp.add(k); expandir(n.subManagers[k], prof + 1); } };
+    expandir(nodo, 0);
+    setExpandido(exp); setAutoHecho(true);
+  }, [nodos, user, autoHecho]);
 
   // Filtro por búsqueda: mostrar solo ramas con coincidencias y expandirlas.
   const { raicesVisibles, autoExpand } = useMemo(() => {
