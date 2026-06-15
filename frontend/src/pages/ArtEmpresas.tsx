@@ -87,9 +87,11 @@ export default function ArtEmpresas() {
             <div className="muted" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Histórico de alícuotas</div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <tbody>
-                {c.alicuotas.map((a, i) => (
-                  <tr key={i}><td style={{ padding: '3px 8px' }}>{fmt(a.desde)}</td><td style={{ padding: '3px 8px', fontFamily: 'monospace' }}>{a.pct}%</td><td style={{ padding: '3px 8px' }} className="muted">{a.nota || ''}</td></tr>
-                ))}
+                {c.alicuotas.map((a, i) => {
+                  const hasta = c.alicuotas[i + 1]?.desde;   // la vigencia termina cuando empieza la siguiente
+                  return (
+                  <tr key={i}><td style={{ padding: '3px 8px', fontFamily: 'monospace', fontSize: 12 }}>{fmt(a.desde)} → {hasta ? fmt(hasta) : 'vigente'}</td><td style={{ padding: '3px 8px', fontFamily: 'monospace' }}>{a.pct}%</td><td style={{ padding: '3px 8px' }} className="muted">{a.nota || ''}</td></tr>
+                ); })}
                 {!c.alicuotas.length && <tr><td className="muted" style={{ padding: '3px 8px' }}>Sin alícuotas cargadas.</td></tr>}
               </tbody>
             </table>
