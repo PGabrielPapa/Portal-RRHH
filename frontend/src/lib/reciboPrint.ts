@@ -6,8 +6,18 @@ const esc = (s: any) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;'
 
 
 function pieDonut(r: Recibo): string {
-  const c: any = r.composicion;
-  if (!c) return '';
+  let c: any = r.composicion;
+  // Fallback para recibos sin composición detallada: torta simple (neto / aportes / contribuciones).
+  if (!c) {
+    const t: any = r.totales || {}; const ce: any = r.costoEmpleador || {};
+    const neto = Number(t.neto || 0), desc = Number(t.totalDescuentos || 0), contrib = Number(ce.totalContrib || 0);
+    if (neto + desc + contrib <= 0) return '';
+    c = { neto, costoTotal: ce.costoTotal || (neto + desc + contrib), cargas: {}, _simple: [
+      { l: 'Sueldo Neto', v: neto, col: '#2563eb' },
+      { l: 'Aportes del trabajador', v: desc, col: '#dc2626' },
+      { l: 'Contribuciones patronales', v: contrib, col: '#16a34a' },
+    ] };
+  }
   const cg = c.cargas || {};
   const sum = (x: any) => x ? (Number(x.empleador || 0) + Number(x.trabajador || 0)) : 0;
   const segs = [
@@ -19,11 +29,12 @@ function pieDonut(r: Recibo): string {
     { l: 'ART', v: Number(cg.art?.empleador || 0), col: '#0891b2' },
     { l: 'SCVO', v: Number(cg.scvo?.empleador || 0), col: '#65a30d' },
   ].filter((x) => x.v > 0.005);
-  const total = segs.reduce((a, x) => a + x.v, 0) || 1;
+  const segsFinal = c._simple ? c._simple.filter((x: any) => x.v > 0.005) : segs;
+  const total = segsFinal.reduce((a: number, x: any) => a + x.v, 0) || 1;
   const R = 52, C = 60;
   let ang = -Math.PI / 2;
   const pt = (a: number) => `${(C + R * Math.cos(a)).toFixed(2)} ${(C + R * Math.sin(a)).toFixed(2)}`;
-  const paths = segs.map((sgm) => {
+  const paths = segsFinal.map((sgm: any) => {
     const frac = sgm.v / total; if (frac <= 0) return '';
     const a2 = ang + frac * 2 * Math.PI; const large = (a2 - ang) > Math.PI ? 1 : 0;
     const d = frac >= 0.9999
@@ -31,7 +42,7 @@ function pieDonut(r: Recibo): string {
       : `M ${C} ${C} L ${pt(ang)} A ${R} ${R} 0 ${large} 1 ${pt(a2)} Z`;
     ang = a2; return `<path d="${d}" fill="${sgm.col}" stroke="#fff" stroke-width="0.7"/>`;
   }).join('');
-  const leyenda = segs.map((sgm) => `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><span style="display:inline-block;width:8px;height:8px;background:${sgm.col}"></span><span style="flex:1">${sgm.l}</span><span style="font-family:'Courier New',monospace">${money(sgm.v)} (${Math.round(sgm.v / total * 100)}%)</span></div>`).join('');
+  const leyenda = segsFinal.map((sgm: any) => `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><span style="display:inline-block;width:8px;height:8px;background:${sgm.col}"></span><span style="flex:1">${sgm.l}</span><span style="font-family:'Courier New',monospace">${money(sgm.v)} (${Math.round(sgm.v / total * 100)}%)</span></div>`).join('');
   const filaDet = (lbl: string, x: any) => x && (x.empleador > 0 || x.trabajador > 0)
     ? `<tr><td>${lbl}</td><td class="n">${money(x.empleador)}</td><td class="n">${money(x.trabajador)}</td><td class="n">${money(x.empleador + x.trabajador)}</td></tr>` : '';
   return `
@@ -74,7 +85,10 @@ function copia(r: Recibo, marca: string): string {
     ${contrib ? `<table class="contrib"><thead><tr><th>Costo del empleador (no afecta el neto)</th><th class="n"></th></tr></thead><tbody>${contrib}<tr class="tot"><td>Costo laboral total</td><td class="n">${money(r.costoEmpleador?.costoTotal || 0)}</td></tr></tbody></table>` : ''}
     ${pieDonut(r)}
     <div class="firmas">
-      <div class="firma">Firma del empleador</div>
+      <div class="firma">
+        ${r.firmaEmpleador ? `<img src="${r.firmaEmpleador}" style="max-height:54px;max-width:160px;display:block;margin:0 auto 2px"/>` : ''}
+        ${r.firmante?.nombre ? `<div style="font-weight:bold">${esc(r.firmante.nombre)}</div>${r.firmante?.cargo ? `<div style="font-size:8px;text-transform:uppercase">${esc(r.firmante.cargo)}</div>` : ''}` : 'Firma del empleador'}
+      </div>
       <div class="firma">Recibí conforme — firma del empleado</div>
     </div>
   </div>`;

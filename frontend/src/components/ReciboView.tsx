@@ -3,6 +3,8 @@ const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currenc
 
 export interface Recibo {
   empleado: { legNum: string; nom: string; empresa: string; cuil?: string; cat?: string };
+  firmaEmpleador?: string | null;
+  firmante?: { nombre?: string; cargo?: string } | null;
   periodo: { anio: number; mes: number; tipoLabel?: string; fechaPago?: string; ganPeriodo?: string };
   haberes: { concepto: string; tipo: string; monto: number }[];
   descuentos: { concepto: string; monto: number }[];
