@@ -133,6 +133,12 @@ function EmpModal({ emp, empresas, onClose, onSaved, onError }: { emp: Empleado 
   const [f, setF] = useState<Record<string, string>>(ini);
   const [busy, setBusy] = useState(false);
   const set = (k: string) => (ev: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: ev.target.value });
+  // En alta, el legajo lo asigna el sistema: traemos el próximo de la empresa elegida.
+  useEffect(() => {
+    if (!esNueva || !f.empresa) return;
+    api.get<{ legNum: string }>(`/empleados/proximo-legajo?empresa=${encodeURIComponent(f.empresa)}`)
+      .then((r) => setF((prev) => ({ ...prev, legNum: r.legNum }))).catch(() => {});
+  }, [esNueva, f.empresa]);
   const F = ({ k, label, type = 'text', ph }: { k: string; label: string; type?: string; ph?: string }) => (
     <div className="field"><label>{label}</label><input className="input" type={type} value={f[k] || ''} onChange={set(k)} placeholder={ph} /></div>
   );
@@ -156,7 +162,7 @@ function EmpModal({ emp, empresas, onClose, onSaved, onError }: { emp: Empleado 
         <div className="grid2">
           <div className="field"><label>Empresa *</label><select className="input" value={f.empresa} onChange={set('empresa')} disabled={!esNueva}>{empresas.map((em) => <option key={em} value={em}>{em}</option>)}</select></div>
           <div className="field"><label>Apellido y Nombre *</label><input className="input" value={f.nom || ''} onChange={set('nom')} /></div>
-          <div className="field"><label>Legajo *</label><input className="input" value={f.legNum || ''} onChange={set('legNum')} disabled={!esNueva} /></div>
+          <div className="field"><label>Legajo {esNueva ? '(automático)' : '*'}</label><input className="input" value={f.legNum || (esNueva ? '…' : '')} disabled readOnly title={esNueva ? 'Lo asigna el sistema según el último legajo de la empresa' : ''} /></div>
           <div className="field"><label>DNI *</label><input className="input" value={f.dni || ''} onChange={set('dni')} disabled={!esNueva} /></div>
           <F k="cuil" label="CUIL" ph="XX-XXXXXXXX-X" />
           <F k="email" label="E-mail" />
@@ -207,7 +213,7 @@ function EmpModal({ emp, empresas, onClose, onSaved, onError }: { emp: Empleado 
 
         <div className="row" style={{ justifyContent: 'flex-end', marginTop: 18 }}>
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn" onClick={save} disabled={busy || !f.empresa || !f.legNum || !f.nom || (!f.dni && !f.cuil)}>{busy ? 'Guardando…' : (esNueva ? 'Crear' : 'Guardar cambios')}</button>
+          <button className="btn" onClick={save} disabled={busy || !f.empresa || !f.nom || (!f.dni && !f.cuil)}>{busy ? 'Guardando…' : (esNueva ? 'Crear' : 'Guardar cambios')}</button>
         </div>
       </div>
     </div>
