@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import MiBanner from '../components/MiBanner';
 
-interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; cuota_desde?: string; cuotas_pagadas?: number; total_pagado?: number; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
+interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; cuota_desde?: string; cuotas_pagadas?: number; total_pagado?: number; bruto?: number; ultimo_neto?: number; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
 interface Cuota { nro: number; anio: number; mes: number; monto: number; }
 
 const money = (n: number) => Number(n).toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
@@ -90,13 +90,16 @@ export default function Adelantos() {
         <table>
           <thead><tr>
             {puedeAprobar && <th>Empleado</th>}
-            <th>Monto</th><th>Cuotas</th><th>1ª cuota</th><th>Descontado</th><th>Motivo</th><th>Fecha</th><th>Estado</th>{puedeAprobar && <th></th>}
+            <th>Monto</th>{puedeAprobar && <th>Tope 50% / solicitado</th>}<th>Cuotas</th><th>1ª cuota</th><th>Descontado</th><th>Motivo</th><th>Fecha</th><th>Estado</th>{puedeAprobar && <th></th>}
           </tr></thead>
           <tbody>
             {items.map((a) => [
               <tr key={a.id}>
                 {puedeAprobar && <td>{a.nom} <span className="muted">({a.leg_num} · {a.empresa})</span></td>}
                 <td>{money(a.monto)}</td>
+                {puedeAprobar && (() => { const tope = (a.ultimo_neto || 0) / 2; const pct = tope > 0 ? (a.monto / tope * 100) : 0; const exc = tope > 0 && a.monto > tope; return (
+                  <td style={{ fontSize: 12 }}>{tope > 0 ? <><span className="muted">tope {money(tope)}</span><br /><span style={{ color: exc ? 'var(--red)' : 'var(--green)' }}>{exc ? '⚠ ' : '✓ '}{pct.toFixed(0)}%</span></> : <span className="muted">s/neto</span>}</td>
+                ); })()}
                 <td>{puedeAprobar && a.estado === 'pendiente'
                   ? <input className="input" style={{ width: 60 }} type="number" min="1" value={(aprob[a.id]?.cuotas) ?? String(a.cuotas || 1)} onChange={(e) => setAp(a.id, 'cuotas', e.target.value, a)} />
                   : a.cuotas}</td>
@@ -118,7 +121,7 @@ export default function Adelantos() {
               </tr>,
               verCuotas === a.id && (
                 <tr key={`c${a.id}`}>
-                  <td colSpan={puedeAprobar ? 8 : 6} style={{ background: 'var(--bg2)', padding: '8px 14px' }}>
+                  <td colSpan={puedeAprobar ? 9 : 6} style={{ background: 'var(--bg2)', padding: '8px 14px' }}>
                     <strong style={{ fontSize: 13 }}>Cuotas aplicadas</strong>
                     {!cuotas.length && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Todavía no se aplicó ninguna cuota en liquidaciones.</div>}
                     {cuotas.length > 0 && (
@@ -132,7 +135,7 @@ export default function Adelantos() {
                 </tr>
               ),
             ]).flat().filter(Boolean)}
-            {!items.length && <tr><td colSpan={puedeAprobar ? 8 : 6} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin adelantos.</td></tr>}
+            {!items.length && <tr><td colSpan={puedeAprobar ? 9 : 6} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin adelantos.</td></tr>}
           </tbody>
         </table>
       </div>
