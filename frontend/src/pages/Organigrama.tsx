@@ -32,13 +32,17 @@ function Nodo({ nodo, nivel, expandido, toggle, q }: { nodo: OrgNode; nivel: num
         <div style={{ margin: '4px 0 4px 18px' }}>
           <div className="muted" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Directos ({nodo.directos.length})</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {nodo.directos.sort((a, b) => a.emp.nom.localeCompare(b.emp.nom)).map((d) => (
-              <span key={d.emp.legNum || d.emp.nom} className="badge"
-                style={{ background: 'var(--bg2)', border: `1px solid ${match(d.emp.nom) ? 'rgba(234,179,8,.6)' : 'var(--border)'}`, fontWeight: 400 }}
-                title={`${d.emp.empresa || d.emp.emp} · ${d.emp.lugar || ''}`}>
-                {d.emp.nom} <span className="muted" style={{ fontFamily: 'monospace' }}>({legD(d.emp.legNum || d.emp.leg)})</span>
-              </span>
-            ))}
+            {nodo.directos.sort((a, b) => a.emp.nom.localeCompare(b.emp.nom)).map((d) => {
+              const tarea = d.emp.tarea || d.emp.desc_categoria || [d.emp.cat, d.emp.tramo].filter(Boolean).join(' ');
+              return (
+              <div key={d.emp.legNum || d.emp.nom}
+                style={{ background: 'var(--bg2)', border: `1px solid ${match(d.emp.nom) ? 'rgba(234,179,8,.6)' : 'var(--border)'}`, borderRadius: 'var(--r)', padding: '5px 9px', fontSize: 12, minWidth: 180 }}>
+                <div>{d.emp.nom} <span className="muted" style={{ fontFamily: 'monospace' }}>({legD(d.emp.legNum || d.emp.leg)})</span></div>
+                <div className="muted" style={{ fontSize: 10, fontFamily: 'monospace' }}>
+                  🏢 {d.emp.empresa || d.emp.emp || '—'}{tarea ? ` · 💼 ${tarea}` : ''}{d.emp.lugar ? ` · 📍 ${d.emp.lugar}` : ''}
+                </div>
+              </div>
+            ); })}
           </div>
         </div>
       )}

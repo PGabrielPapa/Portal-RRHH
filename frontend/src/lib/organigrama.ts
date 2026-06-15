@@ -1,7 +1,7 @@
 // Organigrama — getValidador + construcción del árbol (portado de la app vanilla, js/04 y js/19).
 // La lógica es pura sobre los campos del empleado (nom, lugar, cat, emp, validador…).
 /* eslint-disable */
-export interface Emp { nom: string; leg?: string; legNum?: string; emp?: string; empresa?: string; lugar?: string; cat?: string; tramo?: string; validador?: string; areaOrg?: string; area?: string; validadorGoToHR?: boolean; validadorAutoApproved?: boolean; }
+export interface Emp { nom: string; leg?: string; legNum?: string; emp?: string; empresa?: string; lugar?: string; cat?: string; tramo?: string; tarea?: string; desc_categoria?: string; validador?: string; areaOrg?: string; area?: string; validadorGoToHR?: boolean; validadorAutoApproved?: boolean; }
 
 export function getValidador(emp: any) {
   const nom = emp.nom.toUpperCase().trim();
