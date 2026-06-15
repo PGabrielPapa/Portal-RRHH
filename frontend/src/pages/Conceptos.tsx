@@ -37,7 +37,7 @@ export default function Conceptos() {
   return (
     <>
       <div className="row" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
-        <h2 style={{ margin: 0, flex: 1 }}>Conceptos</h2>
+        <div style={{ flex: 1 }} />
         {canEdit && <button className="btn" onClick={() => setShowNew(true)}>+ Nuevo concepto</button>}
       </div>
       <div className="row" style={{ marginBottom: 14, flexWrap: 'wrap' }}>

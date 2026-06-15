@@ -287,7 +287,6 @@ export default function Liquidacion() {
   const [tab, setTab] = useState('individual');
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Liquidación</h2>
       <div className="row" style={{ gap: 6, marginBottom: 14 }}>
         <button className={`btn ${tab === 'individual' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('individual')}>Individual</button>
         <button className={`btn ${tab === 'corrida' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('corrida')}>Corrida / planilla</button>

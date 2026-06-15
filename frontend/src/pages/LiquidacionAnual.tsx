@@ -31,7 +31,6 @@ export default function LiquidacionAnual() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Liquidación anual de Ganancias <span className="muted" style={{ fontWeight: 400, fontSize: 13 }}>(ajuste anual — RG 4003/17)</span></h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>Impuesto anual con deducciones completas menos lo retenido durante el año. La diferencia se imputa en la liquidación de abril del año siguiente (retención adicional o devolución).</p>
       <div className="row" style={{ gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div className="field"><label>Año fiscal</label><input className="input" type="number" style={{ width: 110 }} value={anio} onChange={(e) => setAnio(Number(e.target.value))} /></div>

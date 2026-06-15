@@ -33,7 +33,6 @@ export default function CertTrabajo() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Certificado de trabajo</h2>
       <form className="card" style={{ marginBottom: 18 }} onSubmit={solicitar}>
         <h3 style={{ marginTop: 0 }}>Solicitar certificado</h3>
         <div className="field" style={{ marginBottom: 10 }}><label>Destinatario (opcional — ej. banco, organismo)</label><input className="input" value={destinatario} onChange={(e) => setDestinatario(e.target.value)} /></div>

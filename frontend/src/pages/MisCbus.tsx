@@ -46,7 +46,6 @@ export default function MisCbus() {
   return (
     <>
       <MiBanner subtitulo="Repartí tu sueldo entre tus cuentas" />
-      <h2 style={{ marginTop: 0 }}>Mis CBUs</h2>
       <div className="card" style={{ marginBottom: 14, fontSize: 13, lineHeight: 1.6 }}>
         💡 Podés <strong>repartir tu sueldo entre varias cuentas</strong> indicando el porcentaje del neto que va a cada una.
         Los porcentajes de las cuentas activas deben sumar 100%.

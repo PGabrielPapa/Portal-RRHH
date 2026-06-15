@@ -20,7 +20,6 @@ export default function CbuNovedades() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>CBU — novedades</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 12 }}>Avisos cuando un empleado da de alta, modifica o quita una cuenta bancaria, para validar antes de la próxima acreditación.</p>
       <div className="row" style={{ gap: 10, marginBottom: 12 }}>
         <label className="row" style={{ gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="checkbox" checked={soloNoLeidas} onChange={(e) => setSoloNoLeidas(e.target.checked)} /> Solo sin leer</label>

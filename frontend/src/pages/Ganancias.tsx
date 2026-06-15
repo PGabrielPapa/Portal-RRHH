@@ -106,7 +106,6 @@ export default function Ganancias() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Ganancias — F.1357</h2>
       <div className="row" style={{ gap: 10, marginBottom: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         {esRRHH && <div className="field" style={{ minWidth: 260 }}><label>Empleado</label><EmpleadoPicker onSelect={setEmp} /></div>}
         <div className="field"><label>Mes</label><select className="input" value={mes} onChange={(e) => setMes(Number(e.target.value))}>{MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}</select></div>

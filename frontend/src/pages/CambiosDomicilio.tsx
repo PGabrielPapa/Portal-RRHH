@@ -14,7 +14,6 @@ export default function CambiosDomicilio() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Cambios de domicilio</h2>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
       <div className="row" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
         <input className="input" style={{ maxWidth: 240 }} placeholder="Buscar empleado o legajo…" value={q} onChange={(e) => setQ(e.target.value)} />

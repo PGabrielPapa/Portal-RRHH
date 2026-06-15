@@ -22,7 +22,7 @@ export default function AdminEmpresas() {
   return (
     <>
       <div className="row" style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0, flex: 1 }}>Empresas</h2>
+        <div style={{ flex: 1 }} />
         <button className="btn" onClick={() => setCreando(true)}>+ Nueva empresa</button>
       </div>
       {msg && <div className={msg.ok ? 'ok' : 'err'} style={{ marginBottom: 12 }}>{msg.ok ? '✓ ' : '⚠ '}{msg.t}</div>}

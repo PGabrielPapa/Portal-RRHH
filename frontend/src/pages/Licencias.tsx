@@ -81,7 +81,6 @@ export default function Licencias() {
   return (
     <>
       {modoMias && <MiBanner subtitulo="Solicitá y seguí tus licencias y vacaciones" />}
-      <h2 style={{ marginTop: 0 }}>{titulo}</h2>
 
       {modoMias && vac && (
         <div className="card" style={{ marginBottom: 14, borderLeft: '3px solid var(--accent)' }}>

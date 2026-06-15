@@ -78,7 +78,6 @@ export default function Sanciones() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>{titulo}</h2>
       {puedeRegistrar && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={registrar}>
           <h3 style={{ marginTop: 0 }}>{esGerente ? 'Solicitar sanción' : 'Registrar sanción'}</h3>

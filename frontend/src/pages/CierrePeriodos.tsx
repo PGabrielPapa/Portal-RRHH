@@ -34,7 +34,6 @@ export default function CierrePeriodos() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Cierre de períodos</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>Cerrar un período bloquea la liquidación (corrida e individual) de esa empresa para ese mes. Solo el administrador puede cerrar o reabrir.</p>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
       {ok && <div className="ok" style={{ marginBottom: 12 }}>✓ {ok}</div>}

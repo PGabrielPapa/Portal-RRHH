@@ -53,7 +53,6 @@ export default function Justificaciones() {
   return (
     <>
       <MiBanner subtitulo="Adjuntá el comprobante de tus licencias" />
-      <h2 style={{ marginTop: 0 }}>Justificación de licencias</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 16 }}>
         Las licencias se solicitan en "Mis licencias" y pasan a conocimiento del gerente y de RR.HH.
         Aquí, posteriormente, justificás cada licencia adjuntando el comprobante correspondiente.

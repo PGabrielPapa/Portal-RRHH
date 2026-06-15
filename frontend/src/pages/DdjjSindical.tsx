@@ -30,7 +30,6 @@ export default function DdjjSindical() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>DDJJ sindical</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>Aportes y contribuciones sindicales del período, agrupados por sindicato, a partir de los recibos liquidados.</p>
       <div className="row" style={{ gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div className="field"><label>Mes</label><select className="input" value={mes} onChange={(e) => setMes(Number(e.target.value))}>{MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}</select></div>

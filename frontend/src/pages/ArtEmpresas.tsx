@@ -51,7 +51,6 @@ export default function ArtEmpresas() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>ART por empresa</h2>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
 
       {puede && (

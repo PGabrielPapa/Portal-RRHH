@@ -70,7 +70,6 @@ export default function Parametros() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Parámetros de liquidación</h2>
       {info && <p className="muted" style={{ marginTop: -8 }}>{info}</p>}
       {!canEdit && <div className="muted" style={{ marginBottom: 12 }}>Solo lectura (requiere rol RR.HH. o admin para editar).</div>}
 

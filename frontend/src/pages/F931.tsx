@@ -31,7 +31,6 @@ export default function F931() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>F.931 <span className="muted" style={{ fontWeight: 400, fontSize: 13 }}>(DDJJ SUSS — aportes y contribuciones)</span></h2>
       <div className="row" style={{ gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div className="field"><label>Mes</label><select className="input" value={mes} onChange={(e) => setMes(Number(e.target.value))}>{MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}</select></div>
         <div className="field"><label>Año</label><input className="input" type="number" style={{ width: 100 }} value={anio} onChange={(e) => setAnio(Number(e.target.value))} /></div>

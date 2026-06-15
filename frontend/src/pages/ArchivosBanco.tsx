@@ -36,7 +36,6 @@ export default function ArchivosBanco() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Archivos de banco</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>
         Genera el archivo de acreditación de haberes para presentar al banco, a partir de una corrida de liquidación.
         Reparte el neto según los CBU activos de cada empleado y su porcentaje.

@@ -23,7 +23,6 @@ export default function Reglamento() {
   return (
     <>
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2 style={{ marginTop: 0 }}>Reglamento / licencias especiales</h2>
         {puede && !edit && <button className="btn ghost" onClick={() => setEdit(JSON.parse(JSON.stringify(reg)))}>✎ Editar</button>}
       </div>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}

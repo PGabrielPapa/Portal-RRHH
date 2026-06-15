@@ -46,7 +46,6 @@ export default function Evaluaciones() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>{titulo}</h2>
       {puedeRegistrar && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={registrar}>
           <h3 style={{ marginTop: 0 }}>Registrar evaluación</h3>

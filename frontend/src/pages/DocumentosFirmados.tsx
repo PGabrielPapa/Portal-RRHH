@@ -23,7 +23,6 @@ export default function DocumentosFirmados() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Documentos firmados</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>Repositorio de documentos generados en el sistema (sanciones notificadas, certificados de trabajo y licencias). Abrí el módulo correspondiente para ver e imprimir cada documento con la firma de RR.HH.</p>
       <div className="row" style={{ gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div className="field"><label>Tipo</label><select className="input" value={tipo} onChange={(e) => setTipo(e.target.value)}>{TIPOS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>

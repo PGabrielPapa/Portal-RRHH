@@ -317,7 +317,6 @@ export default function Escalas() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Escalas / convenios</h2>
       <div className="row" style={{ gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
         <button className={`btn ${tab === 'interna' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('interna')}>Escala interna</button>
         {convenios.map((c) => (

@@ -196,7 +196,6 @@ export default function Simulaciones() {
   const [tab, setTab] = useState('incremento');
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Simulaciones</h2>
       <div className="row" style={{ gap: 6, marginBottom: 14 }}>
         <button className={`btn ${tab === 'incremento' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('incremento')}>Incremento salarial</button>
         <button className={`btn ${tab === 'gratificacion' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('gratificacion')}>Gratificaciones</button>

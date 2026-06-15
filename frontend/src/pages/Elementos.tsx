@@ -31,7 +31,6 @@ export default function Elementos() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Elementos de trabajo</h2>
       <form className="card" style={{ marginBottom: 18 }} onSubmit={registrar}>
         <h3 style={{ marginTop: 0 }}>Registrar entrega</h3>
         <div className="field" style={{ marginBottom: 10 }}><label>Empleado *</label><EmpleadoPicker onSelect={setEmp} /></div>

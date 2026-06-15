@@ -1,7 +1,7 @@
 import { useAuth } from '../lib/auth';
 
 // Encabezado personal del empleado (avatar + nombre + empresa), estilo vanilla.
-export default function MiBanner({ titulo, subtitulo }: { titulo?: string; subtitulo?: string }) {
+export default function MiBanner({ titulo }: { titulo?: string; subtitulo?: string }) {
   const { user } = useAuth();
   const ini = String(user?.nom || '').replace(/,/g, '').split(/\s+/).slice(0, 2).map((x) => x[0]).join('').toUpperCase();
   return (
@@ -11,7 +11,6 @@ export default function MiBanner({ titulo, subtitulo }: { titulo?: string; subti
         <div style={{ fontSize: 15, fontWeight: 600 }}>{user?.nom}</div>
         <div className="muted" style={{ fontFamily: 'var(--font-mono)', marginTop: 2 }}>{user?.empresa}{titulo ? ` · ${titulo}` : ''}</div>
       </div>
-      {subtitulo && <div className="muted" style={{ fontSize: 12, maxWidth: 320, textAlign: 'right' }}>{subtitulo}</div>}
     </div>
   );
 }

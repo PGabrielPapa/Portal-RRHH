@@ -57,7 +57,6 @@ export default function Adelantos() {
   return (
     <>
       {modoMios && <MiBanner subtitulo="Solicitá un adelanto de tu sueldo" />}
-      <h2 style={{ marginTop: 0 }}>{modoMios ? 'Adelantos' : 'Aprobaciones — adelantos'}</h2>
 
       {!puedeAprobar && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={solicitar}>

@@ -26,7 +26,6 @@ export default function MisRecibos() {
   return (
     <>
       <MiBanner subtitulo="Consultá y descargá tus recibos de haberes publicados" />
-      <h2 style={{ marginTop: 0 }}>Mis recibos</h2>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
 
       {sel ? (

@@ -23,7 +23,6 @@ export default function NivelesUsuario() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Niveles de usuario</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>Sistema de 4 niveles de acceso. La asignación de nivel a cada usuario se hace en <button className="btn ghost" style={{ padding: '2px 8px', fontSize: 12 }} onClick={() => nav('/m/admin-usuarios')}>Usuarios →</button></p>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
 

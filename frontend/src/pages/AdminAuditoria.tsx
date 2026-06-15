@@ -12,7 +12,6 @@ export default function AdminAuditoria() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Auditoría</h2>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
       <div className="row" style={{ marginBottom: 14 }}>
         <input className="input" style={{ maxWidth: 280 }} placeholder="Buscar acción, detalle o actor…" value={q} onChange={(e) => setQ(e.target.value)} />

@@ -36,7 +36,6 @@ export default function MisFamiliares() {
   return (
     <>
       <MiBanner subtitulo="Tu grupo familiar declarado" />
-      <h2 style={{ marginTop: 0 }}>Mis familiares</h2>
       <p className="muted" style={{ marginTop: -8 }}>Grupo familiar declarado (obra social, asignaciones familiares, trámites). Los vínculos llevan vigencia para conservar el histórico.</p>
 
       <form className="card" style={{ marginBottom: 18 }} onSubmit={guardar}>

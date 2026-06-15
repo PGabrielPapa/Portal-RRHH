@@ -28,7 +28,6 @@ export default function Sindicatos() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Sindicatos</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>Catálogo de sindicatos y sus parámetros de aportes (cuota del empleado, contribución patronal, antigüedad, base de presentismo y adicional por título).</p>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
 

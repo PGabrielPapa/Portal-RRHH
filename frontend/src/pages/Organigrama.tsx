@@ -98,7 +98,6 @@ export default function Organigrama() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Organigrama / equipo</h2>
       <div className="row" style={{ gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
         <select className="input" style={{ maxWidth: 220 }} value={empresa} onChange={(e) => setEmpresa(e.target.value)}>
           <option value="">Todas las empresas</option>

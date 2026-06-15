@@ -35,7 +35,6 @@ export default function MensajesRRHH() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Mensajes — RR.HH.</h2>
 
       <form className="card" style={{ marginBottom: 18 }} onSubmit={difundir}>
         <h3 style={{ marginTop: 0 }}>Enviar mensaje a empleados</h3>

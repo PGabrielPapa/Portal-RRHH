@@ -34,7 +34,6 @@ export default function AdminUsuarios() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Usuarios</h2>
       {msg && <div className={msg.ok ? 'ok' : 'err'} style={{ marginBottom: 12 }}>{msg.ok ? '✓ ' : '⚠ '}{msg.t}</div>}
       <div className="row" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
         <input className="input" style={{ maxWidth: 240 }} placeholder="Buscar nombre, legajo o DNI…" value={q} onChange={(e) => setQ(e.target.value)} />

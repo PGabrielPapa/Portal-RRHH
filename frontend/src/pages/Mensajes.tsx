@@ -36,7 +36,6 @@ export default function Mensajes() {
   return (
     <>
       <MiBanner subtitulo="Comunicate con Recursos Humanos" />
-      <h2 style={{ marginTop: 0 }}>Mensajes</h2>
 
       <form className="card" style={{ marginBottom: 18 }} onSubmit={enviar}>
         <h3 style={{ marginTop: 0 }}>Enviar mensaje a RR.HH.</h3>

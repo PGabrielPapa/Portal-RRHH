@@ -37,7 +37,6 @@ export default function GananciasParams() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Parámetros de Ganancias</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>
         Tablas del Impuesto a las Ganancias por período. La liquidación y el F.1357 toman la vigente según la fecha de pago.
         Actualizá estos valores con cada RG oficial sin tocar el código.

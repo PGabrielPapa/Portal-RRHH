@@ -49,7 +49,6 @@ export default function Hys() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Higiene y Seguridad</h2>
       <p className="muted" style={{ marginTop: -6, marginBottom: 12 }}>Capacitaciones obligatorias (Res. SRT 905/2015) y entrega de EPP (Res. SRT 299/2011) por empleado.</p>
       <div className="row" style={{ gap: 6, marginBottom: 12 }}>
         <button className={`btn ${tab === 'cap' ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setTab('cap')}>Capacitaciones</button>

@@ -64,7 +64,6 @@ export default function RecibosGestion() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Recibos (gestión)</h2>
       <div className="row" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
         <input className="input" style={{ maxWidth: 240 }} placeholder="Buscar empleado o legajo…" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input" style={{ maxWidth: 200 }} value={empresa} onChange={(e) => setEmpresa(e.target.value)}>

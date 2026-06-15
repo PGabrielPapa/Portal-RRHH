@@ -58,7 +58,6 @@ export default function GeneradorReportes() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>Generador de reportes</h2>
       <div className="row" style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
         {DATASETS.map((d) => <button key={d.key} className={`btn ${dsKey === d.key ? '' : 'ghost'}`} style={{ padding: '5px 12px', fontSize: 13 }} onClick={() => setDsKey(d.key)}>{d.label}</button>)}
       </div>

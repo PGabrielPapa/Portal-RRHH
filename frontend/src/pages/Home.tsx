@@ -3,65 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { groupsForRole } from '../lib/sections';
+import { META, fallback } from '../lib/meta';
 
-// Ícono, color y descripción por sección (réplica del home de la vanilla).
-const META: Record<string, { ico: string; col: string; desc: string }> = {
-  'mis-recibos': { ico: '📄', col: '61,200,160', desc: 'Consultá y descargá tus recibos de haberes' },
-  'mis-ganancias': { ico: '🧾', col: '234,179,8', desc: 'Consultá tu cálculo del Impuesto a las Ganancias (F.1357)' },
-  'mis-datos': { ico: '👤', col: '92,104,128', desc: 'Tu información personal y laboral' },
-  'anticipos': { ico: '💸', col: '61,127,255', desc: 'Solicitá un adelanto de tu sueldo' },
-  'mis-licencias': { ico: '🏖', col: '34,197,94', desc: 'Solicitá y consultá tus licencias y vacaciones' },
-  'justificar-licencia': { ico: '📎', col: '168,85,247', desc: 'Presentá el comprobante que justifica tu licencia' },
-  'mensajes': { ico: '💬', col: '61,127,255', desc: 'Enviá una consulta o mensaje a Recursos Humanos' },
-  'mis-cbus': { ico: '🏦', col: '61,200,160', desc: 'Cargá tus cuentas y el porcentaje de acreditación' },
-  'cert-trabajo': { ico: '📋', col: '99,102,241', desc: 'Solicitá tu certificado laboral firmado' },
-  'mis-sanciones': { ico: '⚖️', col: '239,68,68', desc: 'Consultá tus sanciones y notificaciones' },
-  'mis-evaluaciones': { ico: '📈', col: '94,194,255', desc: 'Consultá tus evaluaciones de desempeño' },
-  'mis-familiares': { ico: '👨‍👩‍👧', col: '94,194,255', desc: 'Cargá y gestioná tu grupo familiar' },
-  'aprobaciones': { ico: '✅', col: '34,197,94', desc: 'Aprobá o rechazá adelantos de tu equipo' },
-  'licencias-equipo': { ico: '🏖', col: '34,197,94', desc: 'Licencias y vacaciones de tu equipo' },
-  'organigrama': { ico: '🗂', col: '61,127,255', desc: 'Estructura y personas a cargo' },
-  'sanciones-equipo': { ico: '⚖️', col: '239,68,68', desc: 'Solicitá y seguí sanciones de tu equipo' },
-  'evaluaciones-equipo': { ico: '📈', col: '94,194,255', desc: 'Evaluá el desempeño de tu equipo' },
-  // RR.HH.
-  'empleados': { ico: '👥', col: '61,127,255', desc: 'Alta, baja y modificación de empleados' },
-  'liquidacion': { ico: '🧮', col: '61,200,160', desc: 'Liquidá haberes por tipo y corrida' },
-  'recibos-gestion': { ico: '📄', col: '61,200,160', desc: 'Generá, publicá y auditá recibos' },
-  'ganancias-rrhh': { ico: '🧾', col: '234,179,8', desc: 'Impuesto a las Ganancias y F.1357' },
-  'ganancias-params': { ico: '⚙️', col: '234,179,8', desc: 'Tablas y parámetros del Impuesto a las Ganancias' },
-  'liquidacion-anual': { ico: '📅', col: '234,179,8', desc: 'Liquidación anual del Impuesto a las Ganancias' },
-  'escalas': { ico: '📊', col: '99,102,241', desc: 'Escalas salariales y convenios por sindicato' },
-  'conceptos': { ico: '🧩', col: '92,104,128', desc: 'Conceptos de haberes y descuentos' },
-  'sanciones': { ico: '⚖️', col: '239,68,68', desc: 'Gestioná sanciones disciplinarias' },
-  'evaluaciones': { ico: '📈', col: '94,194,255', desc: 'Evaluaciones de desempeño del personal' },
-  'simulaciones': { ico: '🔮', col: '168,85,247', desc: 'Simulá liquidaciones, finales y gratificaciones' },
-  'licencias-rrhh': { ico: '🏖', col: '34,197,94', desc: 'Gestión y justificación de licencias' },
-  'hys': { ico: '🦺', col: '245,158,11', desc: 'Higiene y Seguridad en el trabajo' },
-  'beneficios': { ico: '🎁', col: '34,197,94', desc: 'Beneficios del personal' },
-  'elementos-trabajo': { ico: '🧰', col: '92,104,128', desc: 'Elementos y herramientas entregadas' },
-  'reportes': { ico: '📑', col: '61,127,255', desc: 'Generador de reportes multi-dataset' },
-  'f931': { ico: '🏛', col: '234,179,8', desc: 'Declaración jurada F.931 (AFIP)' },
-  'libro-sueldos': { ico: '📚', col: '99,102,241', desc: 'Libro de sueldos (art. 52 LCT)' },
-  'asiento': { ico: '🧾', col: '92,104,128', desc: 'Asiento contable de la liquidación' },
-  'bancos': { ico: '🏦', col: '61,200,160', desc: 'Archivos de acreditación bancaria' },
-  'cbu-novedades': { ico: '🏦', col: '61,200,160', desc: 'Novedades y validación de CBU' },
-  'ddjj-sindical': { ico: '🤝', col: '168,85,247', desc: 'Declaración jurada de aportes sindicales' },
-  'documentos': { ico: '✍️', col: '99,102,241', desc: 'Documentos firmados por el personal' },
-  'cert-trabajo-rrhh': { ico: '📋', col: '99,102,241', desc: 'Emisión de certificados de trabajo' },
-  'mensajes-rrhh': { ico: '💬', col: '61,127,255', desc: 'Mensajes y consultas de empleados' },
-  'cambios-domicilio': { ico: '🏠', col: '92,104,128', desc: 'Cambios de domicilio del personal' },
-  'art-empresas': { ico: '🛡', col: '245,158,11', desc: 'Contratos de ART por empresa' },
-  'sindicatos': { ico: '🤝', col: '168,85,247', desc: 'Sindicatos y convenios colectivos' },
-  'reglamento': { ico: '📜', col: '92,104,128', desc: 'Reglamento y licencias especiales' },
-  'cierre-periodos': { ico: '🔒', col: '239,68,68', desc: 'Cierre de períodos de liquidación' },
-  // Administración
-  'admin-empresas': { ico: '🏢', col: '61,127,255', desc: 'Gestión de empresas del grupo' },
-  'admin-usuarios': { ico: '👤', col: '61,127,255', desc: 'Usuarios y accesos al sistema' },
-  'user-levels': { ico: '🔑', col: '168,85,247', desc: 'Niveles y permisos de usuario' },
-  'auditoria': { ico: '🔍', col: '92,104,128', desc: 'Registro de auditoría del sistema' },
-  'parametros': { ico: '⚙️', col: '92,104,128', desc: 'Parámetros generales de liquidación' },
-};
-const fallback = { ico: '▸', col: '92,104,128', desc: '' };
 
 function Reloj() {
   const [now, setNow] = useState(new Date());
