@@ -21,6 +21,19 @@ const META: Record<string, { ico: string; col: string; desc: string }> = {
 };
 const fallback = { ico: '▸', col: '92,104,128', desc: '' };
 
+function Reloj() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
+  const fecha = now.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const hora = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return (
+    <div style={{ textAlign: 'right', lineHeight: 1.3 }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 600, color: 'var(--accent2)' }}>{hora}</div>
+      <div className="muted" style={{ textTransform: 'capitalize' }}>{fecha}</div>
+    </div>
+  );
+}
+
 interface Cumple { nom: string; empresa: string; lugar?: string; fecha: string; diasHasta: number; edad?: number | null }
 const inic = (nom: string) => String(nom || '').split(',')[0].trim().substring(0, 2).toUpperCase();
 const primerApe = (nom: string) => { const ape = nom.split(',')[0]?.trim() || ''; const n = nom.split(',')[1]?.trim().split(' ')[0] || ''; return `${n} ${ape}`.trim(); };
@@ -85,9 +98,12 @@ export default function Home() {
 
   return (
     <>
-      <div style={{ marginBottom: 22 }}>
-        <h2 style={{ margin: 0 }}>{saludo}{nombre ? `, ${nombre}` : ''} 👋</h2>
-        <div className="muted" style={{ fontSize: 13 }}>¿Qué querés hacer hoy?</div>
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ margin: 0 }}>{saludo}{nombre ? `, ${nombre}` : ''} 👋</h2>
+          <div className="muted" style={{ fontSize: 13 }}>¿Qué querés hacer hoy?</div>
+        </div>
+        <Reloj />
       </div>
 
       <Cumpleanios />
