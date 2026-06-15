@@ -26,10 +26,12 @@ export default function Adelantos() {
   async function abrirCuotas(id: number) { if (verCuotas === id) { setVerCuotas(null); return; } try { setCuotas(await api.get<Cuota[]>(`/anticipos/${id}/cuotas`)); setVerCuotas(id); } catch (e: any) { setErr(e.message); } }
 
   async function load() { try { setItems(await api.get<Anticipo[]>(modoMios ? '/anticipos/mias' : '/anticipos')); } catch (e: any) { setErr(e.message); } }
-  useEffect(() => { if (modoMios) api.get<{ neto: number }[]>('/recibos').then((r) => { if (r.length) setUltimoNeto(Number(r[0].neto)); }).catch(() => {}); }, [modoMios]);
+  useEffect(() => { if (modoMios) api.get<{ neto: number; tipo: string }[]>('/recibos').then((r) => { const m = r.find((x) => ['mensual', 'quincenal_1', 'quincenal_2'].includes(x.tipo)); if (m) setUltimoNeto(Number(m.neto)); }).catch(() => {}); }, [modoMios]);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key]);
 
   const MOTIVOS = ['Gastos médicos', 'Gastos personales', 'Emergencia familiar', 'Refacción / vivienda', 'Educación', 'Deudas', 'Otro'];
+  const mesActual = new Date().getMonth() + 1;
+  const mesBloqueado = [6, 7, 12, 1].includes(mesActual);
   const tope = ultimoNeto != null ? ultimoNeto / 2 : null;
   const pctTope = tope && Number(f.monto) > 0 ? (Number(f.monto) / tope * 100) : 0;
   const excede = tope != null && Number(f.monto) > tope;
@@ -60,6 +62,19 @@ export default function Adelantos() {
       {!puedeAprobar && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={solicitar}>
           <h3 style={{ marginTop: 0 }}>Solicitar adelanto</h3>
+          <div className="card" style={{ background: 'var(--bg2)', fontSize: 12, marginBottom: 12, borderColor: mesBloqueado ? 'rgba(245,158,11,.4)' : 'var(--border)' }}>
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <strong>Reglamento de adelantos de haberes</strong>
+              <a className="btn ghost" href="/reglamento-adelantos.docx" download style={{ padding: '3px 10px', fontSize: 12 }}>📄 Descargar reglamento</a>
+            </div>
+            <ul style={{ margin: '6px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>
+              <li>Se otorgan por excepción, mediante pedido por escrito y fundado, a través del superior inmediato (criterio de alivio financiero ante situaciones extraordinarias).</li>
+              <li>Tope (LCT): hasta el 50% del neto mensual; se descuenta en el mismo mes de otorgamiento.</li>
+              <li>Un (1) anticipo por trimestre, excluyendo junio, julio, diciembre y enero (no se otorgan).</li>
+              <li>Si hay cuenta corriente abierta (préstamo/adelanto sin cancelar), no se otorga uno nuevo hasta cancelarla.</li>
+            </ul>
+            {mesBloqueado && <div style={{ color: 'var(--yellow)', marginTop: 6 }}>⚠ Este mes no se pueden solicitar adelantos (junio, julio, diciembre o enero).</div>}
+          </div>
           {ultimoNeto != null && (
             <div className="card" style={{ marginBottom: 12, padding: '8px 14px', fontSize: 13, background: 'var(--bg2)' }}>
               Último neto liquidado: <strong>{money(ultimoNeto)}</strong> · Tope de referencia (50%): <strong style={{ color: 'var(--accent2)' }}>{money(tope!)}</strong>
@@ -80,9 +95,22 @@ export default function Adelantos() {
             <div className="muted" style={{ textAlign: 'right', fontSize: 11 }}>{(f.explicacion || '').length} / 500</div>
           </div>
           {err && <div className="err" style={{ marginBottom: 8 }}>⚠ {err}</div>}
-          <button className="btn" disabled={busy || !f.monto || !f.motivoSel}>{busy ? 'Enviando…' : 'Solicitar'}</button>
+          <button className="btn" disabled={busy || !f.monto || !f.motivoSel || mesBloqueado}>{busy ? 'Enviando…' : 'Solicitar'}</button>
           <p className="muted" style={{ fontSize: 11, marginTop: 8 }}>La cantidad de cuotas de descuento la define RR.HH. al aprobar el adelanto.</p>
         </form>
+      )}
+      {puedeAprobar && (
+        <div className="card" style={{ background: 'var(--bg2)', fontSize: 12, marginBottom: 12 }}>
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <strong>Reglamento de adelantos de haberes</strong>
+            <a className="btn ghost" href="/reglamento-adelantos.docx" download style={{ padding: '3px 10px', fontSize: 12 }}>📄 Descargar reglamento</a>
+          </div>
+          <ul style={{ margin: '6px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>
+            <li>Tope (LCT): 50% del neto mensual del empleado (sin SAC) — columna "% sobre ½ neto"; se descuenta en el mismo mes.</li>
+            <li>Un (1) anticipo por trimestre, excluyendo junio, julio, diciembre y enero (no corresponden).</li>
+            <li>No corresponde si el empleado tiene cuenta corriente abierta (adelanto sin cancelar).</li>
+          </ul>
+        </div>
       )}
       {puedeAprobar && err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
 
