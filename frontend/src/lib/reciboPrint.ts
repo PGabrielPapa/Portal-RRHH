@@ -100,7 +100,8 @@ export function imprimirRecibo(r: Recibo) {
   <style>
     @page { size: A4 portrait; margin: 10mm; }
     body { font-family: Arial, sans-serif; font-size: 11px; color: #000; }
-    .copia { border: 1.5px solid #333; padding: 10px 12px; margin-bottom: 14px; position: relative; }
+    .copia { border: 1.5px solid #333; padding: 10px 12px; position: relative; page-break-after: always; }
+    .copia:last-child { page-break-after: auto; }
     .marca { position: absolute; top: 6px; right: 10px; font-size: 9px; color: #888; letter-spacing: 1px; }
     .head { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 6px; margin-bottom: 6px; }
     .right { text-align: right; font-size: 10px; }
@@ -123,8 +124,8 @@ export function imprimirRecibo(r: Recibo) {
     .firmas { display: flex; justify-content: space-between; margin-top: 24px; }
     .firma { width: 45%; border-top: 1px solid #333; padding-top: 4px; font-size: 9px; text-align: center; }
   </style></head><body>
-  ${copia(r, 'ORIGINAL')}
-  ${copia(r, 'DUPLICADO')}
+  ${copia(r, 'ORIGINAL · Copia para el empleador')}
+  ${copia(r, 'DUPLICADO · Copia para el trabajador')}
   </body></html>`);
   w.document.close(); w.focus();
   setTimeout(() => { try { w.print(); } catch { /* */ } }, 300);
