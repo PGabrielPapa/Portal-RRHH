@@ -25,7 +25,7 @@ export default function Mensajes() {
     if (!texto.trim()) { setErr('Escribí un mensaje.'); return; }
     if (texto.length > 500) { setErr('El mensaje no puede superar los 500 caracteres.'); return; }
     setBusy(true);
-    try { await api.post('/mensajes', { cuerpo: texto.trim(), borrarAlLeer: borrar }); setOk('Mensaje enviado a RR.HH.'); setTexto(''); setBorrar(false); load(); }
+    try { await api.post('/mensajes', { cuerpo: texto.trim(), borrarAlLeer: borrar }); setOk('Mensaje enviado, de corresponder el mismo será respondido a la brevedad por RR.HH.'); setTexto(''); setBorrar(false); load(); }
     catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
   async function borrarMsg(id: number) { try { await api.del(`/mensajes/${id}`); load(); } catch (e: any) { setErr(e.message); } }
