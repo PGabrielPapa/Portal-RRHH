@@ -47,6 +47,7 @@ export default function Sanciones() {
   const [empresas, setEmpresas] = useState<string[]>([]);
   const [empresa, setEmpresa] = useState('');
   const [emp, setEmp] = useState<Empleado | null>(null);
+  const [equipo, setEquipo] = useState<Empleado[]>([]);
   const [f, setF] = useState<Record<string, string>>({ tipo: TIPOS[0], falta: FALTAS[0], fechaNotificacion: hoy() });
   const [notif, setNotif] = useState<Record<number, string>>({});
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
@@ -59,6 +60,7 @@ export default function Sanciones() {
     } catch (e: any) { setMsg({ t: e.message, ok: false }); }
   }
   useEffect(() => { if (esRRHH) api.get<Empleado[]>('/empleados').then((es) => setEmpresas([...new Set(es.map((e) => e.empresa))].sort())).catch(() => {}); }, [esRRHH]);
+  useEffect(() => { if (esGerente) api.get<Empleado[]>('/empleados/equipo').then(setEquipo).catch(() => {}); }, [esGerente]);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key, q, empresa]);
 
   async function registrar(e: React.FormEvent) {
@@ -81,7 +83,14 @@ export default function Sanciones() {
       {puedeRegistrar && (
         <form className="card" style={{ marginBottom: 18 }} onSubmit={registrar}>
           <h3 style={{ marginTop: 0 }}>{esGerente ? 'Solicitar sanción' : 'Registrar sanción'}</h3>
-          <div className="field" style={{ marginBottom: 10 }}><label>Empleado *</label><EmpleadoPicker onSelect={setEmp} /></div>
+          <div className="field" style={{ marginBottom: 10 }}><label>Empleado *</label>
+            {esGerente
+              ? <select className="input" value={emp?.id ?? ''} onChange={(e) => setEmp(equipo.find((x) => String(x.id) === e.target.value) || null)}>
+                  <option value="">{equipo.length ? 'Elegí un integrante de tu equipo…' : 'No tenés personas a cargo en el organigrama'}</option>
+                  {equipo.map((x) => <option key={x.id} value={x.id}>{x.nom} ({x.legNum})</option>)}
+                </select>
+              : <EmpleadoPicker onSelect={setEmp} />}
+          </div>
           <div className="grid2" style={{ marginBottom: 10 }}>
             <div className="field"><label>Tipo de sanción</label><select className="input" value={f.tipo} onChange={set('tipo')}>{TIPOS.map((t) => <option key={t}>{t}</option>)}</select></div>
             <div className="field"><label>Falta cometida</label><select className="input" value={f.falta} onChange={set('falta')}>{FALTAS.map((t) => <option key={t}>{t}</option>)}</select></div>
