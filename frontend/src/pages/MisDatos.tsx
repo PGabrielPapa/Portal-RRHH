@@ -40,8 +40,15 @@ export default function MisDatos() {
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>{p.nom}</h2>
-      <p className="muted" style={{ marginTop: -8 }}>Legajo {p.legNum} · {p.empresa} · {p.role}</p>
+      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--accent-glow)', border: '1px solid rgba(61,127,255,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: 'var(--accent2)', flexShrink: 0 }}>
+          {String(p.nom || '').replace(/,/g, '').split(/\s+/).slice(0, 2).map((x) => x[0]).join('').toUpperCase()}
+        </div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>{p.nom}</div>
+          <div className="muted" style={{ fontFamily: 'var(--font-mono)', marginTop: 2 }}>Legajo {p.legNum} · {p.empresa}{p['lugar'] ? ` · ${p['lugar']}` : ''}</div>
+        </div>
+      </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h3 style={{ marginTop: 0 }}>Datos personales</h3>
