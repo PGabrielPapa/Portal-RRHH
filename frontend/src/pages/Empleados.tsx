@@ -19,6 +19,7 @@ export default function Empleados() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ t: string; ok: boolean } | null>(null);
   const [showAlta, setShowAlta] = useState(false);
+  const [editEmp, setEditEmp] = useState<Empleado | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function load() {
@@ -100,7 +101,8 @@ export default function Empleados() {
                   <td>{e.dni}</td>
                   <td>{e.cat || '—'}</td>
                   <td><span className="badge" style={{ color: e.activo ? 'var(--green)' : 'var(--t3)' }}>{e.activo ? 'Activo' : 'Baja'}</span></td>
-                  {canEdit && <td style={{ textAlign: 'right' }}>
+                  {canEdit && <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => setEditEmp(e)}>Editar</button>
                     <button className="btn ghost" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => toggleActivo(e)}>{e.activo ? 'Dar de baja' : 'Reactivar'}</button>
                   </td>}
                 </tr>
@@ -111,54 +113,101 @@ export default function Empleados() {
         </div>
         <p className="muted" style={{ marginTop: 10 }}>{items.length} empleado(s)</p>
 
-      {showAlta && <AltaModal empresas={empresas} onClose={() => setShowAlta(false)} onSaved={() => { setShowAlta(false); setMsg({ t: 'Empleado dado de alta', ok: true }); load(); }} onError={(t) => setMsg({ t, ok: false })} />}
+      {(showAlta || editEmp) && <EmpModal emp={editEmp} empresas={empresas} onClose={() => { setShowAlta(false); setEditEmp(null); }} onSaved={(m) => { setShowAlta(false); setEditEmp(null); setMsg({ t: m, ok: true }); load(); }} onError={(t) => setMsg({ t, ok: false })} />}
     </>
   );
 }
 
-function AltaModal({ empresas, onClose, onSaved, onError }: { empresas: string[]; onClose: () => void; onSaved: () => void; onError: (t: string) => void; }) {
-  const [f, setF] = useState<Record<string, string>>({ empresa: empresas[0] || '' });
+function EmpModal({ emp, empresas, onClose, onSaved, onError }: { emp: Empleado | null; empresas: string[]; onClose: () => void; onSaved: (m: string) => void; onError: (t: string) => void; }) {
+  const esNueva = !emp;
+  const e = (emp || {}) as any;
+  const ini: Record<string, string> = {
+    empresa: e.empresa || empresas[0] || '', legNum: e.legNum || '', dni: e.dni || '', cuil: e.cuil || '', nom: e.nom || '',
+    email: e.email || '', ingreso: e.ingreso || '', fecha_nac: e.fecha_nac || '', sexo: e.sexo || '', estado_civil: e.estado_civil || '', nacionalidad: e.nacionalidad || '',
+    lugar: e.lugar || '', tarea: e.tarea || '', cat: e.cat || '', tramo: e.tramo || '', desc_categoria: e.desc_categoria || '', condicion: e.condicion || '',
+    cod_convenio: e.cod_convenio || '', cod_os: e.cod_os || '', desc_os: e.desc_os || '', cod_sindicato: e.cod_sindicato || '',
+    basico: e.basico ?? '', antiguedad_monto: e.antiguedad_monto ?? '', complemento: e.complemento ?? '', norem: e.norem ?? '', sueldo: e.sueldo ?? '',
+    bruto: e.bruto != null ? String(e.bruto) : '', neto: e.neto != null ? String(e.neto) : '',
+    dom_calle: e.dom_calle || '', dom_nro: e.dom_nro || '', dom_piso: e.dom_piso || '', dom_depto: e.dom_depto || '', dom_torre: e.dom_torre || '', dom_bloque: e.dom_bloque || '', dom_loc: e.dom_loc || '', dom_cp: e.dom_cp || '', dom_prov: e.dom_prov || '',
+  };
+  const [f, setF] = useState<Record<string, string>>(ini);
   const [busy, setBusy] = useState(false);
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
+  const set = (k: string) => (ev: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: ev.target.value });
+  const F = ({ k, label, type = 'text', ph }: { k: string; label: string; type?: string; ph?: string }) => (
+    <div className="field"><label>{label}</label><input className="input" type={type} value={f[k] || ''} onChange={set(k)} placeholder={ph} /></div>
+  );
 
   async function save() {
     setBusy(true);
     try {
-      await api.post('/empleados', {
-        empresa: f.empresa, legNum: f.legNum, dni: f.dni, cuil: f.cuil, nom: f.nom,
-        email: f.email, cat: f.cat, tramo: f.tramo, ingreso: f.ingreso || null,
-        bruto: parseFloat(f.bruto) || 0, neto: parseFloat(f.neto) || 0,
-      });
-      onSaved();
-    } catch (e: any) { onError(e.message); } finally { setBusy(false); }
+      const body: any = { ...f, bruto: parseFloat(f.bruto) || 0, neto: parseFloat(f.neto) || 0 };
+      if (esNueva) await api.post('/empleados', body);
+      else await api.put(`/empleados/${(emp as any).id}`, body);
+      onSaved(esNueva ? 'Empleado dado de alta' : 'Empleado actualizado');
+    } catch (err: any) { onError(err.message); } finally { setBusy(false); }
   }
 
   return (
     <div className="modal-bg" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ marginTop: 0 }}>Nueva alta de empleado</h3>
-        <div className="field" style={{ marginBottom: 10 }}>
-          <label>Empresa *</label>
-          <select className="input" value={f.empresa} onChange={set('empresa')}>
-            {empresas.map((em) => <option key={em} value={em}>{em}</option>)}
-          </select>
-        </div>
+      <div className="modal" onClick={(ev) => ev.stopPropagation()} style={{ maxWidth: 760, maxHeight: '90vh', overflow: 'auto' }}>
+        <h3 style={{ marginTop: 0 }}>{esNueva ? 'Nueva alta de empleado' : `Editar — ${e.nom}`}</h3>
+
+        <div className="sb-group-label" style={{ margin: '4px 0 6px' }}>Identificación</div>
         <div className="grid2">
-          <div className="field"><label>Legajo *</label><input className="input" value={f.legNum || ''} onChange={set('legNum')} /></div>
-          <div className="field"><label>DNI *</label><input className="input" value={f.dni || ''} onChange={set('dni')} /></div>
-          <div className="field"><label>CUIL</label><input className="input" value={f.cuil || ''} onChange={set('cuil')} placeholder="XX-XXXXXXXX-X" /></div>
-          <div className="field"><label>Fecha ingreso</label><input className="input" value={f.ingreso || ''} onChange={set('ingreso')} placeholder="AAAA-MM-DD" /></div>
+          <div className="field"><label>Empresa *</label><select className="input" value={f.empresa} onChange={set('empresa')} disabled={!esNueva}>{empresas.map((em) => <option key={em} value={em}>{em}</option>)}</select></div>
+          <div className="field"><label>Apellido y Nombre *</label><input className="input" value={f.nom || ''} onChange={set('nom')} /></div>
+          <div className="field"><label>Legajo *</label><input className="input" value={f.legNum || ''} onChange={set('legNum')} disabled={!esNueva} /></div>
+          <div className="field"><label>DNI *</label><input className="input" value={f.dni || ''} onChange={set('dni')} disabled={!esNueva} /></div>
+          <F k="cuil" label="CUIL" ph="XX-XXXXXXXX-X" />
+          <F k="email" label="E-mail" />
+          <F k="ingreso" label="Fecha de ingreso" type="date" />
+          <F k="fecha_nac" label="Fecha de nacimiento" ph="AAAA-MM-DD o DD/MM/AAAA" />
+          <F k="sexo" label="Sexo" />
+          <F k="estado_civil" label="Estado civil" />
+          <F k="nacionalidad" label="Nacionalidad" />
         </div>
-        <div className="field" style={{ margin: '10px 0' }}><label>Apellido y Nombre *</label><input className="input" value={f.nom || ''} onChange={set('nom')} /></div>
+
+        <div className="sb-group-label" style={{ margin: '12px 0 6px' }}>Datos laborales</div>
         <div className="grid2">
-          <div className="field"><label>E-mail</label><input className="input" value={f.email || ''} onChange={set('email')} /></div>
-          <div className="field"><label>Categoría</label><input className="input" value={f.cat || ''} onChange={set('cat')} /></div>
-          <div className="field"><label>Sueldo bruto</label><input className="input" value={f.bruto || ''} onChange={set('bruto')} /></div>
-          <div className="field"><label>Sueldo neto</label><input className="input" value={f.neto || ''} onChange={set('neto')} /></div>
+          <F k="lugar" label="Ubicación / Lugar de trabajo" />
+          <F k="tarea" label="Tarea / Puesto" />
+          <F k="cat" label="Categoría (código)" />
+          <F k="tramo" label="Tramo" />
+          <F k="desc_categoria" label="Descripción de categoría" />
+          <F k="condicion" label="Condición" />
+          <F k="cod_convenio" label="Código de convenio" />
+          <F k="cod_sindicato" label="Código de sindicato" />
+          <F k="cod_os" label="Código obra social" />
+          <F k="desc_os" label="Descripción obra social" />
         </div>
+
+        <div className="sb-group-label" style={{ margin: '12px 0 6px' }}>Remuneración</div>
+        <div className="grid2">
+          <F k="basico" label="Básico" />
+          <F k="antiguedad_monto" label="Adicional antigüedad ($)" />
+          <F k="complemento" label="Complemento" />
+          <F k="norem" label="No remunerativo" />
+          <F k="sueldo" label="Sueldo" />
+          <F k="bruto" label="Sueldo bruto" />
+          <F k="neto" label="Sueldo neto" />
+        </div>
+
+        <div className="sb-group-label" style={{ margin: '12px 0 6px' }}>Domicilio</div>
+        <div className="grid2">
+          <F k="dom_calle" label="Calle" />
+          <F k="dom_nro" label="Número" />
+          <F k="dom_piso" label="Piso" />
+          <F k="dom_depto" label="Depto" />
+          <F k="dom_torre" label="Torre" />
+          <F k="dom_bloque" label="Bloque" />
+          <F k="dom_loc" label="Localidad" />
+          <F k="dom_cp" label="C.P." />
+          <F k="dom_prov" label="Provincia" />
+        </div>
+
         <div className="row" style={{ justifyContent: 'flex-end', marginTop: 18 }}>
           <button className="btn ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn" onClick={save} disabled={busy || !f.empresa || !f.legNum || !f.nom || (!f.dni && !f.cuil)}>{busy ? 'Guardando…' : 'Crear'}</button>
+          <button className="btn" onClick={save} disabled={busy || !f.empresa || !f.legNum || !f.nom || (!f.dni && !f.cuil)}>{busy ? 'Guardando…' : (esNueva ? 'Crear' : 'Guardar cambios')}</button>
         </div>
       </div>
     </div>
