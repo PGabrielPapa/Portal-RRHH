@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { groupsForRole } from '../lib/sections';
 
@@ -9,22 +9,18 @@ export default function Layout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <aside style={{ width: 250, flex: 'none', background: 'var(--bg2)', borderRight: '1px solid var(--border)', overflowY: 'auto', height: '100vh', position: 'sticky', top: 0 }}>
-        <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
+      <aside className="sidebar">
+        <Link to="/" className="sb-brand" style={{ display: 'block', textDecoration: 'none' }}>
           <strong>Portal RR.HH.</strong>
           <div className="muted">Grupo LEITEN</div>
-        </div>
-        <nav style={{ padding: '8px 10px' }}>
+        </Link>
+        <nav style={{ padding: '10px' }}>
+          <NavLink to="/" end className="sb-item" style={({ isActive }) => isActive ? { background: 'var(--accent-glow)', color: 'var(--accent2)' } : {}}>🏠 Inicio</NavLink>
           {groups.map((g) => (
-            <div key={g.panel} style={{ marginBottom: 14 }}>
-              <div className="muted" style={{ textTransform: 'uppercase', fontSize: 10, letterSpacing: '.08em', padding: '6px 10px' }}>{g.panel}</div>
+            <div key={g.panel} style={{ marginTop: 12 }}>
+              <div className="sb-group-label">{g.panel}</div>
               {g.items.map((it) => (
-                <NavLink key={it.key} to={`/m/${it.key}`}
-                  style={({ isActive }) => ({
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '7px 10px', borderRadius: 6, fontSize: 13, textDecoration: 'none',
-                    color: isActive ? '#fff' : 'var(--t2)', background: isActive ? 'var(--accent)' : 'transparent',
-                  })}>
+                <NavLink key={it.key} to={`/m/${it.key}`} className={({ isActive }) => `sb-item${isActive ? ' active' : ''}`}>
                   <span>{it.label}</span>
                   {!it.ready && <span title="En migración" style={{ fontSize: 10, opacity: .6 }}>🚧</span>}
                 </NavLink>
@@ -36,7 +32,7 @@ export default function Layout() {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="topbar">
-          <span className="muted">Panel</span>
+          <span className="nav-logo" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent2)', letterSpacing: '.05em' }}>LEITEN · RR.HH.</span>
           <div className="row">
             <span className="muted">{user?.nom} · {user?.role}</span>
             <button className="btn ghost" onClick={() => { logout(); nav('/login'); }}>Salir</button>
