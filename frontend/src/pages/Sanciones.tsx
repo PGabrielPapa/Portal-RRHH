@@ -66,7 +66,7 @@ export default function Sanciones() {
   async function registrar(e: React.FormEvent) {
     e.preventDefault(); if (!emp) return;
     try {
-      const r = await api.post<{ estado: string }>('/sanciones', { empleadoId: emp.id, tipo: f.tipo, falta: f.falta, fecha: f.fecha, dias: f.dias, descripcion: f.descripcion, fechaNotificacion: f.fechaNotificacion, fechaCumplimiento: f.fechaCumplimiento });
+      const r = await api.post<{ estado: string }>('/sanciones', { empleadoId: emp.id, tipo: f.tipo, falta: f.falta, fecha: f.fecha, dias: f.dias, descripcion: f.descripcion, fechaNotificacion: f.fechaNotificacion, fechaCumplimiento: f.fechaCumplimiento, solicitar: esGerente });
       setMsg({ t: r.estado === 'solicitada' ? 'Sanción solicitada (pendiente RR.HH.)' : 'Sanción aplicada', ok: true });
       setF({ tipo: TIPOS[0], falta: FALTAS[0], fechaNotificacion: hoy() }); setEmp(null); load();
     } catch (e: any) { setMsg({ t: e.message, ok: false }); }
@@ -123,7 +123,7 @@ export default function Sanciones() {
               <tr key={s.id}>
                 {!modoMias && <td>{s.nom} <span className="muted">({s.leg_num})</span></td>}{esRRHH && <td>{s.empresa}</td>}
                 <td>{s.tipo}</td><td>{s.falta || '—'}</td><td>{fmt(s.fecha)}</td>
-                <td><span className="badge" style={{ color: colorEstado(s.estado) }}>{s.estado || 'aplicada'}</span></td>
+                <td><span className="badge" style={{ color: colorEstado(s.estado) }}>{s.estado || 'solicitada'}</span></td>
                 {esRRHH && <td>
                   {s.fecha_notificacion ? <span className="muted">{fmt(s.fecha_notificacion)}</span>
                     : (s.estado !== 'solicitada' && s.estado !== 'rechazada') ? (
