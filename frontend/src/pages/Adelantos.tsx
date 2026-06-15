@@ -12,8 +12,11 @@ const colorEstado = (e: string) => e === 'aprobado' ? 'var(--green)' : e === 're
 
 export default function Adelantos() {
   const { key } = useParams();
+  const { user } = useAuth();
   const modoMios = key === 'anticipos';   // personal vs aprobaciones
   const puedeAprobar = !modoMios;
+  const esGerente = user?.role === 'manager';   // el gerente NO define cuotas (lo hace RR.HH./admin)
+  const defineCuotas = puedeAprobar && !esGerente;
   const [items, setItems] = useState<Anticipo[]>([]);
   const [f, setF] = useState<Record<string, string>>({});
   const [ultimoNeto, setUltimoNeto] = useState<number | null>(null);
@@ -47,7 +50,7 @@ export default function Adelantos() {
     try {
       const cfg = aprob[a.id] || { cuotas: String(a.cuotas || 1), cuotaDesde: proxMes };
       const body: any = { estado };
-      if (estado === 'aprobado') { body.cuotas = Number(cfg.cuotas) || 1; body.cuotaDesde = cfg.cuotaDesde || proxMes; }
+      if (estado === 'aprobado' && defineCuotas) { body.cuotas = Number(cfg.cuotas) || 1; body.cuotaDesde = cfg.cuotaDesde || proxMes; }
       await api.patch(`/anticipos/${a.id}`, body); load();
     } catch (e: any) { setErr(e.message); }
   }
@@ -136,10 +139,10 @@ export default function Adelantos() {
                     <span style={{ color: exc ? 'var(--red)' : 'var(--green)' }}>{exc ? '⚠ ' : '✓ '}{pct.toFixed(1)}%</span>
                   </> : <span className="muted">sin liquidación</span>}</td>
                 ); })()}
-                <td>{puedeAprobar && a.estado === 'pendiente'
+                <td>{defineCuotas && a.estado === 'pendiente'
                   ? <input className="input" style={{ width: 60 }} type="number" min="1" value={(aprob[a.id]?.cuotas) ?? String(a.cuotas || 1)} onChange={(e) => setAp(a.id, 'cuotas', e.target.value, a)} />
                   : a.cuotas}</td>
-                <td>{puedeAprobar && a.estado === 'pendiente'
+                <td>{defineCuotas && a.estado === 'pendiente'
                   ? <input className="input" style={{ width: 110 }} type="month" value={(aprob[a.id]?.cuotaDesde) ?? proxMes} onChange={(e) => setAp(a.id, 'cuotaDesde', e.target.value, a)} />
                   : (a.cuota_desde || '—')}</td>
                 <td>{a.estado === 'aprobado'
