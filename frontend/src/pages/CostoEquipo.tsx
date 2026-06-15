@@ -25,7 +25,7 @@ export default function CostoEquipo() {
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [mes, anio]);
 
-  const items = data?.items || [];
+  const items = [...(data?.items || [])].sort((a, b) => b.costo - a.costo);   // costo de mayor a menor
   const t = data?.totales;
 
   return (
