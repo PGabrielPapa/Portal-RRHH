@@ -6,9 +6,24 @@ import type { Empleado } from '../lib/types';
 
 interface Lic { id: number; tipo: string; desde: string; hasta: string; dias: number; motivo?: string; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; justificacion?: boolean; tiene_comprobante?: boolean; }
 
-const TIPOS = ['Vacaciones', 'Enfermedad', 'Examen', 'Matrimonio', 'Matrimonio de hijo', 'Fallecimiento familiar', 'Nacimiento', 'Mudanza', 'Donación de sangre', 'Otra'];
+// Tipos de licencia (réplica del desplegable de la vanilla, con los días entre paréntesis).
+// soloRRHH = imprevisibles: no se solicitan, las registra RR.HH. (el empleado las justifica aparte).
+const LIC_TIPOS: { value: string; label: string; soloRRHH?: boolean }[] = [
+  { value: 'Vacaciones', label: 'Vacaciones' },
+  { value: 'Enfermedad', label: 'Enfermedad', soloRRHH: true },
+  { value: 'Matrimonio', label: 'Matrimonio (12 días corridos)' },
+  { value: 'Nacimiento de hijo', label: 'Nacimiento de hijo — empleados varones (2 días corridos)', soloRRHH: true },
+  { value: 'Fallecimiento familiar directo', label: 'Fallecimiento — padres, cónyuge, hermano/a (4 días corridos)', soloRRHH: true },
+  { value: 'Fallecimiento familiar político', label: 'Fallecimiento — abuelos, suegros, cuñados, hijastros (2 días corridos)', soloRRHH: true },
+  { value: 'Examen', label: 'Examen (hasta 4 días corridos por examen)' },
+  { value: 'Donación de sangre', label: 'Donación de sangre (1 día)' },
+  { value: 'Trámites prematrimoniales', label: 'Trámites prematrimoniales (1 día hábil)' },
+  { value: 'Matrimonio de hijo', label: 'Matrimonio de hijo (1 día hábil)' },
+  { value: 'Mudanza', label: 'Mudanza (2 días corridos)' },
+  { value: 'Trámites personales', label: 'Trámites personales' },
+];
 // Enfermedad, fallecimiento y nacimiento son imprevisibles: no se solicitan con anticipación (RR.HH. las registra).
-const TIPOS_SOLICITABLES = TIPOS.filter((t) => !['Enfermedad', 'Fallecimiento familiar', 'Nacimiento'].includes(t));
+const TIPOS_SOLICITABLES = LIC_TIPOS.filter((t) => !t.soloRRHH);
 const colorEstado = (e: string) => e === 'aprobada' ? 'var(--green)' : e === 'rechazada' ? 'var(--red)' : 'var(--yellow)';
 const fmt = (s: string) => s ? new Date(s + 'T12:00:00').toLocaleDateString('es-AR') : '—';
 
@@ -97,7 +112,7 @@ export default function Licencias() {
         <form className="card" style={{ marginBottom: 18 }} onSubmit={solicitar}>
           <h3 style={{ marginTop: 0 }}>Solicitar licencia</h3>
           <div className="grid2" style={{ marginBottom: 10 }}>
-            <div className="field"><label>Tipo</label><select className="input" value={f.tipo} onChange={set('tipo')}>{TIPOS_SOLICITABLES.map((t) => <option key={t}>{t}</option>)}</select></div>
+            <div className="field"><label>Tipo</label><select className="input" value={f.tipo} onChange={set('tipo')}>{TIPOS_SOLICITABLES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
             <div className="field"></div>
             <div className="field"><label>Desde *</label><input className="input" type="date" value={f.desde || ''} onChange={set('desde')} /></div>
             <div className="field"><label>Hasta *</label><input className="input" type="date" value={f.hasta || ''} onChange={set('hasta')} /></div>
@@ -127,7 +142,7 @@ export default function Licencias() {
             )}
           </div>
           <div className="grid2" style={{ marginBottom: 10 }}>
-            <div className="field"><label>Tipo</label><select className="input" value={reg.tipo} onChange={setR('tipo')}>{TIPOS.map((t) => <option key={t}>{t}</option>)}</select></div>
+            <div className="field"><label>Tipo</label><select className="input" value={reg.tipo} onChange={setR('tipo')}>{LIC_TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
             <div className="field"></div>
             <div className="field"><label>Desde *</label><input className="input" type="date" value={reg.desde || ''} onChange={setR('desde')} /></div>
             <div className="field"><label>Hasta *</label><input className="input" type="date" value={reg.hasta || ''} onChange={setR('hasta')} /></div>
