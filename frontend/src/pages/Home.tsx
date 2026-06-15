@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { groupsForRole } from '../lib/sections';
 
@@ -19,6 +21,60 @@ const META: Record<string, { ico: string; col: string; desc: string }> = {
 };
 const fallback = { ico: '▸', col: '92,104,128', desc: '' };
 
+interface Cumple { nom: string; empresa: string; lugar?: string; fecha: string; diasHasta: number; edad?: number | null }
+const inic = (nom: string) => String(nom || '').split(',')[0].trim().substring(0, 2).toUpperCase();
+const primerApe = (nom: string) => { const ape = nom.split(',')[0]?.trim() || ''; const n = nom.split(',')[1]?.trim().split(' ')[0] || ''; return `${n} ${ape}`.trim(); };
+
+function Cumpleanios() {
+  const [items, setItems] = useState<Cumple[]>([]);
+  useEffect(() => { api.get<Cumple[]>('/empleados/cumpleanios').then(setItems).catch(() => {}); }, []);
+  const hoy = items.filter((c) => c.diasHasta === 0);
+  const proximos = items.filter((c) => c.diasHasta > 0).slice(0, 5);
+  if (!items.length) return null;
+  const etiqueta = (c: Cumple) => c.diasHasta <= 7 ? `en ${c.diasHasta} día${c.diasHasta !== 1 ? 's' : ''}` : c.fecha;
+  return (
+    <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 22 }}>
+      {hoy.length > 0 ? (
+        <>
+          <div style={{ padding: '12px 16px', background: 'linear-gradient(135deg,rgba(245,158,11,.12),rgba(251,146,60,.06))', borderBottom: '1px solid rgba(245,158,11,.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🎉</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--yellow)' }}>{hoy.length === 1 ? '¡Hoy cumple años un compañero!' : `¡Hoy cumplen años ${hoy.length} compañeros!`}</span>
+          </div>
+          <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {hoy.map((c, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.25)', borderRadius: 'var(--r)' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,rgba(245,158,11,.35),rgba(251,146,60,.35))', border: '1px solid rgba(245,158,11,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--yellow)', flexShrink: 0 }}>{inic(c.nom)}</div>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{primerApe(c.nom)}{c.edad ? ` · cumple ${c.edad}` : ''}</div><div className="muted" style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>{c.empresa}{c.lugar ? ` · ${c.lugar}` : ''}</div></div>
+                <span style={{ fontSize: 22 }}>🎂</span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div style={{ padding: '12px 16px', borderBottom: proximos.length ? '1px solid var(--border)' : 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>🎂</span>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Cumpleaños</span>
+          <span className="muted" style={{ marginLeft: 'auto', fontSize: 12 }}>Hoy no hay cumpleaños</span>
+        </div>
+      )}
+      {proximos.length > 0 && (
+        <>
+          {hoy.length > 0 && <div className="sb-group-label" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg2)', padding: '10px 16px' }}>Próximos cumpleaños</div>}
+          <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {proximos.map((c, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--r)' }}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--bg3)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--t3)', flexShrink: 0 }}>{inic(c.nom)}</div>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 500 }}>{primerApe(c.nom)}</div><div className="muted" style={{ fontFamily: 'var(--font-mono)', fontSize: 10 }}>{c.empresa}{c.lugar ? ` · ${c.lugar}` : ''}</div></div>
+                <span className="muted" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, whiteSpace: 'nowrap' }}>{etiqueta(c)}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const { user } = useAuth();
   const nav = useNavigate();
@@ -33,6 +89,8 @@ export default function Home() {
         <h2 style={{ margin: 0 }}>{saludo}{nombre ? `, ${nombre}` : ''} 👋</h2>
         <div className="muted" style={{ fontSize: 13 }}>¿Qué querés hacer hoy?</div>
       </div>
+
+      <Cumpleanios />
 
       {groups.map((g) => (
         <div key={g.panel} style={{ marginBottom: 26 }}>
