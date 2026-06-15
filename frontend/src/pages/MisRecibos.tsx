@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import ReciboView, { Recibo } from '../components/ReciboView';
+import MiBanner from '../components/MiBanner';
 import { imprimirRecibo } from '../lib/reciboPrint';
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -24,6 +25,7 @@ export default function MisRecibos() {
 
   return (
     <>
+      <MiBanner subtitulo="Consultá y descargá tus recibos de haberes publicados" />
       <h2 style={{ marginTop: 0 }}>Mis recibos</h2>
       {err && <div className="err" style={{ marginBottom: 12 }}>⚠ {err}</div>}
 

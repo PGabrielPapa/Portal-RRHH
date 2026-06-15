@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import MiBanner from '../components/MiBanner';
 
 interface Mensaje {
   id: number; titulo: string; cuerpo: string; autor?: string; created_at: string;
@@ -34,6 +35,7 @@ export default function Mensajes() {
 
   return (
     <>
+      <MiBanner subtitulo="Comunicate con Recursos Humanos" />
       <h2 style={{ marginTop: 0 }}>Mensajes</h2>
 
       <form className="card" style={{ marginBottom: 18 }} onSubmit={enviar}>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
+import MiBanner from '../components/MiBanner';
 import { bancoDesdeCBU, validarCBU } from '../lib/cbu';
 
 interface Cbu { id: number; cbu: string; banco?: string; alias?: string; titular?: string; porcentaje: number; activo: boolean; vigencia_desde?: string; vigencia_hasta?: string; }
@@ -44,6 +45,7 @@ export default function MisCbus() {
 
   return (
     <>
+      <MiBanner subtitulo="Repartí tu sueldo entre tus cuentas" />
       <h2 style={{ marginTop: 0 }}>Mis CBUs</h2>
       <div className="card" style={{ marginBottom: 14, fontSize: 13, lineHeight: 1.6 }}>
         💡 Podés <strong>repartir tu sueldo entre varias cuentas</strong> indicando el porcentaje del neto que va a cada una.

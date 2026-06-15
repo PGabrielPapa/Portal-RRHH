@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, fetchBlob } from '../lib/api';
+import MiBanner from '../components/MiBanner';
 import type { Empleado } from '../lib/types';
 
 interface Lic { id: number; tipo: string; desde: string; hasta: string; dias: number; motivo?: string; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; justificacion?: boolean; tiene_comprobante?: boolean; }
@@ -79,6 +80,7 @@ export default function Licencias() {
 
   return (
     <>
+      {modoMias && <MiBanner subtitulo="Solicitá y seguí tus licencias y vacaciones" />}
       <h2 style={{ marginTop: 0 }}>{titulo}</h2>
 
       {modoMias && vac && (

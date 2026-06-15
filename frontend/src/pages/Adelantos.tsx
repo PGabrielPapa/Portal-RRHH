@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import MiBanner from '../components/MiBanner';
 
 interface Anticipo { id: number; monto: number; motivo?: string; cuotas: number; cuota_desde?: string; cuotas_pagadas?: number; total_pagado?: number; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
 interface Cuota { nro: number; anio: number; mes: number; monto: number; }
@@ -53,6 +54,7 @@ export default function Adelantos() {
 
   return (
     <>
+      {modoMios && <MiBanner subtitulo="Solicitá un adelanto de tu sueldo" />}
       <h2 style={{ marginTop: 0 }}>{modoMios ? 'Adelantos' : 'Aprobaciones — adelantos'}</h2>
 
       {!puedeAprobar && (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import MiBanner from '../components/MiBanner';
 
 interface Fam { id: number; tipo: string; apellido?: string; nombre: string; genero?: string; dni?: string; cuil?: string; fecha_nac?: string; fecha_vinculo?: string; discapacidad: boolean; vigencia_desde?: string; vigencia_hasta?: string; motivo_cierre?: string; }
 const TIPOS = [['padre', 'Padre'], ['madre', 'Madre'], ['conyuge', 'Cónyuge'], ['concubino', 'Concubino/a'], ['hijo', 'Hijo'], ['hija', 'Hija'], ['hijastro', 'Hijastro'], ['hijastra', 'Hijastra']];
@@ -34,6 +35,7 @@ export default function MisFamiliares() {
 
   return (
     <>
+      <MiBanner subtitulo="Tu grupo familiar declarado" />
       <h2 style={{ marginTop: 0 }}>Mis familiares</h2>
       <p className="muted" style={{ marginTop: -8 }}>Grupo familiar declarado (obra social, asignaciones familiares, trámites). Los vínculos llevan vigencia para conservar el histórico.</p>
 
