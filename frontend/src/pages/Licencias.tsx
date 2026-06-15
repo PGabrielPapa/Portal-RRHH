@@ -64,7 +64,7 @@ export default function Licencias() {
   }
   useEffect(() => { if (modoMias) api.get('/licencias/vacaciones-info').then(setVac).catch(() => {}); }, [modoMias]);
   useEffect(() => { if (!modoMias) api.get<Empleado[]>('/empleados').then((es) => setEmpresas([...new Set(es.map((e) => e.empresa))].sort())).catch(() => {}); }, [modoMias]);
-  useEffect(() => { if (esEquipo) api.get<Empleado[]>('/empleados/equipo?directos=1').then(setDirectos).catch(() => {}); }, [esEquipo]);
+  useEffect(() => { if (esEquipo) api.get<Empleado[]>('/empleados/equipo').then(setDirectos).catch(() => {}); }, [esEquipo]);
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [key, estado, empresa, q]);
 
   async function solicitar(e: React.FormEvent) {
@@ -161,7 +161,7 @@ export default function Licencias() {
         <div className="row" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
           {esEquipo && (
             <select className="input" style={{ maxWidth: 240 }} value={filtroEmp} onChange={(e) => setFiltroEmp(e.target.value)}>
-              <option value="">{directos.length ? 'Todo mi equipo (directos)' : 'No tenés reportes directos'}</option>
+              <option value="">{directos.length ? 'Todo mi equipo' : 'No tenés personas a cargo en el organigrama'}</option>
               {directos.map((x) => <option key={x.id} value={x.legNum}>{x.nom} ({x.legNum})</option>)}
             </select>
           )}
