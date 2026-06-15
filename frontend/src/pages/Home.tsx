@@ -18,6 +18,11 @@ const META: Record<string, { ico: string; col: string; desc: string }> = {
   'mis-sanciones': { ico: '⚠️', col: '239,68,68', desc: 'Consultá tus sanciones y notificaciones' },
   'mis-evaluaciones': { ico: '📈', col: '94,194,255', desc: 'Consultá tus evaluaciones de desempeño' },
   'mis-familiares': { ico: '👨‍👩‍👧', col: '94,194,255', desc: 'Cargá y gestioná tu grupo familiar' },
+  'aprobaciones': { ico: '✅', col: '34,197,94', desc: 'Aprobá o rechazá adelantos de tu equipo' },
+  'licencias-equipo': { ico: '🏖', col: '34,197,94', desc: 'Licencias y vacaciones de tu equipo' },
+  'organigrama': { ico: '🗂', col: '61,127,255', desc: 'Estructura y personas a cargo' },
+  'sanciones-equipo': { ico: '⚠️', col: '239,68,68', desc: 'Solicitá y seguí sanciones de tu equipo' },
+  'evaluaciones-equipo': { ico: '📈', col: '94,194,255', desc: 'Evaluá el desempeño de tu equipo' },
 };
 const fallback = { ico: '▸', col: '92,104,128', desc: '' };
 
