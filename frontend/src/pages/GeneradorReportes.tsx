@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
 
-type Campo = [string, string, ('text' | 'num' | 'date')?];
+type Campo = [string, string, ('text' | 'num' | 'int' | 'date')?];
 interface Dataset { key: string; label: string; endpoint: string; campos: Campo[]; default: string[]; }
 
 const DATASETS: Dataset[] = [
   { key: 'empleados', label: 'Empleados (nómina)', endpoint: '/empleados', default: ['legNum', 'nom', 'cuil', 'empresa', 'cat', 'bruto'],
     campos: [['legNum', 'Legajo'], ['nom', 'Nombre'], ['dni', 'DNI'], ['cuil', 'CUIL'], ['empresa', 'Empresa'], ['cat', 'Categoría'], ['tramo', 'Tramo'], ['ingreso', 'Ingreso', 'date'], ['bruto', 'Bruto', 'num'], ['neto', 'Neto', 'num'], ['lugar', 'Lugar'], ['mail', 'Email'], ['tarea', 'Tarea'], ['condicion', 'Condición'], ['cod_convenio', 'Convenio'], ['cod_sindicato', 'Sindicato'], ['fecha_nac', 'Fecha nac.', 'date'], ['sexo', 'Sexo'], ['estado_civil', 'Estado civil'], ['dom_loc', 'Localidad'], ['dom_prov', 'Provincia']] },
   { key: 'liquidaciones', label: 'Liquidaciones (recibos)', endpoint: '/recibos/gestion', default: ['leg_num', 'nom', 'empresa', 'anio', 'mes', 'tipo', 'neto'],
-    campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['anio', 'Año', 'num'], ['mes', 'Mes', 'num'], ['tipo', 'Tipo'], ['neto', 'Neto', 'num'], ['created_by', 'Liquidado por'], ['created_at', 'Fecha', 'date']] },
+    campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['anio', 'Año', 'int'], ['mes', 'Mes', 'int'], ['tipo', 'Tipo'], ['neto', 'Neto', 'num'], ['created_by', 'Liquidado por'], ['created_at', 'Fecha', 'date']] },
   { key: 'licencias', label: 'Licencias', endpoint: '/licencias', default: ['leg_num', 'nom', 'empresa', 'tipo', 'desde', 'hasta', 'dias', 'estado'],
-    campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['tipo', 'Tipo'], ['desde', 'Desde', 'date'], ['hasta', 'Hasta', 'date'], ['dias', 'Días', 'num'], ['estado', 'Estado'], ['motivo', 'Motivo'], ['resuelto_por', 'Resuelto por']] },
+    campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['tipo', 'Tipo'], ['desde', 'Desde', 'date'], ['hasta', 'Hasta', 'date'], ['dias', 'Días', 'int'], ['estado', 'Estado'], ['motivo', 'Motivo'], ['resuelto_por', 'Resuelto por']] },
   { key: 'sanciones', label: 'Sanciones', endpoint: '/sanciones', default: ['leg_num', 'nom', 'empresa', 'tipo', 'fecha', 'estado'],
-    campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['tipo', 'Tipo'], ['falta', 'Falta'], ['fecha', 'Fecha', 'date'], ['estado', 'Estado'], ['dias', 'Días', 'num'], ['resuelto_por', 'Resuelto por']] },
+    campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['tipo', 'Tipo'], ['falta', 'Falta'], ['fecha', 'Fecha', 'date'], ['estado', 'Estado'], ['dias', 'Días', 'int'], ['resuelto_por', 'Resuelto por']] },
   { key: 'anticipos', label: 'Adelantos', endpoint: '/anticipos', default: ['leg_num', 'nom', 'empresa', 'monto', 'cuotas', 'estado'],
-    campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['monto', 'Monto', 'num'], ['motivo', 'Motivo'], ['cuotas', 'Cuotas', 'num'], ['cuotas_pagadas', 'Cuotas pagadas', 'num'], ['estado', 'Estado'], ['created_at', 'Fecha', 'date']] },
+    campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['monto', 'Monto', 'num'], ['motivo', 'Motivo'], ['cuotas', 'Cuotas', 'int'], ['cuotas_pagadas', 'Cuotas pagadas', 'int'], ['estado', 'Estado'], ['created_at', 'Fecha', 'date']] },
 ];
 const $ = (n: any) => (Number(n) || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -47,7 +47,7 @@ export default function GeneradorReportes() {
   }, [rows, empresa, q, ordenPor]);
 
   const toggle = (k: string) => setSel((p) => p.includes(k) ? p.filter((x) => x !== k) : [...p, k]);
-  const val = (r: any, k: string) => { const v = r[k]; if (v == null || v === '') return '—'; const t = tipoDe(k); if (t === 'num') return '$ ' + $(v); if (t === 'date') return String(v).slice(0, 10); return String(v); };
+  const val = (r: any, k: string) => { const v = r[k]; if (v == null || v === '') return '—'; const t = tipoDe(k); if (t === 'num') return '$\u00A0' + $(v); if (t === 'int') return String(Math.round(Number(v))); if (t === 'date') return String(v).slice(0, 10); return String(v); };
 
   function csv() {
     const head = sel.map(labelDe).join(',');
