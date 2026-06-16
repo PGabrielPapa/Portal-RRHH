@@ -13,7 +13,7 @@ export interface CertData {
 export function imprimirCertificado(d: CertData) {
   const e = d.empleado; const c = d.campos || {};
   const partes: string[] = [];
-  partes.push(`presta servicios en relación de dependencia en esta empresa`);
+  partes.push(`presta servicios en relación de dependencia para la empresa ${e.empresa}${e.cuit ? `, CUIT: ${e.cuit}` : ''}`);
   if (c.fecha_ingreso && e.ingreso) partes.push(`desde el ${fmtFecha(e.ingreso)}`);
   if (c.antiguedad && e.ingreso) partes.push(`con una antigüedad de ${aniosAntig(e.ingreso)} año(s)`);
   const catReal = e.categoria || e.cat;
