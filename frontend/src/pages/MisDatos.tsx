@@ -6,7 +6,8 @@ const v = (x: unknown) => (x === null || x === undefined || x === '' ? '—' : S
 function Field({ label, value }: { label: string; value: unknown }) {
   return (<div className="field" style={{ marginBottom: 10 }}><label>{label}</label><div style={{ fontSize: 14 }}>{v(value)}</div></div>);
 }
-interface Cambio { id: number; dom_nuevo?: string; estado: string; created_at: string; resuelto_por?: string; }
+interface Cambio { id: number; dom_anterior?: string; dom_nuevo?: string; estado: string; created_at: string; resuelto_at?: string; resuelto_por?: string; }
+const fmtFecha = (s?: string) => s ? new Date(s).toLocaleDateString('es-AR') : '';
 const estadoColor = (e: string) => e === 'aprobado' ? 'var(--green)' : e === 'rechazado' ? 'var(--red)' : 'var(--yellow)';
 
 export default function MisDatos() {
@@ -98,10 +99,16 @@ export default function MisDatos() {
 
         {cambios.length > 0 && (
           <div style={{ marginTop: 14 }}>
-            <div className="muted" style={{ marginBottom: 6 }}>Cambios informados:</div>
+            <div className="muted" style={{ marginBottom: 6, textTransform: 'uppercase', fontSize: 11, letterSpacing: '.05em' }}>Histórico de domicilios</div>
             {cambios.map((c) => (
-              <div key={c.id} className="row" style={{ justifyContent: 'space-between', fontSize: 13, padding: '4px 0' }}>
-                <span>{c.dom_nuevo}</span><span className="badge" style={{ color: estadoColor(c.estado) }}>{c.estado}</span>
+              <div key={c.id} className="row" style={{ justifyContent: 'space-between', alignItems: 'center', fontSize: 13, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <div>{c.dom_nuevo}</div>
+                  <div className="muted" style={{ fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+                    {c.estado === 'aprobado' ? `Vigente desde ${fmtFecha(c.resuelto_at)}` : c.estado === 'rechazado' ? `Rechazado ${fmtFecha(c.resuelto_at)}` : `Informado ${fmtFecha(c.created_at)}`}
+                  </div>
+                </div>
+                <span className="badge" style={{ color: estadoColor(c.estado) }}>{c.estado}</span>
               </div>
             ))}
           </div>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 
-interface C { id: number; calle?: string; nro?: string; dom_anterior?: string; dom_nuevo?: string; estado: string; created_at: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
+interface C { id: number; calle?: string; nro?: string; dom_anterior?: string; dom_nuevo?: string; estado: string; created_at: string; resuelto_at?: string; nom?: string; leg_num?: string; empresa?: string; resuelto_por?: string; }
+const fmtF = (s?: string) => s ? new Date(s).toLocaleDateString('es-AR') : '—';
 const estadoColor = (e: string) => e === 'aprobado' ? 'var(--green)' : e === 'rechazado' ? 'var(--red)' : 'var(--yellow)';
 
 export default function CambiosDomicilio() {
@@ -21,12 +22,13 @@ export default function CambiosDomicilio() {
       </div>
       <div className="card" style={{ padding: 0, overflow: 'auto' }}>
         <table>
-          <thead><tr><th>Empleado</th><th>Empresa</th><th>Domicilio anterior</th><th>Nuevo domicilio</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Empleado</th><th>Empresa</th><th>Domicilio anterior</th><th>Nuevo domicilio</th><th>Fecha del cambio</th><th>Estado</th><th></th></tr></thead>
           <tbody>
             {items.map((c) => (
               <tr key={c.id}>
                 <td>{c.nom} <span className="muted">({c.leg_num})</span></td><td>{c.empresa}</td>
                 <td className="muted">{c.dom_anterior || '—'}</td><td>{c.dom_nuevo}</td>
+                <td className="muted" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, whiteSpace: 'nowrap' }}>{c.estado === 'pendiente' ? `informado ${fmtF(c.created_at)}` : fmtF(c.resuelto_at)}</td>
                 <td><span className="badge" style={{ color: estadoColor(c.estado) }}>{c.estado}</span></td>
                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{c.estado === 'pendiente' ? <>
                   <button className="btn" style={{ padding: '4px 10px', fontSize: 12, marginRight: 6 }} onClick={() => resolver(c, 'aprobado')}>Aprobar</button>
@@ -34,7 +36,7 @@ export default function CambiosDomicilio() {
                 </> : <span className="muted" style={{ fontSize: 12 }}>{c.resuelto_por ? `por ${c.resuelto_por}` : ''}</span>}</td>
               </tr>
             ))}
-            {!items.length && <tr><td colSpan={6} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin cambios de domicilio.</td></tr>}
+            {!items.length && <tr><td colSpan={7} className="muted" style={{ textAlign: 'center', padding: 20 }}>Sin cambios de domicilio.</td></tr>}
           </tbody>
         </table>
       </div>
