@@ -5,7 +5,7 @@ type Campo = [string, string, ('text' | 'num' | 'int' | 'date')?];
 interface Dataset { key: string; label: string; endpoint: string; campos: Campo[]; default: string[]; }
 
 const DATASETS: Dataset[] = [
-  { key: 'empleados', label: 'Empleados (nómina)', endpoint: '/empleados', default: ['legNum', 'nom', 'cuil', 'empresa', 'cat', 'bruto'],
+  { key: 'empleados', label: 'Empleados (nómina)', endpoint: '/empleados', default: ['legNum', 'nom', 'cuil', 'empresa', 'cat', 'tramo', 'tarea', 'bruto'],
     campos: [['legNum', 'Legajo'], ['nom', 'Nombre'], ['dni', 'DNI'], ['cuil', 'CUIL'], ['empresa', 'Empresa'], ['cat', 'Categoría'], ['tramo', 'Tramo'], ['ingreso', 'Ingreso', 'date'], ['bruto', 'Bruto', 'num'], ['neto', 'Neto', 'num'], ['lugar', 'Lugar'], ['mail', 'Email'], ['tarea', 'Tarea'], ['condicion', 'Condición'], ['cod_convenio', 'Convenio'], ['cod_sindicato', 'Sindicato'], ['fecha_nac', 'Fecha nac.', 'date'], ['sexo', 'Sexo'], ['estado_civil', 'Estado civil'], ['dom_loc', 'Localidad'], ['dom_prov', 'Provincia']] },
   { key: 'liquidaciones', label: 'Liquidaciones (recibos)', endpoint: '/recibos/gestion', default: ['leg_num', 'nom', 'empresa', 'anio', 'mes', 'tipo', 'neto'],
     campos: [['leg_num', 'Legajo'], ['nom', 'Nombre'], ['empresa', 'Empresa'], ['anio', 'Año', 'int'], ['mes', 'Mes', 'int'], ['tipo', 'Tipo'], ['neto', 'Neto', 'num'], ['created_by', 'Liquidado por'], ['created_at', 'Fecha', 'date']] },
@@ -47,11 +47,18 @@ export default function GeneradorReportes() {
   }, [rows, empresa, q, ordenPor]);
 
   const toggle = (k: string) => setSel((p) => p.includes(k) ? p.filter((x) => x !== k) : [...p, k]);
-  const val = (r: any, k: string) => { const v = r[k]; if (v == null || v === '') return '—'; const t = tipoDe(k); if (t === 'num') return '$\u00A0' + $(v); if (t === 'int') return String(Math.round(Number(v))); if (t === 'date') return String(v).slice(0, 10); return String(v); };
+  const [tramoMap, setTramoMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    api.get<{ tramos?: { key: string; label: string }[] }>('/escala/activa')
+      .then((e) => setTramoMap(Object.fromEntries((e.tramos || []).map((t) => [t.key, t.label]))))
+      .catch(() => {});
+  }, []);
+
+  const val = (r: any, k: string) => { const v = r[k]; if (v == null || v === '') return '—'; if (k === 'tramo') return tramoMap[String(v)] || String(v); const t = tipoDe(k); if (t === 'num') return '$\u00A0' + $(v); if (t === 'int') return String(Math.round(Number(v))); if (t === 'date') return String(v).slice(0, 10); return String(v); };
 
   function csv() {
     const head = sel.map(labelDe).join(',');
-    const lines = filas.map((r) => sel.map((k) => { const v = r[k]; const s = v == null ? '' : tipoDe(k) === 'num' ? Number(v) : String(v); return `"${String(s).replace(/"/g, '""')}"`; }).join(','));
+    const lines = filas.map((r) => sel.map((k) => { const v = r[k]; const s = v == null ? '' : k === 'tramo' ? (tramoMap[String(v)] || String(v)) : tipoDe(k) === 'num' ? Number(v) : String(v); return `"${String(s).replace(/"/g, '""')}"`; }).join(','));
     const blob = new Blob(['﻿' + [head, ...lines].join('\r\n')], { type: 'text/csv' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `reporte_${dsKey}.csv`; a.click();
   }
