@@ -48,6 +48,8 @@ import CambiosDomicilio from '../pages/CambiosDomicilio';
 import MisFamiliares from '../pages/MisFamiliares';
 import CostoEquipo from '../pages/CostoEquipo';
 import Justificaciones from '../pages/Justificaciones';
+import FichadasImport from '../pages/FichadasImport';
+import FichadasConsulta from '../pages/FichadasConsulta';
 
 // Módulos ya migrados (clave de sección → componente).
 const COMPONENTS: Record<string, ComponentType> = {
@@ -105,6 +107,8 @@ const COMPONENTS: Record<string, ComponentType> = {
   'cambios-domicilio': CambiosDomicilio,
   'mis-familiares': MisFamiliares,
   'justificar-licencia': Justificaciones,
+  'fichadas-import': FichadasImport,
+  'fichadas-consulta': FichadasConsulta,
 };
 
 export default function SectionView() {

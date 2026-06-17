@@ -26,6 +26,21 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return data as T;
 }
 
+// POST de multipart/form-data (subida de archivos). No fija Content-Type:
+// el navegador agrega el boundary automáticamente.
+async function requestForm<T>(method: string, path: string, form: FormData): Promise<T> {
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${BASE}${path}`, { method, headers, body: form });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 401) setToken(null);
+    throw new Error((data as any).error || `Error ${res.status}`);
+  }
+  return data as T;
+}
+
 // Descarga binaria autenticada (p.ej. comprobante de licencia) -> Blob.
 export async function fetchBlob(path: string): Promise<Blob> {
   const headers: Record<string, string> = {};
@@ -45,4 +60,5 @@ export const api = {
   put: <T>(p: string, b?: unknown) => request<T>('PUT', p, b),
   patch: <T>(p: string, b?: unknown) => request<T>('PATCH', p, b),
   del: <T>(p: string) => request<T>('DELETE', p),
+  postForm: <T>(p: string, form: FormData) => requestForm<T>('POST', p, form),
 };

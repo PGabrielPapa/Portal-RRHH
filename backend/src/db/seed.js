@@ -109,7 +109,6 @@ async function main() {
 
     // Catálogo de conceptos COMPLETO (réplica de la vanilla). Idempotente.
     const conceptos = JSON.parse(fs.readFileSync(path.join(dataDir, 'conceptos.seed.json'), 'utf8'));
-    // Migración única: si todavía está el catálogo viejo (11 estándar) y no el completo, lo limpiamos.
     const tieneNuevo = await client.query("SELECT 1 FROM conceptos WHERE codigo='20000' LIMIT 1");
     if (!tieneNuevo.rowCount) {
       await client.query("DELETE FROM conceptos WHERE codigo IN ('001','002','003','010','020','100','101','102','103','200','300')");
@@ -122,7 +121,6 @@ async function main() {
       );
     }
     console.log(`[seed] conceptos: ${conceptos.length}`);
-    console.log('[seed] conceptos: ok');
 
     // Escala salarial inicial (solo si no hay ninguna versión)
     try {
